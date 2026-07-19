@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-
+# python 3.6 3.7 3.8
 # check pygraphviz pycairo PyGObject pygccxml for python3.8
+# pip install pygraphviz pycairo PyGObject pygccxml
+# ./waf xxxx --vis
+# This script checks whether vis is useful
+
 
 mods = [
     "gi",
