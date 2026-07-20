@@ -11,8 +11,8 @@
 *.dat
 *.log
 *.mob
-*.pcap
-*.plt
+# *.pcap
+# *.plt
 *.routes
 *.tr
 [D|U]l[A-Z][a-z]*Stats.txt
@@ -66,7 +66,7 @@ doc/introspected-doxygen.h
 .waf
 ^doc/introspected-doxygen\.h$
 .*\.py[co]$
-\.pcap$
+# \.pcap$
 \.mob$
 \.routes$
 ^doc/manual/build
