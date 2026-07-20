@@ -1,5 +1,5 @@
 # castxml binary
-ubuntu 18.04 系统仓库castxml版本过低(v0.1)，ns3至少v0.2
+ubuntu 18.04 系统仓库castxml版本过低(v0.1)，ns3要求至少v0.2
 因此我们采用python3.7仓库中的castxml二进制发布版本。
 
 ```bash
