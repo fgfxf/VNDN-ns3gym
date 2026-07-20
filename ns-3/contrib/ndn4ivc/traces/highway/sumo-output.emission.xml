@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on Mon Jul 20 14:20:29 2026 by Eclipse SUMO GUI Version 1.1.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="contrib/ndn4ivc/traces/highway/map.net.xml"/>
+        <route-files value="contrib/ndn4ivc/traces/highway/passenger_routes.rou.xml,contrib/ndn4ivc/traces/highway/emergency_routes.rou.xml"/>
+    </input>
+
+    <output>
+        <emission-output value="contrib/ndn4ivc/traces/highway/sumo-output.emission.xml"/>
+        <tripinfo-output value="contrib/ndn4ivc/traces/highway/sumo-output.tripinfo.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+        <step-length value="0.100000"/>
+    </time>
+
+    <report>
+        <verbose value="true"/>
+        <error-log value="contrib/ndn4ivc/traces/highway/SumoError.log"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="3400"/>
+    </traci_server>
+
+    <random_number>
+        <seed value="10"/>
+    </random_number>
+
+    <gui_only>
+        <gui-settings-file value="contrib/ndn4ivc/traces/highway/settings.xml"/>
+        <quit-on-end value="true"/>
+        <start value="true"/>
+        <tracker-interval value="0.1"/>
+    </gui_only>
+
+</configuration>
+-->
+
+<emission-export xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/emission_file.xsd">
+    <timestep time="0.00">
+        <vehicle id="passenger0" eclass="HBEFA3/PC_G_EU4" CO2="2152.14" CO="10.24" HC="0.09" NOx="0.69" PMx="0.01" fuel="0.93" electricity="0.00" noise="62.58" route="!passenger0" type="passenger" waiting="0.00" lane="A1B1_0" pos="5.10" speed="11.11" angle="90.02" x="-108.97" y="95.26"/>
+    </timestep>
+</emission-export>

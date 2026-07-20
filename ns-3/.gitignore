@@ -86,6 +86,6 @@ massif.*
 \#[^\#/]+\#$
 .lock-wscript
 .lock-wafbuild
-src/ndnSIM
+# src/ndnSIM  # tracked as regular files in this repository
 configure
 toggle
