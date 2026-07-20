@@ -33,6 +33,7 @@ TAGS
 .lock-waf_*_build
 .waf*
 
+.vscode/
 build-dir/
 build/
 /.cproject
