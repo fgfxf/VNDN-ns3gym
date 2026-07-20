@@ -5,10 +5,6 @@ def build(bld):
     obj = bld.create_ns3_program("opengym", ["core", "opengym"])
     obj.source = "opengym/sim.cc"
 
-    obj = bld.create_ns3_program("fgfxfopengym", ["core", "opengym"])
-    obj.source = "fgfxfopengym/sim.cc"
-
-
     obj = bld.create_ns3_program("opengym-2", ["core", "opengym"])
     obj.source = ["opengym-2/sim.cc", "opengym-2/mygym.cc"]
 
