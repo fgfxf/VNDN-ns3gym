@@ -1,0 +1,2 @@
+[console_scripts]
+castxml = castxml:castxml
