@@ -8,9 +8,9 @@
 *.pyo
 
 *.cwnd
-*.dat
+# *.dat
 *.log
-*.mob
+# *.mob
 # *.pcap
 # *.plt
 *.routes
@@ -67,7 +67,7 @@ doc/introspected-doxygen.h
 ^doc/introspected-doxygen\.h$
 .*\.py[co]$
 # \.pcap$
-\.mob$
+# \.mob$
 \.routes$
 ^doc/manual/build
 ^doc/tutorial/build
