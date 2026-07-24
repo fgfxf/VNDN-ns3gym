@@ -1,0 +1,47 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# Neural-Network assisted NDN Interest routing for vehicular RSU handover.
+#
+# This wscript automatically scans the model/, helper/ and apps/ directories and
+# appends every source/header file to the right build list:
+#   - .h  / .hpp  -> ns3header (public headers)
+#   - .cc / .c / .cpp -> module source (compiled into the ns-3 module)
+import os
+
+
+def build(bld):
+    module = bld.create_ns3_module('vndn-nn-rd', [
+                                   'core',
+                                   'network',
+                                   'mobility',
+                                   'wave',
+                                   'ndnSIM',
+                                   'traci',
+                                   'opengym'])
+
+    module.source = []
+    moduleName = "vndn-nn-rd"
+    headers = bld(features='ns3header')
+    headers.module = moduleName
+    headers.source = []
+    # Directories whose files are auto-discovered. Files are appended to the
+    # build according to their extension:
+    #   .h / .hpp            -> public ns-3 headers
+    #   .cc / .c / .cpp      -> compiled module sources
+    scanDirs = ["model", "helper", "apps"]
+    sourceExts = (".cc", ".c", ".cpp")
+    headerExts = (".h", ".hpp")
+    for d in scanDirs:
+        dirPath = "./contrib/" + moduleName + "/" + d
+        if not os.path.isdir(dirPath):
+            continue
+        for file in os.listdir(dirPath):
+            filePath = d + "/" + file
+            if file.endswith(headerExts):
+                headers.source.append(filePath)
+            elif file.endswith(sourceExts):
+                module.source.append(filePath)
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.recurse('examples')
+    # bld.ns3_python_bindings()

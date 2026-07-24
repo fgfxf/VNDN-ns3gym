@@ -20,6 +20,7 @@
 
 #include "ns3/wifi-setup-helper.h"
 #include "ns3/wifi-adhoc-helper.h"
+#include "ns3/vndn-utils-helper.h" // shared VNDN utilities (checkDisableNodes, exec, color codes)
 
 #include "ns3/traci-module.h"
 #include "ns3/netanim-module.h"
@@ -34,12 +35,10 @@
 #include <sstream>
 #include <iomanip>
 
-#define YELLOW_CODE "\033[33m"
-#define RED_CODE "\033[31m"
-#define BLUE_CODE "\033[34m"
-#define BOLD_CODE "\033[1m"
-#define CYAN_CODE "\033[36m"
-#define END_CODE "\033[0m"
+// ANSI color codes (YELLOW_CODE, RED_CODE, ...) and the SUMO_SCENARIO_NAME /
+// SHELLSCRIPT_NUM_VEHICLES macros are shared across examples and now live in
+// ns3/vndn-utils-helper.h. They are still available here because that header
+// is included above.
 
 // specify the SUMO scenario in the 'ndn4ivc/traces' directory
 // e.g., grid-map  grid-map-test  highway  highway-map-test  spider-map
@@ -58,48 +57,15 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("vndn-example-beacon");
 NS_OBJECT_ENSURE_REGISTERED (BeaconApp);
 
-std::map<uint32_t, ns3::Time> nodesDisable2Move;
-
-void
-checkDisableNodes ()
-{
-  for (auto it = nodesDisable2Move.begin (), it_next = it; it != nodesDisable2Move.end ();
-       it = it_next)
-    {
-      ++it_next;
-      Ptr<Node> exNode = ns3::NodeList::GetNode (it->first);
-      // NOTE:we'll put the node in a new position, outside the simulation
-      // communication range, but this is just for better visualization mode
-      if ((ns3::Time) ns3::Simulator::Now ().GetSeconds () - it->second > 1)
-        {
-          Ptr<ConstantPositionMobilityModel> mob =
-              exNode->GetObject<ConstantPositionMobilityModel> ();
-          mob->SetPosition (Vector ((double) exNode->GetId (), -4000 - (rand () % 25), -5000.0));
-          nodesDisable2Move.erase (it);
-        }
-    }
-  Simulator::Schedule (Seconds (1), &checkDisableNodes);
-}
-
-std::string
-exec (const char *cmd)
-{
-  std::array<char, 128> buffer;
-  std::string result;
-  std::unique_ptr<FILE, decltype (&pclose)> pipe (popen (cmd, "r"), pclose);
-  if (!pipe)
-    throw std::runtime_error ("exec failed!");
-  while (fgets (buffer.data (), buffer.size (), pipe.get ()) != nullptr)
-    result += buffer.data ();
-  return result;
-}
+// nodesDisable2Move, checkDisableNodes() and exec() used to be defined here;
+// they are now shared through ns3::ndn::VndnUtilsHelper (vndn-utils-helper.h).
 
 int
 main (int argc, char *argv[])
 {
   std::cout << CYAN_CODE << BOLD_CODE << "Starting simulation... " END_CODE << std::endl;
 
-  uint32_t nVehicles = std::stoi (exec (SHELLSCRIPT_NUM_VEHICLES));
+  uint32_t nVehicles = std::stoi (ndn::VndnUtilsHelper::exec (SHELLSCRIPT_NUM_VEHICLES));
 
   std::cout << "Selected SUMO scenario: " << SUMO_SCENARIO_NAME << std::endl;
 
@@ -285,7 +251,8 @@ main (int argc, char *argv[])
     //GetPhy ()->SetSleepMode ();
 
     // avoid animation error (link drag) in PyViz
-    nodesDisable2Move.emplace (exNode->GetId (), (ns3::Time) ns3::Simulator::Now ().GetSeconds ());
+    ndn::VndnUtilsHelper::nodesDisable2Move.emplace (exNode->GetId (),
+                                                     (ns3::Time) ns3::Simulator::Now ().GetSeconds ());
 
     //the SUMO node has been finished and the ns3 node has also fully 'deactivated' accordingly
     //further actions could be required for a save shutdown!
@@ -295,7 +262,7 @@ main (int argc, char *argv[])
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelNumber",
                ns3::UintegerValue (SCH1));
 
-  Simulator::Schedule (Seconds (1), &checkDisableNodes);
+  ndn::VndnUtilsHelper::ScheduleDisableNodesCheck ();
 
   sumoClient->SumoSetup (setupNewSumoVehicle, shutdownSumoVehicle);
   std::cout << YELLOW_CODE << BOLD_CODE << "Simulation is running: " END_CODE << std::endl;

@@ -3,6 +3,8 @@ ubuntu 18.04 系统仓库castxml版本过低(v0.1)，ns3要求至少v0.2
 因此我们采用python3.7仓库中的castxml二进制发布版本。
 
 ```bash
+git lfs pull
+git lfs ls-files
 cp -r castxml  ~/.local/lib/python3.8/site-packages/
 cp -r castxml-0.4.5.dist-info ~/.local/lib/python3.8/site-packages/
 ```

@@ -19,8 +19,6 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
   * 33.8dbm ~ 200m  (radio coverage)
   * 45.6dbm~ 500m  (radio coverage)
   */
-  double txPower_dBm = 45.6; //dBm
-  double MinDistance = 500;
 
   /* Propagation loss models >> implemented:
   - Cost231PropagationLossModel
@@ -55,22 +53,27 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
     MinDistance: The distance under which the propagation model refuses to give results (m)
   */
 
-  std::string phyMode ("OfdmRate6MbpsBW10MHz");
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   wifiChannel.AddPropagationLoss ("ns3::TwoRayGroundPropagationLossModel", "HeightAboveZ",
                                   DoubleValue (1.5), "SystemLoss", DoubleValue (1), "MinDistance",
-                                  DoubleValue (MinDistance));
+                                  DoubleValue (m_MinDistance));
 
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11);
 
   wifiPhy.Set ("TxPowerStart",
-               DoubleValue (txPower_dBm)); //Minimum available transmission level (dbm)
+               DoubleValue (m_txPower_dBm)); //Minimum available transmission level (dbm)
   wifiPhy.Set ("TxPowerEnd",
-               DoubleValue (txPower_dBm)); //Maximum available transmission level (dbm)
+               DoubleValue (m_txPower_dBm)); //Maximum available transmission level (dbm)
   //Number of transmission power levels available between TxPowerStart and TxPowerEnd included (default 8)
   wifiPhy.Set ("TxPowerLevels", UintegerValue (1));
+
+  wifiPhy.SetPreambleDetectionModel ("ns3::ThresholdPreambleDetectionModel",
+                                     "MinimumRssi", DoubleValue (m_MinimumRssi),
+                                     "Threshold", DoubleValue (m_snr));
+  wifiPhy.Set ("EnergyDetectionThreshold", DoubleValue (m_MinimumRssi));
+  wifiPhy.Set ("RxSensitivity", DoubleValue (m_MinimumRssi));
 
   //wifiPhy.Set ("RxGain", DoubleValue (1));
   //wifiPhy.Set ("ShortPlcpPreambleSupported", BooleanValue(true) );
@@ -80,7 +83,6 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
   //wifiPhy.Set ("TxGain", DoubleValue(1));
   //wifiPhy.Set ("Frequency", UintegerValue(5880)); //CH176
   //wifiPhy.Set ("ChannelWidth", UintegerValue(20));
-  //wifiPhy.Set ("EnergyDetectionThreshold",DoubleValue(-96));
   //wifiPhy.Set ("RxNoiseFigure", DoubleValue(7));
   //wifiPhy.Set ("TxAntennas", UintegerValue(1));
   //wifiPhy.Set ("RxAntennas", UintegerValue(5));
@@ -103,6 +105,38 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
     wifiPhy.EnablePcap ("PCAP", wifiNetDevices);
 
   return wifiNetDevices;
+}
+/*
+  * 21dBm ~ 75m (radio coverage)
+  * 33.8dbm ~ 200m  (radio coverage)
+  * 45.6dbm~ 500m  (radio coverage)
+*/
+void
+WifiSetupHelper::SetTxPower (double power)
+{
+  m_txPower_dBm = power;
+}
+/*
+  * 21dBm ~ 75m (radio coverage)
+  * 33.8dbm ~ 200m  (radio coverage)
+  * 45.6dbm~ 500m  (radio coverage)
+*/
+void
+WifiSetupHelper::SetMinDistance (double distance)
+{
+  m_MinDistance = distance;
+}
+
+void
+WifiSetupHelper::SetMiniRssi (double rssi)
+{
+  m_MinimumRssi = rssi;
+}
+
+void
+WifiSetupHelper::SetSnr (double snr)
+{
+  m_snr = snr;
 }
 } // namespace ndn
 } // namespace ns3

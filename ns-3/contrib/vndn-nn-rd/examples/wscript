@@ -1,0 +1,14 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+import os
+
+def build(bld):
+    moduleName = "vndn-nn-rd"
+    #将examples文件夹下所有cc文件都列入编译列表
+    for filename in os.listdir("./contrib/"+moduleName+"/examples"):
+        if filename.startswith('.') or filename == 'CVS':
+            continue
+        elif filename.endswith(".cc"):
+            name = filename[:-len(".cc")]
+            obj = bld.create_ns3_program(name,  ['ndn4ivc','core', 'aodv', 'applications', 'dsr', 'dsdv', 'flow-monitor', 'mobility', 'network', 'olsr', 'propagation', 'wifi', 'wave','traci','traci-applications'])
+            obj.source = filename
+

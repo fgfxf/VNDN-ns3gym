@@ -27,13 +27,22 @@ sudo apt install -y \
 
 # 将/usr/bin/python3和/usr/bin/python软链接到/usr/bin/python3.8
 
-python3.8 -m pip install \
-    'pycairo==1.20.1' \
-    'PyGObject==3.36.1' \
-    'pygraphviz==1.7'
+python -m pip install --no-cache-dir "pycairo==1.23.0"
+python -m pip install --no-cache-dir "PyGObject==3.42.2"
+python -m pip install --no-cache-dir "pygraphviz==1.7"
 
 ```
 
 使用这个脚本检测是否安装成功。
+```bash
+[OK] gi
+[OK] cairo
+[OK] pygraphviz
+[OK] gi.repository.GObject
+[OK] gi.repository.Gtk
+[OK] gi.repository.Gdk
+[OK] gi.repository.Pango
+[OK] gi.repository.GooCanvas
+```
 
 

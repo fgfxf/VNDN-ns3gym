@@ -60,7 +60,8 @@ class ShowNdnFaces(InformationWindow):
         self.visualizer.remove_information_window(self)
 
     def update(self):
-        faces = ndn.L3Protocol.getL3Protocol(self.node).getForwarder().getFaceTable()
+        # faces = ndn.L3Protocol.getL3Protocol(self.node).getForwarder().getFaceTable()
+        faces = ndn.L3Protocol.getL3Protocol(self.node).getFaceTable()
 
         self.table_model.clear()
 

@@ -22,8 +22,6 @@
 #include "ns3/traci-client.h"
 #include "ns3/sumoMap-graph.h"
 
-#include "mygraph-helper.h"
-
 #include "../src/json/single_include/nlohmann/json.hpp"
 
 namespace ndn {
