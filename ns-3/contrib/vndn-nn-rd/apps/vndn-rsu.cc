@@ -8,6 +8,7 @@
  */
 
 #include "vndn-rsu.h"
+#include "ns3/vndn-rsu-app.h"
 
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
@@ -146,3 +147,7 @@ VndnRsu::Stop ()
 }
 
 } // namespace vanet
+
+namespace ns3 {
+NS_OBJECT_ENSURE_REGISTERED (VndnRsuApp);
+} // namespace ns3

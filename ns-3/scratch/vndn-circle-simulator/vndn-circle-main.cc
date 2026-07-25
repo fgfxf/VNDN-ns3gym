@@ -27,8 +27,6 @@
 
 
 
-
-
 //for safe remove node in ns3 vis
 std::map<uint32_t,ns3::Time> nodesDisable2Move;//nodeID  -- stopTime
 void checkDisableNodes(){
@@ -152,9 +150,9 @@ int main(int argc,char *argv[]){
 
     //p2p
     ns3::PointToPointHelper p2p;
-    p2p.SetDeviceAttribute("DataRate",ns3::StringValue("100Mbps"));
-    p2p.SetChannelAttribute("Delay",ns3::StringValue("40ms"));
-    p2p.Install(nodePool.Get(0),nodePool.Get(1));//RSU之间逻辑链路,这个时延应当比经过核心网要大，因为我们是图省事直接建立的物理链路
+    // p2p.SetDeviceAttribute("DataRate",ns3::StringValue("100Mbps"));
+    // p2p.SetChannelAttribute("Delay",ns3::StringValue("40ms"));
+    // p2p.Install(nodePool.Get(0),nodePool.Get(1));//RSU之间逻辑链路,这个时延应当比经过核心网要大，因为我们是图省事直接建立的物理链路
 
     p2p.SetDeviceAttribute("DataRate",ns3::StringValue("100Mbps"));
     p2p.SetChannelAttribute("Delay",ns3::StringValue("20ms"));
@@ -255,7 +253,7 @@ int main(int argc,char *argv[]){
     itsRsuNodes.Add (rsuApp.Install (nodePool.Get (0)));
     usedNodeCounter++;
 
-    rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(0));
+    // rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(0));m
     rsuNode0 = nodePool.Get(1) ->GetObject<ns3::MobilityModel>();
     rsuNode0->SetPosition(ns3::Vector(150,70,20));
     itsRsuNodes.Add (rsuApp.Install (nodePool.Get (1)));
@@ -268,7 +266,7 @@ int main(int argc,char *argv[]){
 
     ///////////////服务器节点设置////////////////////
     ns3::Ptr<ns3::MobilityModel> serverNode = serverNodes.Get(0) ->GetObject<ns3::MobilityModel>();
-    serverNode->SetPosition(ns3::Vector(0,0,200));
+    serverNode->SetPosition(ns3::Vector(65,-50,200));
     ns3::ndn::AppHelper producer("ns3::ndn::Producer");
     producer.SetPrefix("/com/baidu");
     producer.SetAttribute("PayloadSize",ns3::StringValue("10240"));
@@ -276,7 +274,7 @@ int main(int argc,char *argv[]){
     producerApp.Start(ns3::Seconds(0.0));
 
     ns3::Ptr<ns3::MobilityModel> routerNode = routerNodes.Get(0) ->GetObject<ns3::MobilityModel>();
-    routerNode->SetPosition(ns3::Vector(50,50,200));
+    routerNode->SetPosition(ns3::Vector(65,0,200));
 
 
     //所有的基站，找不到缓存的数据前缀都向server请求。

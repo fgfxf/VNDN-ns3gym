@@ -8,6 +8,7 @@
  */
 
 #include "vndn-obu.h"
+#include "ns3/vndn-obu-app.h"
 #include "ns3/node-list.h"
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
@@ -140,3 +141,7 @@ VndnObu::Stop ()
 }
 
 } // namespace vanet
+
+namespace ns3 {
+NS_OBJECT_ENSURE_REGISTERED (VndnObuApp);
+} // namespace ns3

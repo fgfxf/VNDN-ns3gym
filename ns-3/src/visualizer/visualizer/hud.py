@@ -159,7 +159,7 @@ class Axes(object):
                                  text=("%G" % x),
                                  fill_color_rgba=self.color,
                                  alignment=Pango.Alignment.CENTER,
-                                 # anchor=Gtk.Widget.ANCHOR_S,
+                                 anchor=GooCanvas.CanvasAnchorType.SOUTH,
                                  x=PIXELS_PER_METER*x,
                                  y=(yc - offset))
             x += xdiv
