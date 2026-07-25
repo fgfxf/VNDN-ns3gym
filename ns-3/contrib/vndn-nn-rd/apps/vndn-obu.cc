@@ -13,9 +13,11 @@
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
 #include "ns3/assert.h"
+#include "ns3/random-variable-stream.h"
 #include <ndn-cxx/lp/tags.hpp>
 
 #include <iostream>
+#include <cstdlib>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnObu");
 
@@ -106,22 +108,64 @@ VndnObu::OnInterest (const ndn::Interest &interest)
 void
 VndnObu::OnData (const ndn::Interest &interest, const ndn::Data &data)
 {
-  // TODO: 后续在此实现收到数据包后的处理逻辑
+  // 收到数据包后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 收到数据包: " << data.getName ());
 }
 
 void
 VndnObu::OnTimeout (const ndn::Interest &interest)
 {
-  // TODO: 后续在此实现兴趣包超时后的处理逻辑
+  // 兴趣包超时后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 兴趣包超时: " << interest.getName ());
 }
 
 void
 VndnObu::OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack)
 {
-  // TODO: 后续在此实现收到 NACK 后的处理逻辑
+  // 收到 NACK 后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 收到 NACK, reason: " << nack.getReason ());
+}
+
+////////////////////////////////////////////////////////////////////////
+// 周期性请求发送（模拟用户高频访问）
+////////////////////////////////////////////////////////////////////////
+
+void
+VndnObu::ScheduleNextPacket ()
+{
+  if (!m_active)
+    return;
+  // 根据频率计算发送间隔（微秒），并加入少量随机抖动以避免同步风暴
+  ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
+  m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
+}
+
+void
+VndnObu::SendPacket ()
+{
+  m_requestScheduler.Cancel ();
+  if (!m_active)
+    return;
+
+  // 构造兴趣包：前缀 /com/baidu + 递增序号，模拟用户请求不同内容
+  m_seq++;
+  std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/com/baidu");
+  name->appendSequenceNumber (m_seq);
+
+  std::shared_ptr<ndn::Interest> interest = std::make_shared<ndn::Interest> ();
+  interest->setName (*name);
+  interest->setInterestLifetime (ndn::time::milliseconds (3000));
+  interest->setCanBePrefix (false);
+  interest->setMustBeFresh (false);
+
+  NS_LOG_INFO ("OBU 发送兴趣包: " << *name);
+  m_face.expressInterest (*interest,
+                          std::bind (&VndnObu::OnData, this, _1, _2),
+                          std::bind (&VndnObu::OnNack, this, _1, _2),
+                          std::bind (&VndnObu::OnTimeout, this, _1));
+
+  // 调度下一次发送，形成持续的高频请求
+  ScheduleNextPacket ();
 }
 
 void
@@ -130,12 +174,15 @@ VndnObu::Start ()
   m_face.processEvents ();
   m_active = true;
   NS_LOG_DEBUG ("OBU 启动...");
+  // 启动周期性请求发送
+  ScheduleNextPacket ();
 }
 
 void
 VndnObu::Stop ()
 {
   NS_LOG_DEBUG ("OBU 关闭...");
+  m_requestScheduler.Cancel ();
   m_face.shutdown ();
   m_active = false;
 }

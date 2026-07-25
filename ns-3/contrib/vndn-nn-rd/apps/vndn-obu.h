@@ -118,6 +118,24 @@ private:
   void
   OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack);
 
+  ////////////////////////////////////////////////////////////////////////
+  // 周期性请求发送（模拟用户高频访问）
+  ////////////////////////////////////////////////////////////////////////
+
+  /**
+   * \brief 调度下一次兴趣包发送。
+   *        根据请求频率计算下一次发送时刻并设置定时器。
+   */
+  void
+  ScheduleNextPacket ();
+
+  /**
+   * \brief 发送一个兴趣包。
+   *        构造兴趣包并通过 face 发出，随后调度下一次发送。
+   */
+  void
+  SendPacket ();
+
 private:
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
@@ -126,6 +144,11 @@ private:
   bool m_active = false;                     ///< 应用是否处于活跃状态
   ns3::Ptr<ns3::NetDevice> m_wirelessDevice = nullptr; ///< 无线网络设备
   uint64_t m_wirelessFaceId = 0;             ///< 无线链路对应的 faceId
+
+  // 周期性请求相关成员
+  double m_frequency = 40.0;                 ///< 请求频率（Hz），即每秒发送兴趣包次数
+  ns3::EventId m_requestScheduler;           ///< 请求发送定时器
+  uint32_t m_seq = 0;                        ///< 顺序递增的兴趣包序号
 };
 
 } // namespace vanet

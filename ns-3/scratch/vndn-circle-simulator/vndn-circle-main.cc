@@ -24,7 +24,9 @@
 #include "ns3/point-to-point-module.h"  // pcapwrite
 #include "ns3/vndn-rsu-app.h"
 #include "ns3/vndn-obu-app.h"
+#include "ns3/log.h"
 
+NS_LOG_COMPONENT_DEFINE ("vndn-circle-main");
 
 
 //for safe remove node in ns3 vis
@@ -133,6 +135,19 @@ int main(int argc,char *argv[]){
     cmd.AddValue ("sumo-gui", "Enable SUMO with graphical user interface", enSumoGui);
     cmd.Parse (argc, argv);
 
+    if (enLog)
+      {
+        // 记录 circle-main、OBU、RSU 三个组件的全部级别日志
+        std::vector<std::string> componentsLogLevelAll;
+        componentsLogLevelAll.push_back ("vndn-circle-main");
+        componentsLogLevelAll.push_back ("ndn.VndnObu");
+        componentsLogLevelAll.push_back ("ndn.VndnRsu");
+        for (auto const &c : componentsLogLevelAll)
+          {
+            ns3::LogComponentEnable (c.c_str (), ns3::LOG_LEVEL_ALL);
+            ns3::LogComponentEnable (c.c_str (), ns3::LOG_PREFIX_ALL);
+          }
+      }
 
     // 节点容器
     ns3::NodeContainer nodePool;
@@ -142,10 +157,15 @@ int main(int argc,char *argv[]){
     ns3::NodeContainer routerNodes; //路由器节点
     routerNodes.Create(1);
     //wifi
+    // 车联网基站切换场景参数说明：
+    //   发射功率 23 dBm（约 200mW），对应 TwoRayGround 模型约 300m 覆盖范围，
+    //   使车辆在两个 RSU 之间存在重叠覆盖区域，从而产生切换。
+    //   接收灵敏度 -96 dBm，符合 IEEE 802.11p OFDM 6Mbps 模式的典型值。
+    //   前导检测 SNR 阈值 4.0 dB，保证可靠的前导检测。
     ns3::ndn::WifiSetupHelper wifi;
-    wifi.SetTxPower(12);//发射功率  dBm
-    wifi.SetMiniRssi(-78);//最低接受 dBm
-    wifi.SetSnr(-4);//信噪比
+    wifi.SetTxPower(10);     //发射功率 23 dBm ~ 300m 覆盖
+    wifi.SetMiniRssi(-78);   //最低接收信号（802.11p 典型灵敏度 -96  dBm）
+    wifi.SetSnr(4.0);        //前导检测 SNR 阈值 4.0 dB
     ns3::NetDeviceContainer devices = wifi.ConfigureDevices(nodePool,enPcap);
 
     //p2p

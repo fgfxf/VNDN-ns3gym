@@ -1,4 +1,6 @@
 #include "ns3/wifi-setup-helper.h"
+#include "ns3/propagation-environment.h"
+
 
 namespace ns3 {
 namespace ndn {
@@ -54,12 +56,13 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
   */
 
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
-  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper();
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   wifiChannel.AddPropagationLoss ("ns3::TwoRayGroundPropagationLossModel", "HeightAboveZ",
                                   DoubleValue (1.5), "SystemLoss", DoubleValue (1), "MinDistance",
                                   DoubleValue (m_MinDistance));
-
+  // wifiChannel.AddPropagationLoss ("ns3::ItuR1411NlosOverRooftopPropagationLossModel", "Frequency",DoubleValue (5885e6),"Environment",EnumValue(ns3::UrbanEnvironment));
+ 
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11);
 
   wifiPhy.Set ("TxPowerStart",
