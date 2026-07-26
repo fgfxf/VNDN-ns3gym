@@ -90,7 +90,8 @@ int main(int argc,char *argv[]){
 
     // 各类仿真数据输出路径
     std::string l3RateTracerFile = outputDir + "l3-rate-tracer.txt";      // L3速率追踪
-    std::string pcapFile         = outputDir + "ndn-trace.pcap";          // PCAP抓包
+    std::string pcapFile         = outputDir + "ndn-trace";               // PCAP抓包前缀（ns3自动追加-节点号.pcap）
+    std::string pcapWriterFile   = outputDir + "ndn-trace.pcap";          // PcapWriter输出文件（p2p链路抓包）
     std::string appDelayFile     = outputDir + "app-delay-tracer.txt";    // 应用层时延追踪
     std::string csTracerFile     = outputDir + "cs-tracer.txt";           // 内容存储命中率追踪
     std::string netAnimFile      = outputDir + "netanim-animation.xml";   // NetAnim动画
@@ -98,19 +99,7 @@ int main(int argc,char *argv[]){
     std::string aiTrainingTagDir = outputDir + "ai-training/";            // AI训练标签目录
     std::string aiTrainingTagFile= aiTrainingTagDir + "training-tag.csv"; // AI训练标签文件
    
-    // {
-    //     // 递归创建输出目录
-    //     std::string cmd = "mkdir -p " + outputDir;
-    //     if (system(cmd.c_str()) != 0) {
-    //         std::cerr << "Warning: failed to create output directory: " << outputDir << std::endl;
-    //     }
-    //      // 创建AI训练标签子目录
-    //     cmd = "mkdir -p " + aiTrainingTagDir;
-    //     if (system(cmd.c_str()) != 0) {
-    //         std::cerr << "Warning: failed to create AI training directory: " << aiTrainingTagDir << std::endl;
-    //     }
-    // }
-    std::cout << "Output directory: " << outputDir << std::endl;
+
 
     const uint32_t nVehicles = VndnUtilsHelper::GetVehicleCount(VndnUtilsHelper::ndn4ivc_traces_folder,scenario_name,scenario_file);
     uint32_t NdnInterval = 1;//ms
@@ -147,6 +136,23 @@ int main(int argc,char *argv[]){
             ns3::LogComponentEnable (c.c_str (), ns3::LOG_LEVEL_ALL);
             ns3::LogComponentEnable (c.c_str (), ns3::LOG_PREFIX_ALL);
           }
+
+        {
+          // 递归创建输出目录
+          std::string cmd = "mkdir -p " + outputDir;
+          if (system (cmd.c_str ()) != 0)
+            {
+              std::cerr << "Warning: failed to create output directory: " << outputDir << std::endl;
+            }
+          // 创建AI训练标签子目录
+          cmd = "mkdir -p " + aiTrainingTagDir;
+          if (system (cmd.c_str ()) != 0)
+            {
+              std::cerr << "Warning: failed to create AI training directory: " << aiTrainingTagDir
+                        << std::endl;
+            }
+        }
+        std::cout << "Log and data Output directory: " << outputDir << std::endl;
       }
 
     // 节点容器
@@ -166,7 +172,7 @@ int main(int argc,char *argv[]){
     wifi.SetTxPower(10);     //发射功率 23 dBm ~ 300m 覆盖
     wifi.SetMiniRssi(-78);   //最低接收信号（802.11p 典型灵敏度 -96  dBm）
     wifi.SetSnr(4.0);        //前导检测 SNR 阈值 4.0 dB
-    ns3::NetDeviceContainer devices = wifi.ConfigureDevices(nodePool,enPcap);
+    ns3::NetDeviceContainer devices = wifi.ConfigureDevices(nodePool,enPcap,pcapFile);
 
     //p2p
     ns3::PointToPointHelper p2p;
@@ -190,7 +196,7 @@ int main(int argc,char *argv[]){
     ndnStackHelper.AddFaceCreateCallback(ns3::WifiNetDevice::GetTypeId(),ns3::MakeCallback(ns3::FixLinkTypeAdhocCb));
     ndnStackHelper.setCsSize(10);
     ndnStackHelper.InstallAll();
-    ns3::ndn::StrategyChoiceHelper::Install(nodePool,"/","/localhost/nfd/strategy/multicast-vanet");
+    ns3::ndn::StrategyChoiceHelper::Install(nodePool,"/","/localhost/nfd/strategy/vndn-multicast");
     //安装sumo和mobility
     std::cout<<"配置sumo/Traci..." <<std::endl;
     ns3::MobilityHelper mobility;
@@ -310,7 +316,7 @@ int main(int argc,char *argv[]){
     if (enPcap)
       {
         ns3::ndn::L3RateTracer::InstallAll (l3RateTracerFile, ns3::Seconds (1.0));
-        PcapWriter trace (pcapFile);
+        PcapWriter trace (pcapWriterFile);
         ns3::Config::ConnectWithoutContext (
             "/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/MacTx",
             ns3::MakeCallback (&PcapWriter::TracePacket, &trace));

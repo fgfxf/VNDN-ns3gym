@@ -123,7 +123,13 @@ Face::expressInterest(const Interest& interest,
                       const NackCallback& afterNacked,
                       const TimeoutCallback& afterTimeout)
 {
-  auto id = m_impl->m_pendingInterestTable.allocateId();
+  // /vndn/control 前缀的包（如基站同步信号）分配 id=0，跳过应用层 PIT，
+  // 使其不会在应用层超时（不触发 afterTimeout 回调）
+  static const Name vndnControlPrefix("/vndn/control");
+  RecordId id = 0;
+  if (!vndnControlPrefix.isPrefixOf(interest.getName())) {
+    id = m_impl->m_pendingInterestTable.allocateId();
+  }
 
   auto interest2 = make_shared<Interest>(interest);
   interest2->getNonce();

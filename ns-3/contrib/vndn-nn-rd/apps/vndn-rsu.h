@@ -119,6 +119,19 @@ private:
   void
   OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack);
 
+  ////////////////////////////////////////////////////////////////////////
+  // 周期性同步信号广播（类似 5G Synchronization Signal）
+  ////////////////////////////////////////////////////////////////////////
+
+  /**
+   * \brief 发送一个同步信号（SyncSignal）兴趣包。
+   *        RSU 通过无线接口以广播方式周期性发送 /hello 兴趣包，
+   *        附近车辆收到后可据此发现基站并完成驻留。类似 5G 基站
+   *        周期发送 SSB（Synchronization Signal Block）的机制。
+   */
+  void
+  SendSyncSignal ();
+
 private:
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
@@ -127,6 +140,12 @@ private:
   bool m_active = false;                     ///< 应用是否处于活跃状态
   ns3::Ptr<ns3::NetDevice> m_wirelessDevice = nullptr; ///< 无线网络设备
   uint64_t m_wirelessFaceId = 0;             ///< 无线链路对应的 faceId
+
+  // 同步信号广播相关成员
+  ndn::scheduler::EventId m_sendSyncSignal;  ///< 同步信号发送定时器
+  ns3::Address m_wirelessAddress;            ///< 无线接口地址
+  uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）
+  uint64_t m_broadcastMac = 0;               ///< 广播地址 ff:ff:ff:ff:ff:ff 的 uint64 形式
 };
 
 } // namespace vanet

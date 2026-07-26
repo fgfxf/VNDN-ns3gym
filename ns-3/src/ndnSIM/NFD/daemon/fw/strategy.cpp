@@ -235,8 +235,11 @@ Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data,
   }
 
   // delete the PIT entry's in-record based on egress,
-  // since Data is sent to face and endpoint from which the Interest was received
-  pitEntry->deleteInRecord(egress.face);
+  // since Data is sent to face and endpoint from which the Interest was received.
+  // /vndn/control 前缀的包不删 in-record，使后续数据包仍能转发给同一下游
+  if (data.getName().getPrefix(2) != Name("/vndn/control")) {
+    pitEntry->deleteInRecord(egress.face);
+  }
 
   if (pitToken != nullptr) {
     Data data2 = data; // make a copy so each downstream can get a different PIT token

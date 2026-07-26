@@ -40,6 +40,22 @@ namespace nfd {
 
 NFD_LOG_INIT(Forwarder);
 
+/**
+ * \brief 判断名称是否属于车联网控制前缀 /vndn/control。
+ *
+ * 该前缀下的兴趣包和数据包（如基站同步信号 /vndn/control/hello）具有特殊转发行为：
+ *   - 不查询 / 不缓存到 Content Store
+ *   - 不因超时或响应而删除 PIT 条目
+ *   - 不删除 in-record / out-record
+ * 这使得 beacon 类消息可以被多个接收者重复处理，类似广播信令。
+ */
+static bool
+isVndnControlPrefix(const Name& name)
+{
+  static const Name vndnControlPrefix("/vndn/control");
+  return vndnControlPrefix.isPrefixOf(name);
+}
+
 static Name
 getDefaultStrategyName()
 {
@@ -142,7 +158,8 @@ Forwarder::onIncomingInterest(const FaceEndpoint& ingress, const Interest& inter
   }
 
   // is pending?
-  if (!pitEntry->hasInRecords()) {
+  // /vndn/control 前缀的包跳过 Content Store 查询，直接进入 CS miss 流程
+  if (!pitEntry->hasInRecords() && !isVndnControlPrefix(interest.getName())) {
     m_cs.find(interest,
               bind(&Forwarder::onContentStoreHit, this, ingress, pitEntry, _1, _2),
               bind(&Forwarder::onContentStoreMiss, this, ingress, pitEntry, _1));
@@ -274,6 +291,11 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
     ++m_counters.nUnsatisfiedInterests;
   }
 
+  // /vndn/control 前缀的包不删除 PIT 条目（不超时、不因响应而清除）
+  if (isVndnControlPrefix(pitEntry->getName())) {
+    return;
+  }
+
   // PIT delete
   pitEntry->expiryTimer.cancel();
   m_pit.erase(pitEntry.get());
@@ -304,8 +326,10 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     return;
   }
 
-  // CS insert
-  m_cs.insert(data);
+  // CS insert — /vndn/control 前缀的数据包不缓存
+  if (!isVndnControlPrefix(data.getName())) {
+    m_cs.insert(data);
+  }
 
   // when only one PIT entry is matched, trigger strategy: after receive Data
   if (pitMatches.size() == 1) {
@@ -313,8 +337,11 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
 
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
 
-    // set PIT expiry timer to now
-    this->setExpiryTimer(pitEntry, 0_ms);
+    // /vndn/control 前缀的包不设置过期定时器、不删 out-record
+    if (!isVndnControlPrefix(data.getName())) {
+      // set PIT expiry timer to now
+      this->setExpiryTimer(pitEntry, 0_ms);
+    }
 
     beforeSatisfyInterest(*pitEntry, ingress.face, data);
     // trigger strategy: after receive Data
@@ -328,8 +355,10 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     // Dead Nonce List insert if necessary (for out-record of inFace)
     this->insertDeadNonceList(*pitEntry, &ingress.face);
 
-    // delete PIT entry's out-record
-    pitEntry->deleteOutRecord(ingress.face);
+    // delete PIT entry's out-record — /vndn/control 前缀的包不删 out-record
+    if (!isVndnControlPrefix(data.getName())) {
+      pitEntry->deleteOutRecord(ingress.face);
+    }
   }
   // when more than one PIT entry is matched, trigger strategy: before satisfy Interest,
   // and send Data to all matched out faces
@@ -347,8 +376,11 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
         }
       }
 
-      // set PIT expiry timer to now
-      this->setExpiryTimer(pitEntry, 0_ms);
+      // /vndn/control 前缀的包不设置过期定时器、不清除 in/out-record
+      if (!isVndnControlPrefix(data.getName())) {
+        // set PIT expiry timer to now
+        this->setExpiryTimer(pitEntry, 0_ms);
+      }
 
       // invoke PIT satisfy callback
       beforeSatisfyInterest(*pitEntry, ingress.face, data);
@@ -362,9 +394,11 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
       // Dead Nonce List insert if necessary (for out-record of inFace)
       this->insertDeadNonceList(*pitEntry, &ingress.face);
 
-      // clear PIT entry's in and out records
-      pitEntry->clearInRecords();
-      pitEntry->deleteOutRecord(ingress.face);
+      // clear PIT entry's in and out records — /vndn/control 前缀的包不清除
+      if (!isVndnControlPrefix(data.getName())) {
+        pitEntry->clearInRecords();
+        pitEntry->deleteOutRecord(ingress.face);
+      }
     }
 
     // foreach pending downstream
@@ -386,8 +420,10 @@ Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
   // accept to cache?
   fw::UnsolicitedDataDecision decision = m_unsolicitedDataPolicy->decide(ingress.face, data);
   if (decision == fw::UnsolicitedDataDecision::CACHE) {
-    // CS insert
-    m_cs.insert(data, true);
+    // CS insert — /vndn/control 前缀的数据包不缓存
+    if (!isVndnControlPrefix(data.getName())) {
+      m_cs.insert(data, true);
+    }
   }
 
   NFD_LOG_DEBUG("onDataUnsolicited in=" << ingress << " data=" << data.getName() << " decision=" << decision);

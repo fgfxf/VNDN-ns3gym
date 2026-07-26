@@ -14,7 +14,8 @@ WifiSetupHelper::~WifiSetupHelper ()
 }
 
 NetDeviceContainer
-WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
+WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap,
+                                   std::string pcapPrefix)
 {
   /** Propagationa = TwoRayGroundPropagationLossModel && ConstantSpeedPropagationDelayModel***
   * 21dBm ~ 75m (radio coverage)
@@ -105,7 +106,7 @@ WifiSetupHelper::ConfigureDevices (NodeContainer &nodes, bool enablePcap)
   NetDeviceContainer wifiNetDevices = wifi80211p.Install (wifiPhy, wifi80211pMac, nodes);
 
   if (enablePcap)
-    wifiPhy.EnablePcap ("PCAP", wifiNetDevices);
+    wifiPhy.EnablePcap (pcapPrefix, wifiNetDevices);
 
   return wifiNetDevices;
 }

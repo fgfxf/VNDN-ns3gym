@@ -20,7 +20,8 @@ public:
   void SetMiniRssi (double rssi);
   void SetSnr (double snr);
 
-  NetDeviceContainer ConfigureDevices (NodeContainer &n, bool enableLog);
+  NetDeviceContainer ConfigureDevices (NodeContainer &n, bool enableLog,
+                                       std::string pcapPrefix = "vndn-trace");
 
 private:
   /** Propagationa = TwoRayGroundPropagationLossModel && ConstantSpeedPropagationDelayModel***

@@ -91,17 +91,22 @@ public: // consumer
     this->ensureConnected(true);
 
     const Interest& interest2 = *interest;
-    auto& entry = m_pendingInterestTable.put(id, std::move(interest), afterSatisfied, afterNacked,
-                                             afterTimeout, ref(m_scheduler));
 
     lp::Packet lpPacket;
     addFieldFromTag<lp::NextHopFaceIdField, lp::NextHopFaceIdTag>(lpPacket, interest2);
     addFieldFromTag<lp::CongestionMarkField, lp::CongestionMarkTag>(lpPacket, interest2);
 
-    entry.recordForwarding();
     m_face.m_transport->send(finishEncoding(std::move(lpPacket), interest2.wireEncode(),
                                             'I', interest2.getName()));
-    dispatchInterest(entry, interest2);
+
+    // id==0 表示 /vndn/control 前缀的控制包（如基站同步信号），
+    // 不放入应用层 PIT（不超时）、不调用 dispatchInterest（app 节点不响应自身控制包）
+    if (id != 0) {
+      auto& entry = m_pendingInterestTable.put(id, std::move(interest), afterSatisfied, afterNacked,
+                                               afterTimeout, ref(m_scheduler));
+      entry.recordForwarding();
+      dispatchInterest(entry, interest2);
+    }
   }
 
   void
