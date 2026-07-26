@@ -26,8 +26,11 @@
 #include <ndn-cxx/encoding/block.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/lp/packet.hpp>
+#include <ndn-cxx/lp/fields.hpp>
 
 #include "ns3/queue.h"
+#include "ns3/node-list.h"
 
 NS_LOG_COMPONENT_DEFINE("ndn.NetDeviceTransport");
 
@@ -111,18 +114,98 @@ NetDeviceTransport::doSend(const Block& packet, const nfd::EndpointId& endpoint)
   NS_LOG_FUNCTION(this << "Sending packet from netDevice with URI"
                   << this->getLocalUri());
 
-  // convert NFD packet to NS3 packet
+  // 将 NFD 数据包转换为 NS3 数据包 / Convert NFD packet to NS3 packet
   BlockHeader header(packet);
-
   Ptr<ns3::Packet> ns3Packet = Create<ns3::Packet>();
   ns3Packet->AddHeader(header);
 
-  // send the NS3 packet
-  m_netDevice->Send(ns3Packet, m_netDevice->GetBroadcast(),
-                    L3Protocol::ETHERNET_FRAME_TYPE);
+  if (m_netDevice->IsPointToPoint()) {
+    // 点对点链路：直接广播发送 / Point-to-point link: send via broadcast
+    m_netDevice->Send(ns3Packet, m_netDevice->GetBroadcast(),
+                      L3Protocol::ETHERNET_FRAME_TYPE);
+  }
+  else {
+    // 无线链路：尝试从 LP 包中提取 VndnTag，判断是否需要单播
+    // Wireless link: try to extract VndnTag from the LP packet to decide unicast
+    bool isSingleCast = false;
+    uint64_t targetMac = 0;
+
+    try {
+      // 将 Block 解析为 LP 包 / Parse the Block as an LP packet
+      ndn::lp::Packet lpPacket(packet);
+      if (lpPacket.has<ndn::lp::VndnTagField>()) {
+        auto vndnTag = lpPacket.get<ndn::lp::VndnTagField>();
+        targetMac = vndnTag.getTargetMac();
+        // 目标 MAC 不为 0 且不等于广播地址时，进行单播发送
+        // When target MAC is non-zero and not the broadcast address, send unicast
+        if (targetMac != 0) {
+          isSingleCast = true;
+        }
+      }
+    }
+    catch (const std::exception& e) {
+      // 解析失败时按广播处理 / Fall back to broadcast on parse failure
+      NS_LOG_WARN("doSend: failed to parse LP packet for VndnTag: " << e.what());
+    }
+
+    if (isSingleCast) {
+      // --- 单播发送 / Unicast send ---
+
+      // 直接发送法，用于调试程序，绕过 WiFi 层直接从一个 node 把数据凭空发送到另一个程序。
+      // Direct injection method for debugging: bypass the WiFi layer and send
+      // data directly from one node to another node's receive queue.
+      //
+      // ns3::Ptr<ns3::Node> dstNode = ns3::NodeList::GetNode(dstNodeId);
+      // ns3::Simulator::ScheduleWithContext(dstNode->GetId(), ns3::MilliSeconds(10),
+      //                                     &NetDeviceTransport::receiveFromNetDevice2,
+      //                                     (NetDeviceTransport*)dstNode->GetDevice(0)->netDeviceTransport,
+      //                                     ns3Packet->Copy());
+
+      // 将 uint64_t 目标 MAC 转换为 ns3::Address / Convert uint64_t target MAC to ns3::Address
+      ns3::Address macAddr;
+      macAddr.CopyAllFrom(reinterpret_cast<uint8_t*>(&targetMac), 8);
+      m_netDevice->Send(ns3Packet, macAddr,
+                        L3Protocol::ETHERNET_FRAME_TYPE);
+    }
+    else {
+      // --- 广播发送 / Broadcast send ---
+
+      // 以下代码用于测试，直接把数据绕过一切仿真的物理层，直接丢到对方的设备接收队列里。
+      // The following code is for testing: bypass all simulated physical layers
+      // and drop data directly into the destination device's receive queue.
+      //
+      // uint32_t m_thisNode = (ns3::Simulator::GetContext());
+      // for (uint32_t i = 0; i < ns3::NodeList::GetNNodes(); i++) {
+      //   ns3::Ptr<ns3::Node> dstNode = ns3::NodeList::GetNode(i);
+      //   if (dstNode->GetId() == 2) {
+      //     ns3::Simulator::ScheduleWithContext(dstNode->GetId(),
+      //         ns3::NanoSeconds(rand() % 1000000 + 1000),
+      //         &NetDeviceTransport::receiveFromNetDevice2,
+      //         (NetDeviceTransport*)dstNode->GetDevice(0)->netDeviceTransport,
+      //         ns3Packet->Copy());
+      //   }
+      // }
+
+      m_netDevice->Send(ns3Packet, m_netDevice->GetBroadcast(),
+                        L3Protocol::ETHERNET_FRAME_TYPE);
+    }
+  }
 }
 
-// callback
+// 调试用直接接收回调 / Debug direct-receive callback
+void
+NetDeviceTransport::receiveFromNetDevice2(Ptr<const ns3::Packet> p)
+{
+  // 将 NS3 数据包转换为 NFD 数据包 / Convert NS3 packet to NFD packet
+  Ptr<ns3::Packet> packet = p->Copy();
+
+  BlockHeader header;
+  packet->RemoveHeader(header);
+
+  this->receive(std::move(header.getBlock()));
+}
+
+// 正常接收回调 / Normal receive callback
 void
 NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
                                          Ptr<const ns3::Packet> p,

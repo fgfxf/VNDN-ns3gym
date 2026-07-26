@@ -28,6 +28,7 @@
 #include "ndn-cxx/lp/geo-tag.hpp"
 #include "ndn-cxx/lp/nack-header.hpp"
 #include "ndn-cxx/lp/prefix-announcement-header.hpp"
+#include "ndn-cxx/lp/vndn-tag.hpp"
 
 #include <boost/mpl/set.hpp>
 
@@ -128,6 +129,11 @@ typedef FieldDecl<field_location_tags::Header,
                   tlv::GeoTag> GeoTagField;
 BOOST_CONCEPT_ASSERT((Field<GeoTagField>));
 
+typedef FieldDecl<field_location_tags::Header,
+                  VndnTag,
+                  tlv::VndnTag> VndnTagField;
+BOOST_CONCEPT_ASSERT((Field<VndnTagField>));
+
 /** \brief Declare the Fragment field.
  *
  *  The fragment (i.e. payload) is the bytes between two provided iterators. During encoding,
@@ -156,7 +162,8 @@ typedef boost::mpl::set<
   NonDiscoveryField,
   PrefixAnnouncementField,
   HopCountTagField,
-  GeoTagField
+  GeoTagField,
+  VndnTagField
   > FieldSet;
 
 } // namespace lp

@@ -264,6 +264,18 @@ OcbWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
       m_stationManager->RecordDisassociated (from);
     }
 
+  // fgfxf:
+  // why put check here, not before "if (hdr->IsData ())" ?
+  // because WifiNetDevice::ForwardUp needs to m_promiscRx data packet
+  // and will filter data packet for itself
+  // so we need to filter management frame
+  if (to != GetAddress () && !to.IsGroup ())
+    {
+      NS_LOG_LOGIC ("the management frame is not for us");
+      NotifyRxDrop (packet);
+      return;
+    }
+
   if (hdr->IsData ())
     {
       if (hdr->IsQosData () && hdr->IsQosAmsdu ())
@@ -278,16 +290,6 @@ OcbWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
       return;
     }
 
-  // why put check here, not before "if (hdr->IsData ())" ?
-  // because WifiNetDevice::ForwardUp needs to m_promiscRx data packet
-  // and will filter data packet for itself
-  // so we need to filter management frame
-  if (to != GetAddress () && !to.IsGroup ())
-    {
-      NS_LOG_LOGIC ("the management frame is not for us");
-      NotifyRxDrop (packet);
-      return;
-    }
 
   if (hdr->IsMgt () && hdr->IsAction ())
     {

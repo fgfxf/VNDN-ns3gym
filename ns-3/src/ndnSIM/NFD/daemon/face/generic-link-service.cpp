@@ -169,6 +169,11 @@ GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lp
       lpPacket.add<lp::GeoTagField>(*geoTag);
     }
   }
+
+  auto vndnTag = netPkt.getTag<lp::VndnTag>();
+  if (vndnTag != nullptr) {
+    lpPacket.add<lp::VndnTagField>(*vndnTag);
+  }
 }
 
 void
@@ -368,6 +373,10 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
     interest->setTag(make_shared<lp::GeoTag>(firstPkt.get<lp::GeoTagField>()));
   }
 
+  if (firstPkt.has<lp::VndnTagField>()) {
+    interest->setTag(make_shared<lp::VndnTag>(firstPkt.get<lp::VndnTagField>()));
+  }
+
   if (firstPkt.has<lp::NextHopFaceIdField>()) {
     if (m_options.allowLocalFields) {
       interest->setTag(make_shared<lp::NextHopFaceIdTag>(firstPkt.get<lp::NextHopFaceIdField>()));
@@ -429,6 +438,10 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt,
 
   if (m_options.enableGeoTags && firstPkt.has<lp::GeoTagField>()) {
     data->setTag(make_shared<lp::GeoTag>(firstPkt.get<lp::GeoTagField>()));
+  }
+
+  if (firstPkt.has<lp::VndnTagField>()) {
+    data->setTag(make_shared<lp::VndnTag>(firstPkt.get<lp::VndnTagField>()));
   }
 
   if (firstPkt.has<lp::NackField>()) {
@@ -516,6 +529,10 @@ GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt,
     ++this->nInNetInvalid;
     NFD_LOG_FACE_WARN("received PrefixAnnouncement with Nack: DROP");
     return;
+  }
+
+  if (firstPkt.has<lp::VndnTagField>()) {
+    nack.setTag(make_shared<lp::VndnTag>(firstPkt.get<lp::VndnTagField>()));
   }
 
   this->receiveNack(nack, endpointId);

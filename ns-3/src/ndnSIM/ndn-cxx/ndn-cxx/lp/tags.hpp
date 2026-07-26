@@ -26,6 +26,7 @@
 #include "ndn-cxx/lp/empty-value.hpp"
 #include "ndn-cxx/lp/geo-tag.hpp"
 #include "ndn-cxx/lp/prefix-announcement-header.hpp"
+#include "ndn-cxx/lp/vndn-tag.hpp"
 #include "ndn-cxx/tag.hpp"
 
 namespace ndn {
@@ -86,6 +87,13 @@ typedef SimpleTag<uint64_t, 0x60000000> HopCountTag;
  * This tag can be attached to Interest, Data, Nack.
  */
 class GeoTag; // 0x60000001, defined directly in geo-tag.hpp
+
+/** \class VndnTag
+ *  \brief a packet tag for VndnTag field (vehicular NDN metadata)
+ *
+ * This tag can be attached to Interest, Data, Nack.
+ */
+// 0x70000000, defined directly in vndn-tag.hpp
 
 } // namespace lp
 } // namespace ndn

@@ -86,11 +86,19 @@ private:
 
   /**
    * \brief 收到兴趣包的回调框架。
-   *        当本节点收到匹配前缀的兴趣包时被调用，后续在此实现具体响应逻辑。
+   *        当本节点收到匹配前缀的兴趣包时被调用，按前缀分发到具体处理函数。
    * \param interest 收到的兴趣包
    */
   void
   OnInterest (const ndn::Interest &interest);
+
+  /**
+   * \brief 收到基站同步信号（/vndn/control/hello）的处理函数。
+   *        从兴趣包的 VndnTag 中提取发送者节点 ID、MAC、目标 MAC、单播标记并打印。
+   * \param interest 收到的同步信号兴趣包
+   */
+  void
+  OnSyncSignalInterest (const ndn::Interest &interest);
 
   /**
    * \brief 收到数据包的回调框架。

@@ -53,7 +53,7 @@ VndnRsu::RegisterFacePrefixs ()
       if (device->IsPointToPoint ())
         {
           // p2p 接口：注册控制前缀，用于后续基站间通信
-          std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/control/p2pHandShark");
+          std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/vndn/control");
           ns3::ndn::FibHelper::AddRoute (m_thisNode, *name, face, 1);
         }
       else
@@ -160,8 +160,8 @@ VndnRsu::SendSyncSignal ()
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC、单播标记
   auto vndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
                                                        m_wirelessMac,
-                                                       m_broadcastMac,
-                                                       1);
+                                                       m_wirelessMac,
+                                                       true);
   interest->setTag (vndnTag);
 
   NS_LOG_INFO ("RSU 发送同步信号: " << *name);

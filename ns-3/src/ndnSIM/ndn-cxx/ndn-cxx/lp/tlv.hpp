@@ -38,6 +38,11 @@ enum {
   HopCountTag = 84,
   GeoTag = 85,
   GeoTagPos = 85, // inner fields inside GeoTag
+  VndnTag = 86,
+  VndnSenderNodeId = 87,
+  VndnSenderMac = 88,
+  VndnTargetMac = 89,
+  VndnUnicastFlag = 90,
   PitToken = 98,
   Nack = 800,
   NackReason = 801,

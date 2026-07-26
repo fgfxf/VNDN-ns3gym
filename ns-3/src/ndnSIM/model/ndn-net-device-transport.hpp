@@ -57,6 +57,16 @@ public:
   virtual ssize_t
   getSendQueueLength() final;
 
+  /**
+   * \brief 调试用直接接收回调 / Debug direct-receive callback.
+   *
+   * 用于绕过 WiFi 物理层，将数据包直接注入目标节点的接收队列。
+   * Used to bypass the WiFi physical layer and inject a packet directly
+   * into the receiving queue of a destination node.
+   */
+  void
+  receiveFromNetDevice2(Ptr<const ns3::Packet> p);
+
 private:
   virtual void
   doClose() override;

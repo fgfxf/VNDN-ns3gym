@@ -15,6 +15,7 @@
 #include "ns3/assert.h"
 #include "ns3/random-variable-stream.h"
 #include <ndn-cxx/lp/tags.hpp>
+#include "../model/vndn-tag.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -101,8 +102,36 @@ VndnObu::ExtractIncomingFace (const ndn::Interest &interest)
 void
 VndnObu::OnInterest (const ndn::Interest &interest)
 {
-  // TODO: 后续在此实现收到兴趣包后的具体响应逻辑
+  // 按前缀分发到具体处理函数
+  static const ndn::Name syncSignalPrefix ("/vndn/control/hello");
+  if (syncSignalPrefix.isPrefixOf (interest.getName ()))
+    {
+      OnSyncSignalInterest (interest);
+      return;
+    }
+
   NS_LOG_DEBUG ("OBU 收到兴趣包: " << interest.getName ());
+}
+
+void
+VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
+{
+  if (!m_active)
+    return;
+
+  // 从兴趣包中提取 VndnTag，获取 RSU 传入的车联网元信息
+  auto vndnTag = interest.getTag<vanet::lp::VndnTag> ();
+  if (vndnTag == nullptr)
+    {
+      NS_LOG_DEBUG ("OBU 收到同步信号但无 VndnTag: " << interest.getName ());
+      return;
+    }
+
+  NS_LOG_DEBUG ("OBU 收到同步信号: " << interest.getName ()
+                << " 来自RSU节点ID=" << vndnTag->getSenderNodeId ()
+                << " 发送者MAC=0x" << std::hex << vndnTag->getSenderMac ()
+                << " 目标MAC=0x" << vndnTag->getTargetMac ()
+                << " 单播标记=" << std::dec << vndnTag->getUnicastFlag ());
 }
 
 void
@@ -136,8 +165,8 @@ VndnObu::ScheduleNextPacket ()
   if (!m_active)
     return;
   // 根据频率计算发送间隔（微秒），并加入少量随机抖动以避免同步风暴
-  ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
-  m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
+  // ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
+  // m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
 }
 
 void

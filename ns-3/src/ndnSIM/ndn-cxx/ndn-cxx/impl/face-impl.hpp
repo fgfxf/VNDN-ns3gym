@@ -95,6 +95,7 @@ public: // consumer
     lp::Packet lpPacket;
     addFieldFromTag<lp::NextHopFaceIdField, lp::NextHopFaceIdTag>(lpPacket, interest2);
     addFieldFromTag<lp::CongestionMarkField, lp::CongestionMarkTag>(lpPacket, interest2);
+    addFieldFromTag<lp::VndnTagField, lp::VndnTag>(lpPacket, interest2);
 
     m_face.m_transport->send(finishEncoding(std::move(lpPacket), interest2.wireEncode(),
                                             'I', interest2.getName()));
@@ -234,6 +235,7 @@ public: // producer
     lp::Packet lpPacket;
     addFieldFromTag<lp::CachePolicyField, lp::CachePolicyTag>(lpPacket, data);
     addFieldFromTag<lp::CongestionMarkField, lp::CongestionMarkTag>(lpPacket, data);
+    addFieldFromTag<lp::VndnTagField, lp::VndnTag>(lpPacket, data);
 
     m_face.m_transport->send(finishEncoding(std::move(lpPacket), data.wireEncode(),
                                             'D', data.getName()));
@@ -253,6 +255,7 @@ public: // producer
     lp::Packet lpPacket;
     lpPacket.add<lp::NackField>(outNack->getHeader());
     addFieldFromTag<lp::CongestionMarkField, lp::CongestionMarkTag>(lpPacket, *outNack);
+    addFieldFromTag<lp::VndnTagField, lp::VndnTag>(lpPacket, *outNack);
 
     const Interest& interest = outNack->getInterest();
     m_face.m_transport->send(finishEncoding(std::move(lpPacket), interest.wireEncode(),
