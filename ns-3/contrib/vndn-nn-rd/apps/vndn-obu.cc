@@ -139,7 +139,6 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
                 << " 来自RSU节点ID=" << vndnTag->getSenderNodeId ()
                 << " 发送者MAC=0x" << std::hex << vndnTag->getSenderMac ()
                 << " 目标MAC=0x" << vndnTag->getTargetMac ()
-                << " 单播标记=" << std::dec << vndnTag->getUnicastFlag ()
                 << " 信号强度=" <<  vndnTag->getRxPowerDbm () << "dBm");
 }
 

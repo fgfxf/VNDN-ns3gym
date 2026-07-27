@@ -157,11 +157,10 @@ VndnRsu::SendSyncSignal ()
   interest->setMustBeFresh (false);
   // 指定从无线 face 发出
   interest->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (m_wirelessFaceId));
-  // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC、单播标记
+  // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC
   auto vndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
                                                        m_wirelessMac,
-                                                       m_broadcastMac,
-                                                       true);
+                                                       m_broadcastMac);
   interest->setTag (vndnTag);
 
   NS_LOG_INFO ("RSU 发送同步信号: " << *name);

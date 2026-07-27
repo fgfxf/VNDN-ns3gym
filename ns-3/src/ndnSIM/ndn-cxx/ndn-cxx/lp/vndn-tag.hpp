@@ -52,14 +52,12 @@ public:
    * \param senderNodeId sender node ID
    * \param senderMac sender wireless MAC address (uint64)
    * \param targetMac target wireless MAC address (uint64, broadcast address for broadcast)
-   * \param unicastFlag unicast flag (non-zero means unicast)
    */
   VndnTag(uint32_t senderNodeId, uint64_t senderMac,
-          uint64_t targetMac, uint64_t unicastFlag)
+          uint64_t targetMac)
     : m_senderNodeId(senderNodeId)
     , m_senderMac(senderMac)
     , m_targetMac(targetMac)
-    , m_unicastFlag(unicastFlag)
   {
   }
 
@@ -104,12 +102,6 @@ public: // getters
     return m_targetMac;
   }
 
-  uint64_t
-  getUnicastFlag() const noexcept
-  {
-    return m_unicastFlag;
-  }
-
   /**
    * \brief Get the received signal power.
    * \return signal power in dBm
@@ -139,12 +131,6 @@ public: // setters
     m_targetMac = mac;
   }
 
-  void
-  setUnicastFlag(uint64_t flag) noexcept
-  {
-    m_unicastFlag = flag;
-  }
-
   /**
    * \brief Set the received signal power.
    * \param rxPowerDbm signal power in dBm
@@ -159,7 +145,6 @@ private:
   uint32_t m_senderNodeId = 0;  ///< sender node ID
   uint64_t m_senderMac = 0;     ///< sender wireless MAC address
   uint64_t m_targetMac = 0;     ///< target wireless MAC address
-  uint64_t m_unicastFlag = 0;   ///< unicast flag (non-zero means unicast)
   double m_rxPowerDbm = -999.0;   ///< received signal power in dBm
   mutable Block m_wire;
 };

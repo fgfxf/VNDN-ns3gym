@@ -42,7 +42,6 @@ enum {
   VndnSenderNodeId = 87,
   VndnSenderMac = 88,
   VndnTargetMac = 89,
-  VndnUnicastFlag = 90,
   VndnRxPowerDbm = 91,
   PitToken = 98,
   Nack = 800,
