@@ -83,7 +83,7 @@ VndnTag::wireDecode(const Block& wire)
   m_senderMac = 0;
   m_targetMac = 0;
   m_unicastFlag = 0;
-  m_rxPowerDbm = 0.0;
+  m_rxPowerDbm = -999.0;
 
   for (const Block& element : m_wire.elements()) {
     switch (element.type()) {

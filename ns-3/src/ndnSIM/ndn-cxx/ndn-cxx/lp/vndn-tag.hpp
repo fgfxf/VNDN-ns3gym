@@ -160,7 +160,7 @@ private:
   uint64_t m_senderMac = 0;     ///< sender wireless MAC address
   uint64_t m_targetMac = 0;     ///< target wireless MAC address
   uint64_t m_unicastFlag = 0;   ///< unicast flag (non-zero means unicast)
-  double m_rxPowerDbm = 0.0;   ///< received signal power in dBm
+  double m_rxPowerDbm = -999.0;   ///< received signal power in dBm
   mutable Block m_wire;
 };
 

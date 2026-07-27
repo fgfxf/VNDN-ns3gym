@@ -68,7 +68,7 @@ public:
   Get() const;
 
 private:
-  double m_rxPowerDbm = 0.0; ///< received signal power in dBm
+  double m_rxPowerDbm = -999.0; ///< received signal power in dBm
 };
 
 } // namespace ns3
