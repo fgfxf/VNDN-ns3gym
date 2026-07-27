@@ -39,7 +39,7 @@ VndnObu::VndnObu (ns3::Ptr<ns3::TraciClient> &traci)
   RegisterFacePrefixs ();
 }
 
-// 遍历节点上的 NetDevice，区分无线接口并注册前缀
+// 遍历节点上的 NetDevice，区分无线接口并记录 faceId
 void
 VndnObu::RegisterFacePrefixs ()
 {
@@ -54,9 +54,12 @@ VndnObu::RegisterFacePrefixs ()
 
       if (!device->IsPointToPoint ())
         {
-          // 无线接口：注册根前缀，记录无线设备与 faceId
-          std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/");
-          ns3::ndn::FibHelper::AddRoute (m_thisNode, *name, face, 1);
+          // 无线接口：仅记录无线设备与 faceId，不在无线 face 上注册任何前缀。
+          // std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/");
+          // ns3::ndn::FibHelper::AddRoute (m_thisNode, *name, face, 1);
+          // 车辆收到兴趣包后若本地无法满足，则不对外转发（避免多跳洪泛）。
+          // 应用层通过 setInterestFilter("/", ...) 已在 app face 上注册前缀，
+          // 可正常接收并处理收到的兴趣包。
           m_wirelessDevice = device;
           m_wirelessFaceId = face->getId ();
         }
@@ -73,7 +76,7 @@ VndnObu::ProcessInterest (const ndn::Interest &interest)
   uint64_t inFaceId = ExtractIncomingFace (interest);
   if (!inFaceId)
     {
-      // inFaceId == 0 表示来自本节点上层
+      // inFaceId == 0 表示来自本节点上层 或提取失败
       NS_LOG_DEBUG ("来自本节点上层的兴趣包");
       return;
     }

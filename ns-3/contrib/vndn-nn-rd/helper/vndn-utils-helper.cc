@@ -6,7 +6,7 @@
 
 #include "ns3/vndn-utils-helper.h"
 
-#include "../../ndn4ivc/helper/rapidxml-1.13/rapidxml.hpp"
+#include <rapidxml.hpp>
 
 #include <array>
 #include <cstdio>

@@ -20,6 +20,10 @@ def build(bld):
                                    'opengym'])
 
     module.source = []
+    # Expose the rapidxml header-only library shipped with the ndn4ivc
+    # contrib module so that vndn-nn-rd sources can #include <rapidxml.hpp>.
+    module.includes = '../ndn4ivc/helper/rapidxml-1.13'
+    module.export_includes = '../ndn4ivc/helper/rapidxml-1.13'
     moduleName = "vndn-nn-rd"
     headers = bld(features='ns3header')
     headers.module = moduleName
