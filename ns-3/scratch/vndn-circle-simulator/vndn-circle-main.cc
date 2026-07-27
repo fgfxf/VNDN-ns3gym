@@ -21,58 +21,13 @@
 #include <sys/stat.h>
 
 #include "ns3/vndn-utils-helper.h"
+#include "ns3/vndn-pcap-writer.h"
 #include "ns3/point-to-point-module.h"  // pcapwrite
 #include "ns3/vndn-rsu-app.h"
 #include "ns3/vndn-obu-app.h"
 #include "ns3/log.h"
 
 NS_LOG_COMPONENT_DEFINE ("vndn-circle-main");
-
-
-//for safe remove node in ns3 vis
-std::map<uint32_t,ns3::Time> nodesDisable2Move;//nodeID  -- stopTime
-void checkDisableNodes(){
-    double endX = -1500.0;   //end node location
-    double endY = -2500.0; 
-    double endZ= 1.2; 
-  for (auto it = nodesDisable2Move.begin (), it_next = it; it_next != nodesDisable2Move.end (); it = it_next) {
-      ++it_next;
-      ns3::Ptr<ns3::Node> exNode = ns3::NodeList::GetNode (it->first);
-      // NOTE:we'll put the node in a new position, outside the simulation
-      // communication range, but this is just for better visualization mode
-      if ((ns3::Time) ns3::Simulator::Now ().GetSeconds () - it->second > 1) {
-          ns3::Ptr< ns3::ConstantPositionMobilityModel> mob =
-              exNode->GetObject< ns3::ConstantPositionMobilityModel> ();
-          mob->SetPosition (ns3::Vector (endX - (rand()%25),  endY - (rand () % 25),endZ));
-          nodesDisable2Move.erase (it);
-        ns3::ObjectDeleter::Delete((ns3::Object*)&*exNode);
-        }
-    }
- ns3:: Simulator::Schedule (ns3::Seconds (1), &checkDisableNodes);
-}
-
-
-
-class PcapWriter
-{
-public:
-  PcapWriter (const std::string &file)
-  {
-    ns3::PcapHelper helper;
-    m_pcap = helper.CreateFile (file, std::ios::out, ns3::PcapHelper::DLT_PPP);
-  }
-
-  void
-  TracePacket (ns3::Ptr<const ns3::Packet> packet)
-  {
-    static ns3::PppHeader pppHeader;
-    pppHeader.SetProtocol (0x0077);
-    m_pcap->Write (ns3::Simulator::Now (), pppHeader, packet);
-  }
-
-private:
-  ns3::Ptr<ns3::PcapFileWrapper> m_pcap;
-};
 
 int main(int argc,char *argv[]){
     using namespace ns3::ndn;
@@ -264,7 +219,7 @@ int main(int argc,char *argv[]){
                 netDevices->GetPhy()->SetOffMode();//关掉节点中wifi设备
         }
         //为了确保节点安全移除，先不直接删除
-        nodesDisable2Move.emplace(exNode->GetId(),(ns3::Time)ns3::Simulator::Now().GetSeconds());
+        VndnUtilsHelper::nodesDisable2Move.emplace(exNode->GetId(),(ns3::Time)ns3::Simulator::Now().GetSeconds());
     };
 
     //////////////RSU节点设置//////////////////////////
@@ -310,16 +265,16 @@ int main(int argc,char *argv[]){
     //开始模拟前的最后设置
     ns3::Config::Set("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelNumber",ns3::UintegerValue(SCH1));
     sumoClient->SumoSetup(setupNewNode,shutdownSumoNode);
-    ns3::Simulator::Schedule(ns3::Seconds(1.0),&checkDisableNodes);//延迟移除被sumo移除的节点
+    ns3::Simulator::Schedule(ns3::Seconds(1.0),&VndnUtilsHelper::checkDisableNodes);//延迟移除被sumo移除的节点
 
     ///////////追踪，获取仿真数据
     if (enPcap)
       {
         ns3::ndn::L3RateTracer::InstallAll (l3RateTracerFile, ns3::Seconds (1.0));
-        PcapWriter trace (pcapWriterFile);
+        ns3::ndn::VndnPcapWriter trace (pcapWriterFile);
         ns3::Config::ConnectWithoutContext (
             "/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/MacTx",
-            ns3::MakeCallback (&PcapWriter::TracePacket, &trace));
+            ns3::MakeCallback (&ns3::ndn::VndnPcapWriter::TracePacket, &trace));
       }
 
     ns3::Simulator::Stop (ns3::Seconds (simTime));

@@ -6,10 +6,15 @@
 
 #include "ns3/vndn-utils-helper.h"
 
+#include "../../ndn4ivc/helper/rapidxml-1.13/rapidxml.hpp"
+
 #include <array>
 #include <cstdio>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 namespace ns3 {
 namespace ndn {
@@ -61,18 +66,37 @@ uint32_t
 VndnUtilsHelper::GetVehicleCount (const std::string &contribFolder, const std::string &scenarioName,
                                   const std::string &routeFileName)
 {
-  // Build a shell command that counts the "vehicle id" entries in the SUMO
-  // route file: <contribFolder>/traces/<scenarioName>/<routeFileName>.rou.xml
-  std::string cmd = "echo `cat " + contribFolder + "/" + scenarioName + "/" +
-                    routeFileName + ".rou.xml | grep 'vehicle id' | wc -l`";
-  std::string output = exec (cmd);
-  // trim leading/trailing whitespace before parsing
-  size_t start = output.find_first_not_of (" \t\r\n");
-  if (start == std::string::npos)
+  // Build the path to the SUMO route file:
+  // <contribFolder>/traces/<scenarioName>/<routeFileName>.rou.xml
+  std::string filePath = contribFolder + "/./" + scenarioName + "/" +
+                         routeFileName + ".rou.xml";
+
+  // Read the whole XML file into a buffer (rapidxml requires a mutable,
+  // null-terminated buffer).
+  std::ifstream theFile (filePath);
+  if (!theFile.is_open ())
+    {
+      std::cerr << "VndnUtilsHelper::GetVehicleCount: cannot open " << filePath << std::endl;
+      return 0;
+    }
+  std::vector<char> buffer ((std::istreambuf_iterator<char> (theFile)),
+                            std::istreambuf_iterator<char> ());
+  buffer.push_back ('\0');
+
+  // Parse the buffer and count the <vehicle> nodes.
+  rapidxml::xml_document<> doc;
+  doc.parse<0> (&buffer[0]);
+  rapidxml::xml_node<> *root_node = doc.first_node ("routes");
+  if (!root_node)
     return 0;
-  size_t end = output.find_last_not_of (" \t\r\n");
-  std::string trimmed = output.substr (start, end - start + 1);
-  return static_cast<uint32_t> (std::stoul (trimmed));
+
+  uint32_t count = 0;
+  for (rapidxml::xml_node<> *vehicle_node = root_node->first_node ("vehicle"); vehicle_node;
+       vehicle_node = vehicle_node->next_sibling ("vehicle"))
+    {
+      count++;
+    }
+  return count;
 }
 
 } // namespace ndn

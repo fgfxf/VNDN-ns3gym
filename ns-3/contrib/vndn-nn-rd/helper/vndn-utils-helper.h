@@ -102,9 +102,8 @@ public:
   /**
    * \brief Count the number of vehicles defined in a SUMO route file.
    *
-   * Builds a shell command that greps the \c vehicle\ id entries from the
-   * route file \c <contribFolder>/<scenarioName>/<routeFileName>.rou.xml
-   * and returns the number of matches.
+   * Parses the route file \c <contribFolder>/traces/<scenarioName>/<routeFileName>.rou.xml
+   * using the rapidxml library and counts the \c <vehicle> nodes defined in it.
    *
    * \param contribFolder path to the contrib module folder (e.g. "contrib/vndn-nn-rd")
    * \param scenarioName  name of the SUMO scenario (sub-folder under traces/)
@@ -112,8 +111,8 @@ public:
    * \return the number of vehicles found in the route file
    *
    * This is the function that used to be the free function
-   * \c ShellGetNumOfVehicles() in the ndn4ivc helper, but it now executes the
-   * command internally and returns the parsed count directly as a uint32_t.
+   * \c ShellGetNumOfVehicles() in the ndn4ivc helper, but it now parses the
+   * XML file directly and returns the count as a uint32_t.
    */
   static uint32_t
   GetVehicleCount (const std::string &contribFolder, const std::string &scenarioName,

@@ -160,7 +160,7 @@ VndnRsu::SendSyncSignal ()
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC、单播标记
   auto vndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
                                                        m_wirelessMac,
-                                                       m_wirelessMac,
+                                                       m_broadcastMac,
                                                        true);
   interest->setTag (vndnTag);
 

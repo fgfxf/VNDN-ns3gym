@@ -165,8 +165,8 @@ VndnObu::ScheduleNextPacket ()
   if (!m_active)
     return;
   // 根据频率计算发送间隔（微秒），并加入少量随机抖动以避免同步风暴
-  // ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
-  // m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
+  ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
+  m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
 }
 
 void
