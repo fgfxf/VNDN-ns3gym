@@ -38,6 +38,8 @@
 #include "he-configuration.h"
 #include "mpdu-aggregator.h"
 #include "wifi-phy-header.h"
+// ndnSIM: attach received signal power (dBm) to packets for NDN transport
+#include "rx-power-dbm-tag.h"
 
 namespace ns3 {
 
@@ -3091,6 +3093,13 @@ WifiPhy::EndReceive (Ptr<Event> event)
 
   if (receptionOkAtLeastForOneMpdu)
     {
+      // ndnSIM: attach the received signal power (dBm) to the packet so that
+      // the NDN NetDeviceTransport can later read it and attach it to the
+      // corresponding NDN Interest/Data via the VndnTag LP field.
+      RxPowerDbmTag rxPowerTag;
+      rxPowerTag.Set (signalNoise.signal);
+      packet->AddPacketTag (rxPowerTag);
+
       NotifyMonitorSniffRx (packet, GetFrequency (), txVector, signalNoise, statusPerMpdu);
       m_state->SwitchFromRxEndOk (packet->Copy (), snr, txVector, statusPerMpdu);
     }

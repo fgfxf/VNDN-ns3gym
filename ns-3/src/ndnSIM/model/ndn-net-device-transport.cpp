@@ -31,6 +31,7 @@
 
 #include "ns3/queue.h"
 #include "ns3/node-list.h"
+#include "ns3/rx-power-dbm-tag.h"
 
 NS_LOG_COMPONENT_DEFINE("ndn.NetDeviceTransport");
 
@@ -218,10 +219,39 @@ NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
   // Convert NS3 packet to NFD packet
   Ptr<ns3::Packet> packet = p->Copy();
 
+  // ndnSIM: extract the received signal power (dBm) from the wifi packet tag
+  // and attach it to the VndnTag LP field so that the application layer can
+  // obtain the exact per-packet receive power.
+  RxPowerDbmTag rxPowerTag;
+  bool hasRxPower = packet->PeekPacketTag(rxPowerTag);
+  double rxPowerDbm = 0.0;
+  if (hasRxPower) {
+    rxPowerDbm = rxPowerTag.Get();
+  }
+
   BlockHeader header;
   packet->RemoveHeader(header);
+  Block block = header.getBlock();
 
-  this->receive(std::move(header.getBlock()));
+  if (hasRxPower) {
+    // Try to parse the Block as an LP packet and update the VndnTag field
+    // with the received signal power.
+    try {
+      ndn::lp::Packet lpPacket(block);
+      if (lpPacket.has<ndn::lp::VndnTagField>()) {
+        auto vndnTag = lpPacket.get<ndn::lp::VndnTagField>();
+        vndnTag.setRxPowerDbm(rxPowerDbm);
+        lpPacket.set<ndn::lp::VndnTagField>(vndnTag);
+        // Re-encode the LP packet with the updated VndnTag
+        block = lpPacket.wireEncode();
+      }
+    }
+    catch (const std::exception& e) {
+      NS_LOG_WARN("receiveFromNetDevice: failed to update VndnTag with RxPower: " << e.what());
+    }
+  }
+
+  this->receive(std::move(block));
 }
 
 Ptr<NetDevice>

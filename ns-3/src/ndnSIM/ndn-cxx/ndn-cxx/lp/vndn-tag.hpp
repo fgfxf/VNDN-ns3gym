@@ -110,6 +110,16 @@ public: // getters
     return m_unicastFlag;
   }
 
+  /**
+   * \brief Get the received signal power.
+   * \return signal power in dBm
+   */
+  double
+  getRxPowerDbm() const noexcept
+  {
+    return m_rxPowerDbm;
+  }
+
 public: // setters
   void
   setSenderNodeId(uint32_t nodeId) noexcept
@@ -135,11 +145,22 @@ public: // setters
     m_unicastFlag = flag;
   }
 
+  /**
+   * \brief Set the received signal power.
+   * \param rxPowerDbm signal power in dBm
+   */
+  void
+  setRxPowerDbm(double rxPowerDbm) noexcept
+  {
+    m_rxPowerDbm = rxPowerDbm;
+  }
+
 private:
   uint32_t m_senderNodeId = 0;  ///< sender node ID
   uint64_t m_senderMac = 0;     ///< sender wireless MAC address
   uint64_t m_targetMac = 0;     ///< target wireless MAC address
   uint64_t m_unicastFlag = 0;   ///< unicast flag (non-zero means unicast)
+  double m_rxPowerDbm = 0.0;   ///< received signal power in dBm
   mutable Block m_wire;
 };
 

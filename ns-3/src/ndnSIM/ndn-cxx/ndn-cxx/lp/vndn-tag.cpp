@@ -34,6 +34,7 @@ VndnTag::wireEncode(EncodingImpl<TAG>& encoder) const
 {
   size_t length = 0;
   // Encode in reverse order (prepend)
+  length += encoding::prependDoubleBlock(encoder, tlv::VndnRxPowerDbm, m_rxPowerDbm);
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnUnicastFlag, m_unicastFlag);
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnTargetMac, m_targetMac);
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnSenderMac, m_senderMac);
@@ -82,6 +83,7 @@ VndnTag::wireDecode(const Block& wire)
   m_senderMac = 0;
   m_targetMac = 0;
   m_unicastFlag = 0;
+  m_rxPowerDbm = 0.0;
 
   for (const Block& element : m_wire.elements()) {
     switch (element.type()) {
@@ -96,6 +98,9 @@ VndnTag::wireDecode(const Block& wire)
         break;
       case tlv::VndnUnicastFlag:
         m_unicastFlag = readNonNegativeInteger(element);
+        break;
+      case tlv::VndnRxPowerDbm:
+        m_rxPowerDbm = encoding::readDouble(element);
         break;
       default:
         // ignore unknown sub-TLVs

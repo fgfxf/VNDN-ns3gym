@@ -14,8 +14,6 @@
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
 #include "ns3/assert.h"
 #include "ns3/random-variable-stream.h"
-#include "ns3/wifi-net-device.h"
-#include "ns3/wifi-phy.h"
 #include <ndn-cxx/lp/tags.hpp>
 #include "../model/vndn-tag.hpp"
 
@@ -62,25 +60,10 @@ VndnObu::RegisterFacePrefixs ()
           // 车辆收到兴趣包后若本地无法满足，则不对外转发（避免多跳洪泛）。
           // 应用层通过 setInterestFilter("/", ...) 已在 app face 上注册前缀，
           // 可正常接收并处理收到的兴趣包。
+          // 接收信号强度由底层 wifi-phy 通过 RxPowerDbmTag 附加到包上，
+          // 经 NetDeviceTransport 写入 VndnTag，OBU 直接从 VndnTag 读取。
           m_wirelessDevice = device;
           m_wirelessFaceId = face->getId ();
-
-          // 连接 WifiPhy 的 MonitorSnifferRx trace，记录最近接收信号功率（dBm）。
-          // 这是一种不修改 ns-3 核心代码即可获取接收信号强度的优雅方式：
-          // 当无线网卡接收到任意 wifi 包时触发回调，将信号功率保存到成员变量，
-          // OBU 处理同步信号兴趣包时通过 getLastRxPowerDbm() 读取。
-          ns3::Ptr<ns3::WifiNetDevice> wifiDev =
-              ns3::DynamicCast<ns3::WifiNetDevice> (device);
-          if (wifiDev != nullptr)
-            {
-              ns3::Ptr<ns3::WifiPhy> phy = wifiDev->GetPhy ();
-              if (phy != nullptr)
-                {
-                  phy->TraceConnectWithoutContext (
-                      "MonitorSnifferRx",
-                      ns3::MakeCallback (&VndnObu::OnMonitorSnifferRx, this));
-                }
-            }
         }
     }
 }
@@ -149,30 +132,15 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
       return;
     }
 
-  // 读取最近一次无线接收的信号功率（由 WifiPhy MonitorSnifferRx trace 记录）
-  double rxPowerDbm = getLastRxPowerDbm ();
+  // 从 VndnTag 读取接收信号功率（由底层 wifi-phy 通过 RxPowerDbmTag 附加，
+  // 经 NetDeviceTransport 写入 VndnTag）
 
   NS_LOG_DEBUG ("OBU 收到同步信号: " << interest.getName ()
                 << " 来自RSU节点ID=" << vndnTag->getSenderNodeId ()
                 << " 发送者MAC=0x" << std::hex << vndnTag->getSenderMac ()
                 << " 目标MAC=0x" << vndnTag->getTargetMac ()
                 << " 单播标记=" << std::dec << vndnTag->getUnicastFlag ()
-                << " 信号强度=" << rxPowerDbm << "dBm");
-}
-
-void
-VndnObu::OnMonitorSnifferRx (ns3::Ptr<const ns3::Packet> packet, uint16_t channelFreqMhz,
-                              ns3::WifiTxVector txVector, ns3::MpduInfo aMpdu,
-                              ns3::SignalNoiseDbm signalNoise)
-{
-  // 记录最近一次无线接收的信号功率（dBm），供 OnSyncSignalInterest 读取
-  m_lastRxPowerDbm = signalNoise.signal;
-}
-
-double
-VndnObu::getLastRxPowerDbm () const
-{
-  return m_lastRxPowerDbm;
+                << " 信号强度=" <<  vndnTag->getRxPowerDbm () << "dBm");
 }
 
 void
