@@ -17,6 +17,7 @@
 
 #include "ns3/ptr.h"
 #include "ns3/traci-client.h"
+#include "ns3/wifi-phy.h"
 
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/face.hpp>
@@ -144,6 +145,28 @@ private:
   void
   SendPacket ();
 
+  /**
+   * \brief WifiPhy MonitorSnifferRx trace 回调。
+   *        当无线网卡接收到任意 wifi 包时触发，记录最近一次接收信号的功率（dBm）。
+   *        OBU 在处理同步信号兴趣包时通过 getLastRxPowerDbm() 读取该值。
+   * \param packet 接收到的数据包
+   * \param channelFreqMhz 信道频率（MHz）
+   * \param txVector 发送参数
+   * \param aMpdu A-MPDU 信息
+   * \param signalNoise 信号功率与噪声功率（dBm）
+   */
+  void
+  OnMonitorSnifferRx (ns3::Ptr<const ns3::Packet> packet, uint16_t channelFreqMhz,
+                      ns3::WifiTxVector txVector, ns3::MpduInfo aMpdu,
+                      ns3::SignalNoiseDbm signalNoise);
+
+  /**
+   * \brief 获取最近一次无线接收的信号功率。
+   * \return 信号功率（dBm），若尚未接收到任何包则返回 0
+   */
+  double
+  getLastRxPowerDbm () const;
+
 private:
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
@@ -152,6 +175,9 @@ private:
   bool m_active = false;                     ///< 应用是否处于活跃状态
   ns3::Ptr<ns3::NetDevice> m_wirelessDevice = nullptr; ///< 无线网络设备
   uint64_t m_wirelessFaceId = 0;             ///< 无线链路对应的 faceId
+
+  // 信号强度相关成员
+  double m_lastRxPowerDbm = 0.0;             ///< 最近一次无线接收的信号功率（dBm）
 
   // 周期性请求相关成员
   double m_frequency = 40.0;                 ///< 请求频率（Hz），即每秒发送兴趣包次数
