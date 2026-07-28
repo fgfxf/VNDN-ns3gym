@@ -83,9 +83,9 @@ public:
 public: // consumer
   void
   asyncExpressInterest(RecordId id, shared_ptr<const Interest> interest,
-                       const DataCallback& afterSatisfied,
-                       const NackCallback& afterNacked,
-                       const TimeoutCallback& afterTimeout)
+                        const DataCallback& afterSatisfied,
+                        const NackCallback& afterNacked,
+                        const TimeoutCallback& afterTimeout)
   {
     NDN_LOG_DEBUG("<I " << *interest);
     this->ensureConnected(true);
@@ -100,14 +100,16 @@ public: // consumer
     m_face.m_transport->send(finishEncoding(std::move(lpPacket), interest2.wireEncode(),
                                             'I', interest2.getName()));
 
-    // id==0 表示 /vndn/control 前缀的控制包（如基站同步信号），
-    // 不放入应用层 PIT（不超时）、不调用 dispatchInterest（app 节点不响应自身控制包）
-    if (id != 0) {
-      auto& entry = m_pendingInterestTable.put(id, std::move(interest), afterSatisfied, afterNacked,
-                                               afterTimeout, ref(m_scheduler));
-      entry.recordForwarding();
-      dispatchInterest(entry, interest2);
+    // id==0 表示仅转发 Interest、不创建新的 app PIT 条目
+    // （用于 /vndn/control 前缀的广播 Interest 复用已有 PIT 条目的场景）
+    if (id == 0) {
+      return;
     }
+
+    auto& entry = m_pendingInterestTable.put(id, std::move(interest), afterSatisfied, afterNacked,
+                                             afterTimeout, ref(m_scheduler));
+    entry.recordForwarding();
+    dispatchInterest(entry, interest2);
   }
 
   void
@@ -137,6 +139,11 @@ public: // consumer
       if (entry.getOrigin() == PendingInterestOrigin::APP) {
         hasAppMatch = true;
         entry.invokeDataCallback(data);
+        // /vndn/control 前缀（如基站同步信号）的广播 Interest 需要接收多个 OBU 的 Data 响应，
+        // 因此命中后不从 app PIT 中删除，仅触发回调
+        if (isVndnControlPrefix(entry.getInterest()->getName())) {
+          return false;
+        }
       }
       else {
         hasForwarderMatch = true;

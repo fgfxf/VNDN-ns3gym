@@ -29,6 +29,17 @@
 #include "ndn-cxx/lp/nack.hpp"
 #include "ndn-cxx/util/scheduler.hpp"
 
+namespace {
+// /vndn/control 前缀的包（如基站同步信号）不超时、不删除 PIT 条目，
+// 可被持续响应。此处判断是否属于该前缀。
+inline bool
+isVndnControlPrefix(const ndn::Name& name)
+{
+  static const ndn::Name vndnControlPrefix("/vndn/control");
+  return vndnControlPrefix.isPrefixOf(name);
+}
+} // anonymous namespace
+
 namespace ndn {
 
 /**
@@ -174,6 +185,12 @@ private:
   void
   invokeTimeoutCallback()
   {
+    // /vndn/control 前缀的包（如基站同步信号）超时后既不触发回调也不删除 PIT 条目，
+    // 使其可被持续响应（一个广播 Interest 接收多个 OBU 的 Data）
+    if (isVndnControlPrefix(m_interest->getName())) {
+      return;
+    }
+
     if (m_timeoutCallback) {
       m_timeoutCallback(*m_interest);
     }

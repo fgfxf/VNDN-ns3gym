@@ -474,6 +474,11 @@ private:
   class Impl;
   shared_ptr<Impl> m_impl;
 
+  // /vndn/control 前缀（如基站同步信号）的广播 Interest 复用同一个 app PIT 条目，
+  // 以便一个广播 Interest 能接收多个 OBU 的 Data 响应。
+  // 0 表示尚未创建过该前缀的 PIT 条目。
+  uintptr_t m_vndnControlPitId = 0;
+
   friend PendingInterestHandle;
   friend RegisteredPrefixHandle;
   friend InterestFilterHandle;

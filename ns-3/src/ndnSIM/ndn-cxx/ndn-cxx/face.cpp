@@ -123,11 +123,20 @@ Face::expressInterest(const Interest& interest,
                       const NackCallback& afterNacked,
                       const TimeoutCallback& afterTimeout)
 {
-  // /vndn/control 前缀的包（如基站同步信号）分配 id=0，跳过应用层 PIT，
-  // 使其不会在应用层超时（不触发 afterTimeout 回调）
-  static const Name vndnControlPrefix("/vndn/control");
-  RecordId id = 0;
-  if (!vndnControlPrefix.isPrefixOf(interest.getName())) {
+  RecordId id;
+  // /vndn/control 前缀（如基站同步信号）的广播 Interest 复用同一个 app PIT 条目，
+  // 以便一个广播 Interest 能接收多个 OBU 的 Data 响应，且不会产生重复的 PIT 条目。
+  // 第一次发送时正常分配 id 并创建 PIT 条目；后续发送用 id=0 表示仅转发、不创建新条目。
+  if (isVndnControlPrefix(interest.getName())) {
+    if (m_vndnControlPitId == 0) {
+      m_vndnControlPitId = m_impl->m_pendingInterestTable.allocateId();
+      id = m_vndnControlPitId;
+    }
+    else {
+      id = 0;
+    }
+  }
+  else {
     id = m_impl->m_pendingInterestTable.allocateId();
   }
 
