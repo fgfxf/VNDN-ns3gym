@@ -23,7 +23,25 @@
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+#include "ns3/vndn-handover-strategy.h"
+
+#include <map>
+#include <memory>
+
 namespace vanet {
+
+/**
+ * \brief OBU 周围邻居基站信息。
+ *
+ * 记录每个可见 RSU 的接收信号强度与最近更新时间戳，
+ * 用于基站驻留切换决策。
+ */
+struct ObuNeighborBsInfo
+{
+  double rxPowerDbm = -999.0;   ///< 接收信号强度（dBm），-999 表示无效/未收到信号
+  uint64_t lastUpdateMs = 0;    ///< 最近一次更新时间戳（毫秒）
+  uint64_t senderMac = 0;       ///< RSU 的无线 MAC 地址（uint64 形式）
+};
 
 /**
  * \brief 车载单元（OBU）NDN 应用核心类。
@@ -55,6 +73,13 @@ public:
    */
   void
   Stop ();
+
+  /**
+   * \brief 设置基站驻留切换策略。
+   * \param strategy 切换策略（立即切换 / 防止 ping-pong）
+   */
+  void
+  setHandoverStrategy (HandoverStrategy strategy);
 
 private:
   /**
@@ -94,7 +119,8 @@ private:
 
   /**
    * \brief 收到基站同步信号（/vndn/control/hello）的处理函数。
-   *        从兴趣包的 VndnTag 中提取发送者节点 ID、MAC、目标 MAC、单播标记并打印。
+   *        实现基站驻留切换逻辑：维护周围 RSU 信号强度列表，选择信号最强的
+   *        RSU 作为主基站；根据切换策略决定是否切换，驻留成功后响应 Data 包。
    * \param interest 收到的同步信号兴趣包
    */
   void
@@ -157,6 +183,21 @@ private:
   double m_frequency = 40.0;                 ///< 请求频率（Hz），即每秒发送兴趣包次数
   ns3::EventId m_requestScheduler;           ///< 请求发送定时器
   uint32_t m_seq = 0;                        ///< 顺序递增的兴趣包序号
+  ns3::Address m_wirelessAddress;            ///< 无线接口地址
+  uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）
+  uint64_t m_broadcastMac = 0;               ///< 广播地址 ff:ff:ff:ff:ff:ff 的 uint64 形式
+
+  ////////////////////////////////////////////////////////////////////////
+  // 基站驻留切换相关成员
+  ////////////////////////////////////////////////////////////////////////
+  HandoverStrategy m_handoverStrategy = HandoverStrategy_AntiPingPong; ///< 切换策略
+  int64_t m_currentBsNodeId = -1;            ///< 当前驻留基站节点 ID（-1 表示未驻留）
+  double m_currentBsRxPowerDbm = -999.0;     ///< 当前驻留基站的接收信号强度（dBm），-999 表示无效
+  uint64_t m_lastHandoverMs = 0;             ///< 上次驻留切换的时间戳（毫秒）
+  uint32_t m_bsTimeoutMs = 2000;             ///< 邻居基站过期时间（毫秒）
+  uint32_t m_handoverGuardMs = 20;           ///< 防止 ping-pong 切换的最小间隔（毫秒）
+  std::map<int64_t, std::shared_ptr<ObuNeighborBsInfo>> m_neighborBs; ///< 周围邻居基站列表
+
 };
 
 } // namespace vanet

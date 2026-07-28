@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <map>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnObu");
 
@@ -64,6 +65,11 @@ VndnObu::RegisterFacePrefixs ()
           // 经 NetDeviceTransport 写入 VndnTag，OBU 直接从 VndnTag 读取。
           m_wirelessDevice = device;
           m_wirelessFaceId = face->getId ();
+          m_wirelessAddress = device->GetAddress ();
+          m_wirelessAddress.CopyAllTo ((uint8_t *) &m_wirelessMac,
+                                       sizeof (uint64_t) / sizeof (uint8_t));
+          m_wirelessDevice->GetBroadcast ().CopyAllTo ((uint8_t *) &m_broadcastMac,
+                                                       sizeof (uint64_t) / sizeof (uint8_t));
         }
     }
 }
@@ -132,14 +138,133 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
       return;
     }
 
-  // 从 VndnTag 读取接收信号功率（由底层 wifi-phy 通过 RxPowerDbmTag 附加，
-  // 经 NetDeviceTransport 写入 VndnTag）
+  // 从 VndnTag 读取发送者节点 ID 与接收信号功率
+  int64_t senderNodeId = static_cast<int64_t> (vndnTag->getSenderNodeId ());
+  double rxPowerDbm = vndnTag->getRxPowerDbm ();
+
+  // 当前仿真时间（毫秒）
+  ns3::Time currentTime (ns3::Simulator::Now ());
+  uint64_t currentTimeMs = currentTime.ToInteger (ns3::Time::MS);
+
+  /////////////////////////// 更新邻居基站列表
+  auto it = m_neighborBs.find (senderNodeId);
+  if (it == m_neighborBs.end ())
+    {
+      // 新发现的邻居基站
+      auto info = std::make_shared<ObuNeighborBsInfo> ();
+      info->rxPowerDbm = rxPowerDbm;
+      info->lastUpdateMs = currentTimeMs;
+      info->senderMac = vndnTag->getSenderMac ();
+      m_neighborBs.emplace (senderNodeId, info);
+    }
+  else
+    {
+      // 更新已有邻居基站的信号强度与时间戳
+      it->second->rxPowerDbm = rxPowerDbm;
+      it->second->lastUpdateMs = currentTimeMs;
+      it->second->senderMac = vndnTag->getSenderMac ();
+    }
+
+  /////////////////////////// 删除过期的邻居基站
+  for (auto iter = m_neighborBs.begin (); iter != m_neighborBs.end (); )
+    {
+      if ((currentTimeMs - iter->second->lastUpdateMs) > m_bsTimeoutMs)
+        {
+          // 过期基站恰好是当前驻留基站，则清除驻留
+          if (iter->first == m_currentBsNodeId)
+            {
+              m_currentBsNodeId = -1;
+              m_currentBsRxPowerDbm = -999.0;
+            }
+          iter = m_neighborBs.erase (iter);
+        }
+      else
+        {
+          ++iter;
+        }
+    }
 
   NS_LOG_DEBUG ("OBU 收到同步信号: " << interest.getName ()
-                << " 来自RSU节点ID=" << vndnTag->getSenderNodeId ()
-                << " 发送者MAC=0x" << std::hex << vndnTag->getSenderMac ()
-                << " 目标MAC=0x" << vndnTag->getTargetMac ()
-                << " 信号强度=" <<  vndnTag->getRxPowerDbm () << "dBm");
+                << " 来自RSU节点ID=" << senderNodeId
+                << " 信号强度=" << rxPowerDbm << "dBm"
+                << " 当前驻留基站=" << m_currentBsNodeId
+                << " 邻居数=" << m_neighborBs.size ());
+
+  /////////////////////////// 基站驻留切换决策
+  if (senderNodeId == m_currentBsNodeId)
+    {
+      // 驻留基站更新信号强度与时间戳
+      m_currentBsRxPowerDbm = rxPowerDbm;
+    }
+  else
+    {
+      // 非驻留基站，判断是否需要切换
+      bool shouldHandover = false;
+      if (m_currentBsNodeId == -1)
+        {
+          // 尚未驻留任何基站，直接驻留
+          shouldHandover = true;
+        }
+      else if (rxPowerDbm > m_currentBsRxPowerDbm)
+        {
+          // 新基站信号强于当前驻留基站
+          if (m_handoverStrategy == HandoverStrategy_Immediate)
+            {
+              // 立即切换策略
+              shouldHandover = true;
+            }
+          else
+            {
+              // 防止 ping-pong 切换策略：
+              // 新基站信号强于当前驻留基站，且距离上次驻留切换时间大于阈值
+              if ((currentTimeMs - m_lastHandoverMs) > m_handoverGuardMs)
+                {
+                  shouldHandover = true;
+                }
+            }
+        }
+
+      if (shouldHandover)
+        {
+          NS_LOG_DEBUG ("OBU 基站切换: " << m_currentBsNodeId << " -> " << senderNodeId
+                        << " 信号 " << m_currentBsRxPowerDbm << " -> " << rxPowerDbm << "dBm");
+          m_currentBsNodeId = senderNodeId;
+          m_currentBsRxPowerDbm = rxPowerDbm;
+          m_lastHandoverMs = currentTimeMs;
+        }
+      else
+        {
+          // 不切换，不响应非驻留基站的同步信号
+          return;
+        }
+    }
+
+  /////////////////////////// 驻留基站：响应 hello 兴趣包（回传空内容 Data）
+  std::shared_ptr<ndn::Data> data = std::make_shared<ndn::Data> (interest.getName ());
+  // 空内容（后续再补充具体数据）
+  data->setContent (reinterpret_cast<const uint8_t *> (""), 0);
+  // 封装车联网元信息标签：发送者节点 ID、MAC、目标 MAC（当前驻留基站 MAC）
+  auto bsInfo = m_neighborBs.find (m_currentBsNodeId);
+  uint64_t targetMac = 0;
+  if (bsInfo != m_neighborBs.end ())
+    {
+      targetMac = bsInfo->second->senderMac;
+    }
+  auto dataVndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
+                                                           m_wirelessMac,
+                                                           targetMac);
+  data->setTag (dataVndnTag);
+  // 设置签名（使用占位签名，避免签名验证失败）
+  ndn::Signature signature;
+  ndn::SignatureInfo signatureInfo (static_cast<::ndn::tlv::SignatureTypeValue> (255));
+  signature.setInfo (signatureInfo);
+  signature.setValue (::ndn::makeNonNegativeIntegerBlock (::ndn::tlv::SignatureValue, 0));
+  data->setSignature (signature);
+  data->wireEncode ();
+  m_face.put (*data);
+
+  NS_LOG_DEBUG ("OBU 响应驻留基站同步信号: " << interest.getName ()
+                << " 基站ID=" << m_currentBsNodeId);
 }
 
 void
@@ -173,8 +298,8 @@ VndnObu::ScheduleNextPacket ()
   if (!m_active)
     return;
   // 根据频率计算发送间隔（微秒），并加入少量随机抖动以避免同步风暴
-  ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
-  m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
+  // ns3::Time reqTime = ns3::MicroSeconds (1000000 / 1 + rand () % 20000);
+  // m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
 }
 
 void
@@ -192,9 +317,13 @@ VndnObu::SendPacket ()
   std::shared_ptr<ndn::Interest> interest = std::make_shared<ndn::Interest> ();
   interest->setName (*name);
   interest->setInterestLifetime (ndn::time::milliseconds (3000));
-  interest->setCanBePrefix (false);
+  interest->setCanBePrefix (true);
   interest->setMustBeFresh (false);
-
+  interest->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (m_wirelessFaceId));
+  // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC
+  auto vndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
+                                                       m_wirelessMac,
+                                                       m_broadcastMac);
   NS_LOG_INFO ("OBU 发送兴趣包: " << *name);
   m_face.expressInterest (*interest,
                           std::bind (&VndnObu::OnData, this, _1, _2),
@@ -222,6 +351,12 @@ VndnObu::Stop ()
   m_requestScheduler.Cancel ();
   m_face.shutdown ();
   m_active = false;
+}
+
+void
+VndnObu::setHandoverStrategy (HandoverStrategy strategy)
+{
+  m_handoverStrategy = strategy;
 }
 
 } // namespace vanet

@@ -13,21 +13,22 @@
 #include "ns3/vndn-obu.h"
 #include "ns3/application.h"
 #include "ns3/traci-client.h"
+#include "ns3/enum.h"
 
 namespace ns3 {
 
 /**
  * \brief OBU 应用的 ns-3 Application 包装类。
  *
- * 通过 AddAttribute 暴露 SumoClient 属性，在 StartApplication / StopApplication
- * 中创建并启停 vanet::VndnObu 实例。
+ * 通过 AddAttribute 暴露 SumoClient 与 HandoverStrategy 属性，
+ * 在 StartApplication / StopApplication 中创建并启停 vanet::VndnObu 实例。
  */
 class VndnObuApp : public Application
 {
 public:
   /**
    * \brief 获取 TypeId。
-   *        仅注册 SumoClient 属性与构造函数。
+   *        注册 SumoClient、HandoverStrategy 属性与构造函数。
    */
   static ns3::TypeId
   GetTypeId ()
@@ -37,17 +38,24 @@ public:
             .AddAttribute ("SumoClient", "TraCi client for SUMO",
                            ns3::PointerValue (0),
                            ns3::MakePointerAccessor (&VndnObuApp::m_traci),
-                           ns3::MakePointerChecker<ns3::TraciClient> ());
+                           ns3::MakePointerChecker<ns3::TraciClient> ())
+            .AddAttribute ("HandoverStrategy",
+                           "Base station handover strategy: 0=Immediate, 1=AntiPingPong",
+                           ns3::EnumValue (vanet::HandoverStrategy_AntiPingPong),
+                           ns3::MakeEnumAccessor (&VndnObuApp::m_handoverStrategy),
+                           ns3::MakeEnumChecker (vanet::HandoverStrategy_Immediate, "Immediate",
+                                                 vanet::HandoverStrategy_AntiPingPong, "AntiPingPong"));
     return tid;
   }
 
   /**
-   * \brief 启动应用：创建 VndnObu 实例并调用 Start()。
+   * \brief 启动应用：创建 VndnObu 实例，设置切换策略并调用 Start()。
    */
   virtual void
   StartApplication () override
   {
     m_instance.reset (new vanet::VndnObu (m_traci));
+    m_instance->setHandoverStrategy (m_handoverStrategy);
     m_instance->Start ();
   }
 
@@ -67,6 +75,7 @@ public:
 private:
   std::unique_ptr<vanet::VndnObu> m_instance; ///< OBU 核心逻辑实例
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
+  vanet::HandoverStrategy m_handoverStrategy = vanet::HandoverStrategy_AntiPingPong; ///< 切换策略
 };
 
 } // namespace ns3

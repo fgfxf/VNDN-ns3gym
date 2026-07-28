@@ -171,7 +171,7 @@ VndnRsu::SendSyncSignal ()
 
   // 每 20ms 发送一次同步信号
   m_sendSyncSignal =
-      m_scheduler.schedule (ndn::time::milliseconds (20), [this] { SendSyncSignal (); });
+      m_scheduler.schedule (ndn::time::seconds (1), [this] { SendSyncSignal (); });
 }
 
 void
