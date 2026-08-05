@@ -38,7 +38,11 @@ namespace ndn {
  *
  *  If a packet is longer than this size, library and application MAY drop it.
  */
-const size_t MAX_NDN_PACKET_SIZE = 8800;
+// Maximum size of one encoded NDN network-layer packet. This is not a link
+// MTU: NFD's GenericLinkService fragments the packet according to each
+// transport MTU. VNDN proxy forwarding needs to accept application Data larger
+// than 8.8 KB before handing it to the LP fragmentation pipeline.
+const size_t MAX_NDN_PACKET_SIZE = 88000;
 
 /**
  * @brief Namespace defining NDN Packet Format related constants and procedures
