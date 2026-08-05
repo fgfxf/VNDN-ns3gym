@@ -451,9 +451,14 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt,
   }
 
   if (firstPkt.has<lp::NextHopFaceIdField>()) {
-    ++this->nInNetInvalid;
-    NFD_LOG_FACE_WARN("received NextHopFaceId with Data: DROP");
-    return;
+    if (m_options.allowLocalFields) {
+      data->setTag(make_shared<lp::NextHopFaceIdTag>(firstPkt.get<lp::NextHopFaceIdField>()));
+    }
+    else {
+      ++this->nInNetInvalid;
+      NFD_LOG_FACE_WARN("received NextHopFaceId with Data from non-local face: DROP");
+      return;
+    }
   }
 
   if (firstPkt.has<lp::CachePolicyField>()) {

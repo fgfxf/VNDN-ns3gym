@@ -240,6 +240,9 @@ public: // producer
     this->ensureConnected(true);
 
     lp::Packet lpPacket;
+    // Local privileged applications may actively push control Data through a
+    // selected NFD face. NFD validates that this local field came from a local face.
+    addFieldFromTag<lp::NextHopFaceIdField, lp::NextHopFaceIdTag>(lpPacket, data);
     addFieldFromTag<lp::CachePolicyField, lp::CachePolicyTag>(lpPacket, data);
     addFieldFromTag<lp::CongestionMarkField, lp::CongestionMarkTag>(lpPacket, data);
     addFieldFromTag<lp::VndnTagField, lp::VndnTag>(lpPacket, data);

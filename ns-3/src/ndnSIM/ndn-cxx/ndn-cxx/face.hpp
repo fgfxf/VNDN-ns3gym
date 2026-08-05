@@ -426,6 +426,18 @@ public: // IO routine
     return io;
   }
 
+  /**
+   * @brief Set callback for Data received without a matching app pending Interest.
+   *
+   * ndnSIM uses this for persistent /vndn/control messages that are actively
+   * pushed over a selected point-to-point face.
+   */
+  void
+  setDataUnsolicitedProcess(const DataCallback& callback)
+  {
+    m_dataUnsolicitedCallback = callback;
+  }
+
 NDN_CXX_PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   /**
    * @brief Returns the underlying transport.
@@ -478,6 +490,8 @@ private:
   // 以便一个广播 Interest 能接收多个 OBU 的 Data 响应。
   // 0 表示尚未创建过该前缀的 PIT 条目。
   uintptr_t m_vndnControlPitId = 0;
+
+  DataCallback m_dataUnsolicitedCallback;
 
   friend PendingInterestHandle;
   friend RegisteredPrefixHandle;

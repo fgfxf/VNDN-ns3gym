@@ -318,6 +318,18 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     return;
   }
 
+  // A privileged local application can actively push control Data through an
+  // explicitly selected face, without creating a PIT entry first.
+  auto nextHopTag = data.getTag<lp::NextHopFaceIdTag>();
+  if (nextHopTag != nullptr) {
+    Face* nextHopFace = m_faceTable.get(*nextHopTag);
+    if (nextHopFace != nullptr) {
+      data.setTag<lp::NextHopFaceIdTag>(nullptr);
+      this->onOutgoingData(data, FaceEndpoint(*nextHopFace, 0));
+    }
+    return;
+  }
+
   // PIT match
   pit::DataMatchResult pitMatches = m_pit.findAllDataMatches(data);
   if (pitMatches.size() == 0) {
@@ -423,6 +435,17 @@ Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
     // CS insert — /vndn/control 前缀的数据包不缓存
     if (!isVndnControlPrefix(data.getName())) {
       m_cs.insert(data, true);
+    }
+  }
+
+  // Persistent VNDN control Data is delivered to local application faces even
+  // without a matching PIT entry. Never reflect it onto another network face.
+  if (isVndnControlPrefix(data.getName())) {
+    for (const auto& face : m_faceTable) {
+      if (face.getId() != ingress.face.getId() &&
+          face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+        this->onOutgoingData(data, FaceEndpoint(face, 0));
+      }
     }
   }
 

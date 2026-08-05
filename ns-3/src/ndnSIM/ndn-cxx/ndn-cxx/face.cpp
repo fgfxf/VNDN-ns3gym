@@ -318,7 +318,11 @@ Face::onReceiveElement(const Block& blockFromDaemon)
       auto data = make_shared<Data>(netPacket);
       extractLpLocalFields(*data, lpPacket);
       NDN_LOG_DEBUG(">D " << data->getName());
-      m_impl->satisfyPendingInterests(*data);
+      bool hasNoAppMatch = m_impl->satisfyPendingInterests(*data);
+      if (hasNoAppMatch && m_dataUnsolicitedCallback) {
+        Interest emptyInterest;
+        m_dataUnsolicitedCallback(emptyInterest, *data);
+      }
       break;
     }
   }

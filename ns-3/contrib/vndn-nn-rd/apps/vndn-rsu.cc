@@ -13,10 +13,13 @@
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
 #include "ns3/assert.h"
+#include "ns3/simulator.h"
 #include <ndn-cxx/lp/tags.hpp>
+#include <ndn-cxx/encoding/block-helpers.hpp>
 #include "../model/vndn-tag.hpp"
 
 #include <iostream>
+#include <sstream>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnRsu");
 
@@ -35,6 +38,8 @@ VndnRsu::VndnRsu (ns3::Ptr<ns3::TraciClient> &traci)
   // 获取当前节点指针
   m_thisNode = ns3::NodeList::GetNode (ns3::Simulator::GetContext ());
   RegisterFacePrefixs ();
+  m_face.setDataUnsolicitedProcess (
+      std::bind (&VndnRsu::OnP2pHandshakeDataPush, this, _1, _2));
 }
 
 // 遍历节点上的 NetDevice，区分 p2p 与无线接口并注册前缀
@@ -55,6 +60,7 @@ VndnRsu::RegisterFacePrefixs ()
           // p2p 接口：注册控制前缀，用于后续基站间通信
           std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/vndn/control");
           ns3::ndn::FibHelper::AddRoute (m_thisNode, *name, face, 1);
+          m_p2pFaceIds.push_back (face->getId ());
         }
       else
         {
@@ -112,6 +118,12 @@ VndnRsu::ExtractIncomingFace (const ndn::Interest &interest)
 void
 VndnRsu::OnInterest (const ndn::Interest &interest)
 {
+  static const ndn::Name handshakePrefix ("/vndn/control/p2p-handshake");
+  if (handshakePrefix.isPrefixOf (interest.getName ()))
+    {
+      OnP2pHandshakeInterest (interest);
+      return;
+    }
   // TODO: 后续在此实现收到兴趣包后的具体响应逻辑
   NS_LOG_DEBUG ("RSU 收到兴趣包: " << interest.getName ());
 }
@@ -311,6 +323,150 @@ VndnRsu::SendSyncSignal ()
 }
 
 void
+VndnRsu::SendP2pHandshake ()
+{
+  if (!m_active)
+    return;
+
+  const uint32_t nodeId = m_thisNode->GetId ();
+  m_seenInfrastructureNodes.insert (nodeId);
+
+  ndn::Name name ("/vndn/control/p2p-handshake/rsu");
+  name.appendNumber (nodeId).appendNumber (m_p2pHandshakeRound);
+  for (uint64_t faceId : m_p2pFaceIds)
+    PushIdentityData (faceId, nodeId, "rsu", name);
+  NS_LOG_INFO ("RSU " << nodeId << " 发送第 " << m_p2pHandshakeRound
+                       << " 轮P2P身份握手");
+  ++m_p2pHandshakeRound;
+  if (m_p2pHandshakeRound < 3)
+    m_p2pHandshakeEvent = ns3::Simulator::Schedule (
+        ns3::MilliSeconds (200), &VndnRsu::SendP2pHandshake, this);
+}
+
+void
+VndnRsu::PushIdentityData (uint64_t faceId, uint32_t nodeId,
+                           const std::string &role, const ndn::Name &name)
+{
+  std::ostringstream payload;
+  payload << role << ' ' << nodeId;
+  const std::string content = payload.str ();
+  auto data = std::make_shared<ndn::Data> (name);
+  data->setContent (std::make_shared<ndn::Buffer> (content.begin (), content.end ()));
+  data->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (faceId));
+  ndn::Signature signature;
+  ndn::SignatureInfo signatureInfo (static_cast<ndn::tlv::SignatureTypeValue> (255));
+  signature.setInfo (signatureInfo);
+  signature.setValue (ndn::makeNonNegativeIntegerBlock (ndn::tlv::SignatureValue, 0));
+  data->setSignature (signature);
+  data->wireEncode ();
+  m_face.put (*data);
+}
+
+void
+VndnRsu::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
+{
+  static const ndn::Name handshakePrefix ("/vndn/control/p2p-handshake");
+  if (!handshakePrefix.isPrefixOf (data.getName ()))
+    return;
+  auto incomingFace = data.getTag<ndn::lp::IncomingFaceIdTag> ();
+  if (incomingFace == nullptr)
+    return;
+
+  const auto &content = data.getContent ();
+  std::istringstream parser (std::string (reinterpret_cast<const char *> (content.value ()),
+                                         content.value_size ()));
+  std::string role;
+  uint32_t nodeId = 0;
+  if (!(parser >> role >> nodeId) || nodeId == m_thisNode->GetId ())
+    return;
+
+  uint64_t inFaceId = *incomingFace;
+  bool isNew = m_seenInfrastructureNodes.insert (nodeId).second;
+  m_infrastructureRoutes[nodeId] = inFaceId;
+  m_infrastructureRoles[nodeId] = role;
+  if (!isNew)
+    return;
+
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 发现 " << role << " " << nodeId
+                       << "，出接口faceId=" << inFaceId);
+  for (uint64_t faceId : m_p2pFaceIds)
+    {
+      if (faceId != inFaceId)
+        PushIdentityData (faceId, nodeId, role, data.getName ());
+    }
+}
+
+void
+VndnRsu::OnP2pHandshakeInterest (const ndn::Interest &interest)
+{
+  auto incomingFace = interest.getTag<ndn::lp::IncomingFaceIdTag> ();
+  const ndn::Name &name = interest.getName ();
+  if (incomingFace != nullptr && name.size () >= 6)
+    {
+      uint32_t requesterId = static_cast<uint32_t> (name.get (4).toNumber ());
+      if (requesterId != m_thisNode->GetId ())
+        {
+          bool isNew = m_seenInfrastructureNodes.insert (requesterId).second;
+          m_infrastructureRoutes[requesterId] = *incomingFace;
+          m_infrastructureRoles[requesterId] = name.get (3).toUri ();
+          if (isNew)
+            NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 发现 "
+                                 << m_infrastructureRoles[requesterId] << " " << requesterId
+                                 << "，出接口faceId=" << *incomingFace);
+        }
+    }
+
+  std::ostringstream payload;
+  payload << "rsu " << m_thisNode->GetId () << '\n';
+  for (const auto &entry : m_infrastructureRoutes)
+    payload << m_infrastructureRoles[entry.first] << ' ' << entry.first << '\n';
+
+  auto data = std::make_shared<ndn::Data> (interest.getName ());
+  const std::string content = payload.str ();
+  data->setContent (std::make_shared<ndn::Buffer> (content.begin (), content.end ()));
+  ndn::Signature signature;
+  ndn::SignatureInfo signatureInfo (static_cast<ndn::tlv::SignatureTypeValue> (255));
+  signature.setInfo (signatureInfo);
+  signature.setValue (ndn::makeNonNegativeIntegerBlock (ndn::tlv::SignatureValue, 0));
+  data->setSignature (signature);
+  data->wireEncode ();
+  m_face.put (*data);
+}
+
+void
+VndnRsu::OnP2pHandshakeData (uint64_t outFaceId, const ndn::Interest &, const ndn::Data &data)
+{
+  const auto &content = data.getContent ();
+  std::istringstream parser (std::string (reinterpret_cast<const char *> (content.value ()),
+                                         content.value_size ()));
+  std::string role;
+  uint32_t nodeId;
+  while (parser >> role >> nodeId)
+    {
+      if (nodeId == m_thisNode->GetId ())
+        continue;
+      bool isNew = m_seenInfrastructureNodes.insert (nodeId).second;
+      m_infrastructureRoutes[nodeId] = outFaceId;
+      m_infrastructureRoles[nodeId] = role;
+      if (isNew)
+        NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 发现 " << role << " " << nodeId
+                             << "，出接口faceId=" << outFaceId);
+    }
+}
+
+void
+VndnRsu::OnP2pHandshakeNack (const ndn::Interest &interest, const ndn::lp::Nack &nack)
+{
+  NS_LOG_DEBUG ("RSU 握手Nack: " << interest.getName () << " reason=" << nack.getReason ());
+}
+
+void
+VndnRsu::OnP2pHandshakeTimeout (const ndn::Interest &interest)
+{
+  NS_LOG_DEBUG ("RSU 握手超时: " << interest.getName ());
+}
+
+void
 VndnRsu::Start ()
 {
   m_face.processEvents ();
@@ -319,6 +475,10 @@ VndnRsu::Start ()
   // 启动周期性同步信号广播
   m_sendSyncSignal =
       m_scheduler.schedule (ndn::time::milliseconds (20), [this] { SendSyncSignal (); });
+  // 将不同节点的公告分散在仿真启动后的 500~1000ms 内。
+  uint32_t delayMs = 500 + ((m_thisNode->GetId () * 17) % 50);
+  m_p2pHandshakeEvent = ns3::Simulator::Schedule (
+      ns3::MilliSeconds (delayMs), &VndnRsu::SendP2pHandshake, this);
 }
 
 void
@@ -326,6 +486,7 @@ VndnRsu::Stop ()
 {
   NS_LOG_DEBUG ("RSU 关闭...");
   m_sendSyncSignal.cancel ();
+  m_p2pHandshakeEvent.Cancel ();
   m_face.shutdown ();
   m_active = false;
 }

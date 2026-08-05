@@ -29,6 +29,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace vanet {
 
@@ -148,6 +149,31 @@ private:
   void
   SendSyncSignal ();
 
+  /** 在所有 P2P 接口上发布本节点身份。 */
+  void
+  SendP2pHandshake ();
+
+  /** 处理其他基础设施节点发来的握手 Interest。 */
+  void
+  OnP2pHandshakeInterest (const ndn::Interest &interest);
+
+  void
+  OnP2pHandshakeData (uint64_t outFaceId, const ndn::Interest &interest,
+                      const ndn::Data &data);
+
+  void
+  OnP2pHandshakeNack (const ndn::Interest &interest, const ndn::lp::Nack &nack);
+
+  void
+  OnP2pHandshakeTimeout (const ndn::Interest &interest);
+
+  void
+  OnP2pHandshakeDataPush (const ndn::Interest &interest, const ndn::Data &data);
+
+  void
+  PushIdentityData (uint64_t faceId, uint32_t nodeId,
+                    const std::string &role, const ndn::Name &name);
+
 private:
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
@@ -156,6 +182,12 @@ private:
   bool m_active = false;                     ///< 应用是否处于活跃状态
   ns3::Ptr<ns3::NetDevice> m_wirelessDevice = nullptr; ///< 无线网络设备
   uint64_t m_wirelessFaceId = 0;             ///< 无线链路对应的 faceId
+  std::vector<uint64_t> m_p2pFaceIds;        ///< 本节点所有 P2P face
+  std::map<uint32_t, uint64_t> m_infrastructureRoutes; ///< 基础设施节点ID -> 出接口
+  std::map<uint32_t, std::string> m_infrastructureRoles; ///< 基础设施节点ID -> 角色
+  std::set<uint32_t> m_seenInfrastructureNodes; ///< 已传播的身份公告
+  ns3::EventId m_p2pHandshakeEvent;          ///< 启动阶段握手事件
+  uint32_t m_p2pHandshakeRound = 0;           ///< 当前握手轮次
 
   // 同步信号广播相关成员
   ndn::scheduler::EventId m_sendSyncSignal;  ///< 同步信号发送定时器
