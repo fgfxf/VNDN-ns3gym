@@ -25,6 +25,7 @@
 #include "ns3/point-to-point-module.h"  // pcapwrite
 #include "ns3/vndn-rsu-app.h"
 #include "ns3/vndn-obu-app.h"
+#include "ns3/vndn-router-app.h"
 #include "ns3/log.h"
 
 NS_LOG_COMPONENT_DEFINE ("vndn-circle-main");
@@ -86,6 +87,7 @@ int main(int argc,char *argv[]){
         componentsLogLevelAll.push_back ("vndn-circle-main");
         componentsLogLevelAll.push_back ("ndn.VndnObu");
         componentsLogLevelAll.push_back ("ndn.VndnRsu");
+        componentsLogLevelAll.push_back ("ndn.VndnRouter");
         for (auto const &c : componentsLogLevelAll)
           {
             ns3::LogComponentEnable (c.c_str (), ns3::LOG_LEVEL_ALL);
@@ -257,6 +259,9 @@ int main(int argc,char *argv[]){
 
     ns3::Ptr<ns3::MobilityModel> routerNode = routerNodes.Get(0) ->GetObject<ns3::MobilityModel>();
     routerNode->SetPosition(ns3::Vector(65,0,200));
+    ns3::ndn::AppHelper router("VndnRouterApp");
+    ns3::ApplicationContainer routerApp = router.Install(routerNodes.Get(0));
+    routerApp.Start(ns3::Seconds(0.0));
 
 
     //所有的基站，找不到缓存的数据前缀都向server请求。
@@ -283,5 +288,4 @@ int main(int argc,char *argv[]){
     ns3::Simulator::Destroy();
     return 0;
 }
-
 
