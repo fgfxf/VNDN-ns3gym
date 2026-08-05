@@ -24,6 +24,12 @@
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
+#include "../src/json/single_include/nlohmann/json.hpp"
+
+#include <map>
+#include <set>
+#include <string>
+
 namespace vanet {
 
 /**
@@ -103,6 +109,16 @@ private:
   OnData (const ndn::Interest &interest, const ndn::Data &data);
 
   /**
+   * \brief 收到同步信号响应数据包的处理函数。
+   *        解析 OBU 上报的车辆信息（坐标、速度、加速度、角度、车道、次优基站），
+   *        暂时仅打印日志，后续可实现车辆注册与更新。
+   * \param interest 对应的同步信号兴趣包
+   * \param data 收到的车辆信息数据包
+   */
+  void
+  OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data);
+
+  /**
    * \brief 兴趣包超时的回调框架。
    *        当本节点发出的兴趣包在生命周期内未收到响应时被调用。
    * \param interest 超时的兴趣包
@@ -146,6 +162,18 @@ private:
   ns3::Address m_wirelessAddress;            ///< 无线接口地址
   uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）
   uint64_t m_broadcastMac = 0;               ///< 广播地址 ff:ff:ff:ff:ff:ff 的 uint64 形式
+
+  ////////////////////////////////////////////////////////////////////////
+  // 车辆缓存映射相关成员
+  ////////////////////////////////////////////////////////////////////////
+  /// 车辆节点ID -> 该车辆缓存的名称集合
+  std::map<int64_t, std::set<std::string>> m_vehicleToCs;
+  /// 缓存名称 -> 持有该缓存的车辆节点ID集合
+  std::map<std::string, std::set<int64_t>> m_csToVehicles;
+  /// 车辆节点ID -> 最近一次回复时间戳（毫秒）
+  std::map<int64_t, uint64_t> m_vehicleLastReplyMs;
+  /// 车辆超时时间（毫秒），超过该时间未回复则视为离开
+  uint32_t m_vehicleTimeoutMs = 2000;
 };
 
 } // namespace vanet

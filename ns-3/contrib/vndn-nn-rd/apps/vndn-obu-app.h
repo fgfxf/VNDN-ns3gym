@@ -44,7 +44,13 @@ public:
                            ns3::EnumValue (vanet::HandoverStrategy_AntiPingPong),
                            ns3::MakeEnumAccessor (&VndnObuApp::m_handoverStrategy),
                            ns3::MakeEnumChecker (vanet::HandoverStrategy_Immediate, "Immediate",
-                                                 vanet::HandoverStrategy_AntiPingPong, "AntiPingPong"));
+                                                 vanet::HandoverStrategy_AntiPingPong, "AntiPingPong"))
+            .AddAttribute ("CacheStrategy",
+                           "Cache response strategy: 0=None, 1=Participate",
+                           ns3::EnumValue (vanet::CacheStrategy_None),
+                           ns3::MakeEnumAccessor (&VndnObuApp::m_cacheStrategy),
+                           ns3::MakeEnumChecker (vanet::CacheStrategy_None, "None",
+                                                 vanet::CacheStrategy_Participate, "Participate"));
     return tid;
   }
 
@@ -56,6 +62,7 @@ public:
   {
     m_instance.reset (new vanet::VndnObu (m_traci));
     m_instance->setHandoverStrategy (m_handoverStrategy);
+    m_instance->setCacheStrategy (m_cacheStrategy);
     m_instance->Start ();
   }
 
@@ -76,6 +83,7 @@ private:
   std::unique_ptr<vanet::VndnObu> m_instance; ///< OBU 核心逻辑实例
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
   vanet::HandoverStrategy m_handoverStrategy = vanet::HandoverStrategy_AntiPingPong; ///< 切换策略
+  vanet::CacheStrategy m_cacheStrategy = vanet::CacheStrategy_None; ///< 缓存响应策略
 };
 
 } // namespace ns3

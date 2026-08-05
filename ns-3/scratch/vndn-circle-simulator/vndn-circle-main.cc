@@ -196,6 +196,7 @@ int main(int argc,char *argv[]){
         ns3::Ptr<ns3::VndnObuApp>  ndnApp = ns3::CreateObject<ns3::VndnObuApp>();
         // ndnApp->SetAttribute("Frequency",ns3::DoubleValue(40.0));//频率
         ndnApp->SetAttribute("SumoClient",(ns3::PointerValue)(sumoClient));
+        ndnApp->SetAttribute("CacheStrategy",(ns3::EnumValue)(vanet::CacheStrategy::CacheStrategy_Participate));
         // ndnApp->SetAttribute("SaveDic",ns3::StringValue(aiTrainingTagDir));
         // ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));
         // ndnApp->SetAttribute("ExtendData",ns3::BooleanValue(ObuExtendData));

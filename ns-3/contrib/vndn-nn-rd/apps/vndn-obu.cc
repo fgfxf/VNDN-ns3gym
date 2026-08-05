@@ -12,6 +12,8 @@
 #include "ns3/node-list.h"
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
+#include "ns3/ndnSIM/NFD/daemon/fw/forwarder.hpp"
+#include "ns3/ndnSIM/NFD/daemon/table/cs.hpp"
 #include "ns3/assert.h"
 #include "ns3/random-variable-stream.h"
 #include <ndn-cxx/lp/tags.hpp>
@@ -239,10 +241,70 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
         }
     }
 
-  /////////////////////////// 驻留基站：响应 hello 兴趣包（回传空内容 Data）
+  /////////////////////////// 驻留基站：响应 hello 兴趣包（回传车辆信息 Data）
   std::shared_ptr<ndn::Data> data = std::make_shared<ndn::Data> (interest.getName ());
-  // 空内容（后续再补充具体数据）
-  data->setContent (reinterpret_cast<const uint8_t *> (""), 0);
+
+  // 通过 TraCI 获取车辆交通信息，封装为 JSON
+  nlohmann::json j = nlohmann::json::object ();
+  std::string vehId = m_traci->GetVehicleId (m_thisNode);
+  libsumo::TraCIPosition pos = m_traci->TraCIAPI::vehicle.getPosition3D (vehId);
+  j["LocateX"] = pos.x;
+  j["LocateY"] = pos.y;
+  j["Speed"] = m_traci->TraCIAPI::vehicle.getSpeed (vehId);
+  j["Acceleration"] = m_traci->TraCIAPI::vehicle.getAcceleration (vehId);
+  j["Angle"] = m_traci->TraCIAPI::vehicle.getAngle (vehId);
+  j["LaneIndex"] = m_traci->TraCIAPI::vehicle.getLaneIndex (vehId);
+
+  // 除驻留基站外信号强度最大的基站（次优基站），没有则为当前基站
+  double maxRxSignal = -999.0;
+  int64_t nextRsu = m_currentBsNodeId;
+  for (auto &nb : m_neighborBs)
+    {
+      if (nb.first == m_currentBsNodeId)
+        continue;
+      if (nb.second->rxPowerDbm > maxRxSignal)
+        {
+          maxRxSignal = nb.second->rxPowerDbm;
+          nextRsu = nb.first;
+        }
+    }
+  j["NextRsu"] = nextRsu;
+
+  // 缓存响应策略：参与缓存响应时，上报 CS 缓存信息
+  if (m_cacheStrategy == CacheStrategy_Participate)
+    {
+      std::set<std::string> currentCs = GetCsNames ();
+      if (!m_registered)
+        {
+          // 首次注册：上报全量缓存列表
+          j["CsList"] = std::vector<std::string> (currentCs.begin (), currentCs.end ());
+          j["CsUpdate"] = false;
+          m_registered = true;
+        }
+      else
+        {
+          // 非首次注册：仅上报缓存的增删信息
+          std::vector<std::string> added, removed;
+          for (const auto &n : currentCs)
+            {
+              if (m_lastCsNames.find (n) == m_lastCsNames.end ())
+                added.push_back (n);
+            }
+          for (const auto &n : m_lastCsNames)
+            {
+              if (currentCs.find (n) == currentCs.end ())
+                removed.push_back (n);
+            }
+          j["CsAdded"] = added;
+          j["CsRemoved"] = removed;
+          j["CsUpdate"] = true;
+        }
+      m_lastCsNames = currentCs;
+    }
+
+  std::string strContent = j.dump (4);
+  data->setContent (reinterpret_cast<const uint8_t *> (strContent.c_str ()),
+                    strContent.size ());
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标 MAC（当前驻留基站 MAC）
   auto bsInfo = m_neighborBs.find (m_currentBsNodeId);
   uint64_t targetMac = 0;
@@ -265,6 +327,22 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
 
   NS_LOG_DEBUG ("OBU 响应驻留基站同步信号: " << interest.getName ()
                 << " 基站ID=" << m_currentBsNodeId);
+
+  // // 打印本节点 ContentStore 中的条目
+  // ns3::Ptr<ns3::ndn::L3Protocol> ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+  // if (ndnL3 != nullptr)
+  //   {
+  //     auto forwarder = ndnL3->getForwarder ();
+  //     if (forwarder != nullptr)
+  //       {
+  //         nfd::cs::Cs &cs = forwarder->getCs ();
+  //         NS_LOG_DEBUG ("OBU ContentStore 条目数=" << cs.size ());
+  //         for (auto it = cs.begin (); it != cs.end (); ++it)
+  //           {
+  //             NS_LOG_DEBUG ("  CS entry: " << it->getName ());
+  //           }
+  //       }
+  //   }
 }
 
 void
@@ -311,7 +389,8 @@ VndnObu::SendPacket ()
 
   // 构造兴趣包：前缀 /com/baidu + 递增序号，模拟用户请求不同内容
   m_seq++;
-  std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/com/baidu");
+  std::string userWatch = "/com/baidu/www/userid/" + std::to_string (m_thisNode->GetId ());
+  std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> (userWatch);
   name->appendSequenceNumber (m_seq);
 
   std::shared_ptr<ndn::Interest> interest = std::make_shared<ndn::Interest> ();
@@ -357,6 +436,34 @@ void
 VndnObu::setHandoverStrategy (HandoverStrategy strategy)
 {
   m_handoverStrategy = strategy;
+}
+
+void
+VndnObu::setCacheStrategy (CacheStrategy strategy)
+{
+  m_cacheStrategy = strategy;
+}
+
+std::set<std::string>
+VndnObu::GetCsNames ()
+{
+  std::set<std::string> names;
+  ns3::Ptr<ns3::ndn::L3Protocol> ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+  if (ndnL3 == nullptr)
+    return names;
+  auto forwarder = ndnL3->getForwarder ();
+  if (forwarder == nullptr)
+    return names;
+  nfd::cs::Cs &cs = forwarder->getCs ();
+  for (auto it = cs.begin (); it != cs.end (); ++it)
+    {
+      std::string name = it->getName ().toUri ();
+      // 排除 /localhost 开头的缓存条目
+      if (name.rfind ("/localhost", 0) == 0)
+        continue;
+      names.insert (name);
+    }
+  return names;
 }
 
 } // namespace vanet
