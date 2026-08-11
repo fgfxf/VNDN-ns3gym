@@ -31,6 +31,8 @@
 
 #include <string>
 #include <map>
+#include <utility>
+#include <vector>
 
 namespace ns3 {
 namespace ndn {
@@ -117,6 +119,19 @@ public:
   static uint32_t
   GetVehicleCount (const std::string &contribFolder, const std::string &scenarioName,
                    const std::string &routeFileName);
+
+  /**
+   * \brief Save simulation parameters as key=value lines in an output directory.
+   * \param outputDir output directory, which must already exist
+   * \param parameters ordered parameter name/value pairs
+   * \param fileName output file name relative to outputDir
+   * \return true if the file was written successfully
+   */
+  static bool
+  SaveSimulationConfig (
+      const std::string &outputDir,
+      const std::vector<std::pair<std::string, std::string>> &parameters,
+      const std::string &fileName = "simulation-config.txt");
 };
 
 } // namespace ndn

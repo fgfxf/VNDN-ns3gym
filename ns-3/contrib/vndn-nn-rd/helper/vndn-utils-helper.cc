@@ -99,5 +99,25 @@ VndnUtilsHelper::GetVehicleCount (const std::string &contribFolder, const std::s
   return count;
 }
 
+bool
+VndnUtilsHelper::SaveSimulationConfig (
+    const std::string &outputDir,
+    const std::vector<std::pair<std::string, std::string>> &parameters,
+    const std::string &fileName)
+{
+  std::string filePath = outputDir;
+  if (!filePath.empty () && filePath.back () != '/')
+    filePath += '/';
+  filePath += fileName;
+
+  std::ofstream file (filePath, std::ios::out | std::ios::trunc);
+  if (!file.is_open ())
+    return false;
+
+  for (const auto &parameter : parameters)
+    file << parameter.first << '=' << parameter.second << '\n';
+  return file.good ();
+}
+
 } // namespace ndn
 } // namespace ns3

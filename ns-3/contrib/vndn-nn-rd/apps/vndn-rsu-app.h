@@ -11,8 +11,10 @@
 #define VNDN_RSU_APP_H
 
 #include "ns3/vndn-rsu.h"
+#include "ns3/vndn-rsu-strategy.h"
 #include "ns3/application.h"
 #include "ns3/traci-client.h"
+#include "ns3/enum.h"
 
 namespace ns3 {
 
@@ -37,7 +39,16 @@ public:
             .AddAttribute ("SumoClient", "TraCi client for SUMO",
                            ns3::PointerValue (0),
                            ns3::MakePointerAccessor (&VndnRsuApp::m_traci),
-                           ns3::MakePointerChecker<ns3::TraciClient> ());
+                           ns3::MakePointerChecker<ns3::TraciClient> ())
+            .AddAttribute (
+                "RsuForwardStrategy",
+                "Vehicle handover Data recovery: NoForward, VTDF, or RealTimeVTDF",
+                ns3::EnumValue (vanet::RsuForwardStrategy_NoForward),
+                ns3::MakeEnumAccessor (&VndnRsuApp::m_forwardStrategy),
+                ns3::MakeEnumChecker (vanet::RsuForwardStrategy_NoForward, "NoForward",
+                                      vanet::RsuForwardStrategy_VTDF, "VTDF",
+                                      vanet::RsuForwardStrategy_RealTimeVtdf,
+                                      "RealTimeVTDF"));
     return tid;
   }
 
@@ -48,6 +59,7 @@ public:
   StartApplication () override
   {
     m_instance.reset (new vanet::VndnRsu (m_traci));
+    m_instance->setRsuForwardStrategy (m_forwardStrategy);
     m_instance->Start ();
   }
 
@@ -67,6 +79,8 @@ public:
 private:
   std::unique_ptr<vanet::VndnRsu> m_instance; ///< RSU 核心逻辑实例
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
+  vanet::RsuForwardStrategy m_forwardStrategy =
+      vanet::RsuForwardStrategy_NoForward;
 };
 
 } // namespace ns3

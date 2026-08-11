@@ -25,6 +25,7 @@
 #include "ns3/vndn-pcap-writer.h"
 #include "ns3/point-to-point-module.h"  // pcapwrite
 #include "ns3/vndn-rsu-app.h"
+#include "ns3/vndn-rsu-strategy.h"
 #include "ns3/vndn-obu-app.h"
 #include "ns3/vndn-router-app.h"
 #include "ns3/log.h"
@@ -58,12 +59,16 @@ int main(int argc,char *argv[]){
 
     const uint32_t nVehicles = VndnUtilsHelper::GetVehicleCount(VndnUtilsHelper::ndn4ivc_traces_folder,scenario_name,scenario_file);
     uint32_t NdnInterval = 1;//ms
-    uint32_t simTime = 200;//s
+    uint32_t simTime = 80;//s
     uint32_t nRSUs = 2;  //路边单元数量
     bool enPcap = false;
     bool enLog = true;
     bool enSumoGui = false;
     bool enDataSave = true;
+    vanet::CacheStrategy cacheStrategy = vanet::CacheStrategy_Participate;
+    vanet::HandoverStrategy handoverStrategy = vanet::HandoverStrategy_Immediate;
+    vanet::RsuForwardStrategy rsuForwardStrategy =
+        vanet::RsuForwardStrategy_VTDF; // 回程补救策略
     bool handoverFrequencyBoost = false;
     double obuFrequency = 40.0;
     double handoverFrequencyMultiplier = 4.0;
@@ -121,6 +126,31 @@ int main(int argc,char *argv[]){
             {
               std::cerr << "Warning: failed to create AI training directory: " << aiTrainingTagDir
                         << std::endl;
+            }
+
+          const char *cacheStrategyName =
+              cacheStrategy == vanet::CacheStrategy_Participate ? "Participate" : "None";
+          const char *handoverStrategyName =
+              handoverStrategy == vanet::HandoverStrategy_Immediate
+                  ? "Immediate"
+                  : "AntiPingPong";
+          const char *rsuForwardStrategyName = "NoForward";
+          if (rsuForwardStrategy == vanet::RsuForwardStrategy_VTDF)
+            rsuForwardStrategyName = "VTDF";
+          else if (rsuForwardStrategy == vanet::RsuForwardStrategy_RealTimeVtdf)
+            rsuForwardStrategyName = "RealTimeVTDF";
+
+          std::ostringstream obuFrequencyValue;
+          obuFrequencyValue << obuFrequency;
+          std::vector<std::pair<std::string, std::string>> simulationParameters = {
+              {"CacheStrategy", cacheStrategyName},
+              {"HandoverStrategy", handoverStrategyName},
+              {"obuFrequency", obuFrequencyValue.str ()},
+              {"RsuForwardStrategy", rsuForwardStrategyName}};
+          if (!VndnUtilsHelper::SaveSimulationConfig (outputDir, simulationParameters))
+            {
+              std::cerr << "Warning: failed to create simulation config file: "
+                        << outputDir << "simulation-config.txt" << std::endl;
             }
         }
         std::cout << "Log and data Output directory: " << outputDir << std::endl;
@@ -217,8 +247,8 @@ int main(int argc,char *argv[]){
         ndnApp->SetAttribute("HandoverFrequencyMultiplier",ns3::DoubleValue(handoverFrequencyMultiplier));
         ndnApp->SetAttribute("EnableDataSave",ns3::BooleanValue(enDataSave));
         ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));
-        ndnApp->SetAttribute("CacheStrategy",(ns3::EnumValue)(vanet::CacheStrategy::CacheStrategy_Participate));
-        ndnApp->SetAttribute("HandoverStrategy",(ns3::EnumValue)(vanet::HandoverStrategy::HandoverStrategy_Immediate));
+        ndnApp->SetAttribute("CacheStrategy",ns3::EnumValue(cacheStrategy));
+        ndnApp->SetAttribute("HandoverStrategy",ns3::EnumValue(handoverStrategy));
         // ndnApp->SetAttribute("SaveDic",ns3::StringValue(aiTrainingTagDir));
         // ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));
         // ndnApp->SetAttribute("ExtendData",ns3::BooleanValue(ObuExtendData));
@@ -249,7 +279,7 @@ int main(int argc,char *argv[]){
     ns3::ApplicationContainer  itsRsuNodes;
     ns3::ndn::AppHelper rsuApp("VndnRsuApp");
     rsuApp.SetAttribute("SumoClient",(ns3::PointerValue)(sumoClient));
-    // rsuApp.SetAttribute("RsuForwardStrategy",ns3::EnumValue(strategy));
+    rsuApp.SetAttribute("RsuForwardStrategy",ns3::EnumValue(rsuForwardStrategy));
     // rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(OpengymPort));/////////////////////这个设置神经网络
 
     ns3::Ptr<ns3::MobilityModel> rsuNode0 = nodePool.Get(0) ->GetObject<ns3::MobilityModel>();

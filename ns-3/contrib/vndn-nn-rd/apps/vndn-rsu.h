@@ -18,6 +18,7 @@
 #include "ns3/ptr.h"
 #include "ns3/traci-client.h"
 #include "ns3/node-list.h"
+#include "vndn-rsu-strategy.h"
 
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/face.hpp>
@@ -63,6 +64,9 @@ public:
    */
   void
   Stop ();
+
+  void
+  setRsuForwardStrategy (RsuForwardStrategy strategy);
 
 private:
   /**
@@ -174,7 +178,39 @@ private:
   PushIdentityData (uint64_t faceId, uint32_t nodeId,
                     const std::string &role, const ndn::Name &name);
 
+  void
+  ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNodeId,
+                          uint64_t obuMac);
+
+  void
+  OnVehicleData (const ndn::Interest &interest, const ndn::Data &data);
+
+  void
+  SendDataToVehicle (const ndn::Data &data, uint32_t obuNodeId, uint64_t fallbackMac);
+
+  void
+  QueryVehicleLocation (uint32_t obuNodeId);
+
+  void
+  ForwardDataToRsu (uint32_t targetRsuId, uint32_t obuNodeId,
+                    const ndn::Data &data);
+
+  void
+  OnRsuRelayData (const ndn::Data &data);
+
+  void
+  SendRelayData (const ndn::Name &name, const uint8_t *content, size_t contentSize);
+
+  uint64_t
+  ResolveRouterFace () const;
+
 private:
+  struct PendingVehicleRequest
+  {
+    uint32_t obuNodeId = 0;
+    uint64_t obuMac = 0;
+  };
+
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
   ns3::Ptr<ns3::TraciClient> m_traci;        ///< SUMO 交通数据客户端
@@ -188,6 +224,11 @@ private:
   std::set<uint32_t> m_seenInfrastructureNodes; ///< 已传播的身份公告
   ns3::EventId m_p2pHandshakeEvent;          ///< 启动阶段握手事件
   uint32_t m_p2pHandshakeRound = 0;           ///< 当前握手轮次
+  RsuForwardStrategy m_forwardStrategy = RsuForwardStrategy_NoForward;
+  uint64_t m_relaySequence = 0;
+  std::map<ndn::Name, PendingVehicleRequest> m_pendingVehicleRequests;
+  std::map<uint32_t, std::vector<std::shared_ptr<ndn::Data>>> m_waitingForwardData;
+  std::map<uint32_t, uint32_t> m_resolvedVehicleRsu;
 
   // 同步信号广播相关成员
   ndn::scheduler::EventId m_sendSyncSignal;  ///< 同步信号发送定时器
@@ -205,6 +246,10 @@ private:
   std::map<std::string, std::set<int64_t>> m_csToVehicles;
   /// 车辆节点ID -> 最近一次回复时间戳（毫秒）
   std::map<int64_t, uint64_t> m_vehicleLastReplyMs;
+  /// 车辆节点ID -> 最后一次 hello 回复中的无线 MAC
+  std::map<int64_t, uint64_t> m_vehicleMac;
+  /// 车辆节点ID -> 最后一次 hello 上报的次优 RSU（超时后仍保留）
+  std::map<int64_t, int64_t> m_vehicleNextRsu;
   /// 车辆超时时间（毫秒），超过该时间未回复则视为离开
   uint32_t m_vehicleTimeoutMs;
 };

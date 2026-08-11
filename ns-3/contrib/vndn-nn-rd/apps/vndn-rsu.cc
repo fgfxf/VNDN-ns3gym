@@ -12,6 +12,8 @@
 
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
+#include "ns3/ndnSIM/NFD/daemon/fw/forwarder.hpp"
+#include "ns3/ndnSIM/NFD/daemon/table/pit.hpp"
 #include "ns3/assert.h"
 #include "ns3/simulator.h"
 #include <ndn-cxx/lp/tags.hpp>
@@ -20,6 +22,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <tuple>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnRsu");
 
@@ -127,7 +130,31 @@ VndnRsu::OnInterest (const ndn::Interest &interest)
       OnP2pHandshakeInterest (interest);
       return;
     }
-  // TODO: 后续在此实现收到兴趣包后的具体响应逻辑
+
+  // RSU app 代理发出的同名 Interest 可能再次匹配本应用的根前缀。
+  // pending 表中已存在该名称时，说明它已经被代理，不得再次代理。
+  if (m_pendingVehicleRequests.count (interest.getName ()) != 0)
+    {
+      NS_LOG_DEBUG ("RSU 忽略已代理的 Interest: " << interest.getName ());
+      return;
+    }
+
+  // 默认策略不改变 NDN 原生的 Interest/Data 反向路径。
+  if (m_forwardStrategy == RsuForwardStrategy_NoForward)
+    {
+      NS_LOG_DEBUG ("RSU 收到兴趣包: " << interest.getName ());
+      return;
+    }
+
+  auto incomingFace = interest.getTag<ndn::lp::IncomingFaceIdTag> ();
+  auto vndnTag = interest.getTag<vanet::lp::VndnTag> ();
+  if (incomingFace == nullptr || *incomingFace != m_wirelessFaceId || vndnTag == nullptr)
+    {
+      NS_LOG_DEBUG ("RSU 忽略非车辆无线 Interest: " << interest.getName ());
+      return;
+    }
+
+  ForwardVehicleInterest (interest, vndnTag->getSenderNodeId (), vndnTag->getSenderMac ());
   NS_LOG_DEBUG ("RSU 收到兴趣包: " << interest.getName ());
 }
 
@@ -169,12 +196,19 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
   if (vndnTag != nullptr)
     {
       obuNodeId = static_cast<int64_t> (vndnTag->getSenderNodeId ());
+      m_vehicleMac[obuNodeId] = vndnTag->getSenderMac ();
     }
+
+  if (obuNodeId < 0)
+    return;
 
   // 更新车辆最后回复时间戳
   ns3::Time currentTime (ns3::Simulator::Now ());
   uint64_t currentTimeMs = currentTime.ToInteger (ns3::Time::MS);
   m_vehicleLastReplyMs[obuNodeId] = currentTimeMs;
+  m_vehicleNextRsu[obuNodeId] =
+      j.value ("NextRsu", static_cast<int64_t> (m_thisNode->GetId ()));
+  m_resolvedVehicleRsu.erase (static_cast<uint32_t> (obuNodeId));
 
   NS_LOG_DEBUG ("RSU 收到车辆信息: OBU=" << obuNodeId
                 << " X=" << j.value ("LocateX", 0.0)
@@ -249,14 +283,14 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
 void
 VndnRsu::OnTimeout (const ndn::Interest &interest)
 {
-  // TODO: 后续在此实现兴趣包超时后的处理逻辑
+  m_pendingVehicleRequests.erase (interest.getName ());
   NS_LOG_DEBUG ("RSU 兴趣包超时: " << interest.getName ());
 }
 
 void
 VndnRsu::OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack)
 {
-  // TODO: 后续在此实现收到 NACK 后的处理逻辑
+  m_pendingVehicleRequests.erase (interest.getName ());
   NS_LOG_DEBUG ("RSU 收到 NACK, reason: " << nack.getReason ());
 }
 
@@ -291,6 +325,8 @@ VndnRsu::SendSyncSignal ()
             }
           NS_LOG_DEBUG ("RSU 车辆超时离开: OBU=" << obuNodeId);
           it = m_vehicleLastReplyMs.erase (it);
+          if (m_forwardStrategy == RsuForwardStrategy_VTDF)
+            QueryVehicleLocation (static_cast<uint32_t> (obuNodeId));
         }
       else
         {
@@ -369,6 +405,13 @@ VndnRsu::PushIdentityData (uint64_t faceId, uint32_t nodeId,
 void
 VndnRsu::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
 {
+  static const ndn::Name relayPrefix ("/vndn/control/rsu-relay");
+  if (relayPrefix.isPrefixOf (data.getName ()))
+    {
+      OnRsuRelayData (data);
+      return;
+    }
+
   static const ndn::Name handshakePrefix ("/vndn/control/p2p-handshake");
   if (!handshakePrefix.isPrefixOf (data.getName ()))
     return;
@@ -468,6 +511,255 @@ void
 VndnRsu::OnP2pHandshakeTimeout (const ndn::Interest &interest)
 {
   NS_LOG_DEBUG ("RSU 握手超时: " << interest.getName ());
+}
+
+void
+VndnRsu::setRsuForwardStrategy (RsuForwardStrategy strategy)
+{
+  m_forwardStrategy = strategy;
+}
+
+uint64_t
+VndnRsu::ResolveRouterFace () const
+{
+  for (const auto &entry : m_infrastructureRoles)
+    {
+      if (entry.second == "router")
+        {
+          auto route = m_infrastructureRoutes.find (entry.first);
+          if (route != m_infrastructureRoutes.end ())
+            return route->second;
+        }
+    }
+  return m_p2pFaceIds.empty () ? 0 : m_p2pFaceIds.front ();
+}
+
+void
+VndnRsu::ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNodeId,
+                                 uint64_t obuMac)
+{
+  const uint64_t routerFace = ResolveRouterFace ();
+  if (routerFace == 0)
+    {
+      NS_LOG_WARN ("RSU " << m_thisNode->GetId ()
+                           << " 找不到 Router 接口，无法代理 "
+                           << interest.getName ());
+      return;
+    }
+
+  PendingVehicleRequest request;
+  request.obuNodeId = obuNodeId;
+  request.obuMac = obuMac;
+  m_pendingVehicleRequests[interest.getName ()] = request;
+
+  // 移除原无线 Interest 建立的 PIT，回程 Data 先交由 RSU app 决策。
+  auto ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+  auto &pit = ndnL3->getForwarder ()->getPit ();
+  auto pitEntry = pit.find (interest);
+  if (pitEntry != nullptr)
+    {
+      pitEntry->expiryTimer.cancel ();
+      pit.erase (pitEntry.get ());
+    }
+
+  ndn::Interest upstream (interest);
+  upstream.refreshNonce ();
+  // IncomingFaceId 是接收原无线 Interest 时的本地标签，不能带入新的
+  // 代理 Interest，否则再次投递给本应用时会被误认为无线入包。
+  upstream.removeTag<ndn::lp::IncomingFaceIdTag> ();
+  upstream.removeTag<vanet::lp::VndnTag> ();
+  upstream.setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (routerFace));
+  m_face.expressInterest (
+      upstream, std::bind (&VndnRsu::OnVehicleData, this, _1, _2),
+      std::bind (&VndnRsu::OnNack, this, _1, _2),
+      std::bind (&VndnRsu::OnTimeout, this, _1));
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 代理 OBU " << obuNodeId
+                       << " 的 Interest: " << interest.getName ());
+}
+
+void
+VndnRsu::OnVehicleData (const ndn::Interest &interest, const ndn::Data &data)
+{
+  auto pending = m_pendingVehicleRequests.find (interest.getName ());
+  if (pending == m_pendingVehicleRequests.end ())
+    return;
+
+  const PendingVehicleRequest request = pending->second;
+  m_pendingVehicleRequests.erase (pending);
+  if (m_vehicleLastReplyMs.count (request.obuNodeId) != 0)
+    {
+      SendDataToVehicle (data, request.obuNodeId, request.obuMac);
+      return;
+    }
+
+  if (m_forwardStrategy == RsuForwardStrategy_VTDF)
+    {
+      auto resolved = m_resolvedVehicleRsu.find (request.obuNodeId);
+      if (resolved != m_resolvedVehicleRsu.end ())
+        {
+          ForwardDataToRsu (resolved->second, request.obuNodeId, data);
+        }
+      else
+        {
+          m_waitingForwardData[request.obuNodeId].push_back (
+              std::make_shared<ndn::Data> (data));
+          QueryVehicleLocation (request.obuNodeId);
+        }
+      return;
+    }
+
+  if (m_forwardStrategy == RsuForwardStrategy_RealTimeVtdf)
+    {
+      auto predicted = m_vehicleNextRsu.find (request.obuNodeId);
+      if (predicted != m_vehicleNextRsu.end () && predicted->second >= 0 &&
+          static_cast<uint32_t> (predicted->second) != m_thisNode->GetId ())
+        {
+          ForwardDataToRsu (static_cast<uint32_t> (predicted->second),
+                            request.obuNodeId, data);
+        }
+      else
+        {
+          NS_LOG_WARN ("RSU " << m_thisNode->GetId () << " 没有 OBU "
+                               << request.obuNodeId << " 的有效 NextRsu，放弃补救 "
+                               << data.getName ());
+        }
+    }
+}
+
+void
+VndnRsu::SendDataToVehicle (const ndn::Data &data, uint32_t obuNodeId,
+                            uint64_t fallbackMac)
+{
+  uint64_t targetMac = fallbackMac;
+  auto mac = m_vehicleMac.find (obuNodeId);
+  if (mac != m_vehicleMac.end ())
+    targetMac = mac->second;
+  if (targetMac == 0)
+    {
+      NS_LOG_WARN ("RSU " << m_thisNode->GetId () << " 缺少 OBU " << obuNodeId
+                           << " 的 MAC，无法无线回传 " << data.getName ());
+      return;
+    }
+
+  auto response = std::make_shared<ndn::Data> (data);
+  response->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (m_wirelessFaceId));
+  response->setTag (std::make_shared<vanet::lp::VndnTag> (
+      m_thisNode->GetId (), m_wirelessMac, targetMac));
+  response->wireEncode ();
+  m_face.put (*response);
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 向 OBU " << obuNodeId
+                       << " 回传 Data: " << data.getName ());
+}
+
+void
+VndnRsu::SendRelayData (const ndn::Name &name, const uint8_t *content,
+                        size_t contentSize)
+{
+  const uint64_t routerFace = ResolveRouterFace ();
+  if (routerFace == 0)
+    return;
+  auto relay = std::make_shared<ndn::Data> (name);
+  relay->setContent (content, contentSize);
+  relay->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (routerFace));
+  ndn::Signature signature;
+  ndn::SignatureInfo signatureInfo (static_cast<ndn::tlv::SignatureTypeValue> (255));
+  signature.setInfo (signatureInfo);
+  signature.setValue (ndn::makeNonNegativeIntegerBlock (ndn::tlv::SignatureValue, 0));
+  relay->setSignature (signature);
+  relay->wireEncode ();
+  m_face.put (*relay);
+}
+
+void
+VndnRsu::QueryVehicleLocation (uint32_t obuNodeId)
+{
+  m_resolvedVehicleRsu.erase (obuNodeId);
+  for (const auto &entry : m_infrastructureRoles)
+    {
+      if (entry.second != "rsu" || entry.first == m_thisNode->GetId ())
+        continue;
+      ndn::Name name ("/vndn/control/rsu-relay/find");
+      name.appendNumber (entry.first)
+          .appendNumber (m_thisNode->GetId ())
+          .appendNumber (obuNodeId)
+          .appendNumber (++m_relaySequence);
+      SendRelayData (name, nullptr, 0);
+      NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 经 Router 询问 RSU "
+                           << entry.first << ": OBU " << obuNodeId << " 是否驻留");
+    }
+}
+
+void
+VndnRsu::ForwardDataToRsu (uint32_t targetRsuId, uint32_t obuNodeId,
+                           const ndn::Data &data)
+{
+  ndn::Name name ("/vndn/control/rsu-relay/forward");
+  name.appendNumber (targetRsuId)
+      .appendNumber (m_thisNode->GetId ())
+      .appendNumber (obuNodeId)
+      .appendNumber (++m_relaySequence);
+  const ndn::Block &wire = data.wireEncode ();
+  SendRelayData (name, wire.wire (), wire.size ());
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 经 Router 向 RSU " << targetRsuId
+                       << " 补救 Data: " << data.getName () << " OBU=" << obuNodeId);
+}
+
+void
+VndnRsu::OnRsuRelayData (const ndn::Data &data)
+{
+  const ndn::Name &name = data.getName ();
+  if (name.size () < 8)
+    return;
+  const std::string action = name.get (3).toUri ();
+  const uint32_t targetRsuId = static_cast<uint32_t> (name.get (4).toNumber ());
+  const uint32_t sourceRsuId = static_cast<uint32_t> (name.get (5).toNumber ());
+  const uint32_t obuNodeId = static_cast<uint32_t> (name.get (6).toNumber ());
+  if (targetRsuId != m_thisNode->GetId ())
+    return;
+
+  if (action == "find")
+    {
+      if (m_vehicleLastReplyMs.count (obuNodeId) == 0)
+        return;
+      ndn::Name reply ("/vndn/control/rsu-relay/found");
+      reply.appendNumber (sourceRsuId)
+          .appendNumber (m_thisNode->GetId ())
+          .appendNumber (obuNodeId)
+          .appendNumber (++m_relaySequence);
+      SendRelayData (reply, nullptr, 0);
+      NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 回复：OBU " << obuNodeId
+                           << " 当前在本基站");
+      return;
+    }
+
+  if (action == "found")
+    {
+      m_resolvedVehicleRsu[obuNodeId] = sourceRsuId;
+      auto waiting = m_waitingForwardData.find (obuNodeId);
+      if (waiting != m_waitingForwardData.end ())
+        {
+          for (const auto &packet : waiting->second)
+            ForwardDataToRsu (sourceRsuId, obuNodeId, *packet);
+          m_waitingForwardData.erase (waiting);
+        }
+      return;
+    }
+
+  if (action == "forward")
+    {
+      if (m_vehicleLastReplyMs.count (obuNodeId) == 0)
+        {
+          NS_LOG_WARN ("RSU " << m_thisNode->GetId () << " 收到补救 Data，但 OBU "
+                               << obuNodeId << " 已不在本基站");
+          return;
+        }
+      const auto &content = data.getContent ();
+      auto parsed = ndn::Block::fromBuffer (content.value (), content.value_size ());
+      if (!std::get<0> (parsed))
+        return;
+      ndn::Data original (std::get<1> (parsed));
+      SendDataToVehicle (original, obuNodeId, 0);
+    }
 }
 
 void

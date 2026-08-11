@@ -210,6 +210,13 @@ VndnRouter::PushIdentityData (uint64_t faceId, uint32_t nodeId,
 void
 VndnRouter::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
 {
+  static const ndn::Name relayPrefix ("/vndn/control/rsu-relay");
+  if (relayPrefix.isPrefixOf (data.getName ()))
+    {
+      RelayRsuControlData (data);
+      return;
+    }
+
   static const ndn::Name handshakePrefix ("/vndn/control/p2p-handshake");
   if (!handshakePrefix.isPrefixOf (data.getName ()))
     return;
@@ -239,6 +246,40 @@ VndnRouter::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data
       if (faceId != inFaceId)
         PushIdentityData (faceId, nodeId, role, data.getName ());
     }
+}
+
+void
+VndnRouter::RelayRsuControlData (const ndn::Data &data)
+{
+  const ndn::Name &name = data.getName ();
+  if (name.size () < 8)
+    return;
+
+  const uint32_t targetRsuId = static_cast<uint32_t> (name.get (4).toNumber ());
+  auto route = m_infrastructureRoutes.find (targetRsuId);
+  if (route == m_infrastructureRoutes.end () ||
+      m_infrastructureRoles[targetRsuId] != "rsu")
+    {
+      NS_LOG_WARN ("Router 找不到目标 RSU " << targetRsuId
+                   << "，丢弃控制 Data " << name);
+      return;
+    }
+
+  auto incomingFace = data.getTag<ndn::lp::IncomingFaceIdTag> ();
+  if (incomingFace != nullptr && *incomingFace == route->second)
+    {
+      NS_LOG_WARN ("Router 拒绝将控制 Data 发回入接口: " << name);
+      return;
+    }
+
+  auto forwarded = std::make_shared<ndn::Data> (data);
+  forwarded->setTag (
+      std::make_shared<ndn::lp::NextHopFaceIdTag> (route->second));
+  forwarded->wireEncode ();
+  m_face.put (*forwarded);
+  NS_LOG_INFO ("Router 中继 RSU 控制 Data: " << name
+               << " targetRsu=" << targetRsuId
+               << " outFaceId=" << route->second);
 }
 
 void

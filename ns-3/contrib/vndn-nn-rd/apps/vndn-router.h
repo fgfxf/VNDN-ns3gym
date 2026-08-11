@@ -78,6 +78,9 @@ private:
   OnP2pHandshakeDataPush (const ndn::Interest &interest, const ndn::Data &data);
 
   void
+  RelayRsuControlData (const ndn::Data &data);
+
+  void
   PushIdentityData (uint64_t faceId, uint32_t nodeId,
                     const std::string &role, const ndn::Name &name);
 
