@@ -92,6 +92,15 @@ public:
   void
   setCacheStrategy (CacheStrategy strategy);
 
+  void
+  setFrequency (double frequency);
+
+  void
+  setHandoverFrequencyBoost (bool enabled, double multiplier);
+
+  void
+  setDataSave (bool enabled, const std::string &file);
+
 private:
   /**
    * \brief 遍历节点上的 NetDevice，区分无线接口并注册前缀。
@@ -181,6 +190,28 @@ private:
   void
   SendPacket ();
 
+  struct RequestRecord
+  {
+    uint32_t sequence = 0;
+    uint64_t sendTimeMs = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double speed = 0.0;
+    double acceleration = 0.0;
+    double angle = 0.0;
+    int laneIndex = 0;
+    int64_t sendRsuId = -1;
+    size_t neighborRsuCount = 0;
+    double frequencyHz = 0.0;
+    uint64_t targetMac = 0;
+  };
+
+  void
+  SaveRequestResult (const ndn::Interest &interest, const std::string &status);
+
+  std::string
+  GetPerVehicleSaveFile (const std::string &suffix) const;
+
 private:
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
   ndn::Scheduler m_scheduler;                ///< NDN 定时器
@@ -192,8 +223,16 @@ private:
 
   // 周期性请求相关成员
   double m_frequency = 40.0;                 ///< 请求频率（Hz），即每秒发送兴趣包次数
+  double m_effectiveFrequency = 40.0;        ///< 当前调度实际使用的频率
+  bool m_handoverFrequencyBoost = false;     ///< 是否在多基站交接区域提高频率
+  double m_handoverFrequencyMultiplier = 4.0; ///< 交接区域频率倍率
   ns3::EventId m_requestScheduler;           ///< 请求发送定时器
   uint32_t m_seq = 0;                        ///< 顺序递增的兴趣包序号
+  bool m_enableDataSave = false;              ///< 是否保存逐请求仿真数据
+  std::string m_saveFile;                     ///< 逐请求 CSV 文件路径
+  std::map<ndn::Name, RequestRecord> m_requestRecords; ///< 尚未结束的请求
+  uint32_t m_sendInterestCount = 0;        ///< 总计发送 Interest 数量
+  uint32_t m_timeoutCount = 0;             ///< 超时丢失数量
   ns3::Address m_wirelessAddress;            ///< 无线接口地址
   uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）
   uint64_t m_broadcastMac = 0;               ///< 广播地址 ff:ff:ff:ff:ff:ff 的 uint64 形式

@@ -14,6 +14,9 @@
 #include "ns3/application.h"
 #include "ns3/traci-client.h"
 #include "ns3/enum.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
 
 namespace ns3 {
 
@@ -50,7 +53,29 @@ public:
                            ns3::EnumValue (vanet::CacheStrategy_None),
                            ns3::MakeEnumAccessor (&VndnObuApp::m_cacheStrategy),
                            ns3::MakeEnumChecker (vanet::CacheStrategy_None, "None",
-                                                 vanet::CacheStrategy_Participate, "Participate"));
+                                                 vanet::CacheStrategy_Participate, "Participate"))
+            .AddAttribute ("Frequency", "Normal Interest request frequency in Hz",
+                           ns3::DoubleValue (40.0),
+                           ns3::MakeDoubleAccessor (&VndnObuApp::m_frequency),
+                           ns3::MakeDoubleChecker<double> (0.0))
+            .AddAttribute ("HandoverFrequencyBoost",
+                           "Increase request frequency when at least two RSUs are visible",
+                           ns3::BooleanValue (false),
+                           ns3::MakeBooleanAccessor (&VndnObuApp::m_handoverFrequencyBoost),
+                           ns3::MakeBooleanChecker ())
+            .AddAttribute ("HandoverFrequencyMultiplier",
+                           "Frequency multiplier in a handover overlap area",
+                           ns3::DoubleValue (4.0),
+                           ns3::MakeDoubleAccessor (&VndnObuApp::m_handoverFrequencyMultiplier),
+                           ns3::MakeDoubleChecker<double> (1.0))
+            .AddAttribute ("EnableDataSave", "Save per-request OBU simulation data",
+                           ns3::BooleanValue (false),
+                           ns3::MakeBooleanAccessor (&VndnObuApp::m_enableDataSave),
+                           ns3::MakeBooleanChecker ())
+            .AddAttribute ("SaveFile", "Per-request CSV output path",
+                           ns3::StringValue (""),
+                           ns3::MakeStringAccessor (&VndnObuApp::m_saveFile),
+                           ns3::MakeStringChecker ());
     return tid;
   }
 
@@ -63,6 +88,10 @@ public:
     m_instance.reset (new vanet::VndnObu (m_traci));
     m_instance->setHandoverStrategy (m_handoverStrategy);
     m_instance->setCacheStrategy (m_cacheStrategy);
+    m_instance->setFrequency (m_frequency);
+    m_instance->setHandoverFrequencyBoost (m_handoverFrequencyBoost,
+                                            m_handoverFrequencyMultiplier);
+    m_instance->setDataSave (m_enableDataSave, m_saveFile);
     m_instance->Start ();
   }
 
@@ -84,6 +113,11 @@ private:
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
   vanet::HandoverStrategy m_handoverStrategy = vanet::HandoverStrategy_AntiPingPong; ///< 切换策略
   vanet::CacheStrategy m_cacheStrategy = vanet::CacheStrategy_None; ///< 缓存响应策略
+  double m_frequency = 40.0;
+  bool m_handoverFrequencyBoost = false;
+  double m_handoverFrequencyMultiplier = 4.0;
+  bool m_enableDataSave = false;
+  std::string m_saveFile;
 };
 
 } // namespace ns3

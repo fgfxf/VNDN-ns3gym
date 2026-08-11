@@ -18,6 +18,7 @@
 #include <sstream>
 #include <ctime>
 #include <iomanip>
+#include <memory>
 #include <sys/stat.h>
 
 #include "ns3/vndn-utils-helper.h"
@@ -48,10 +49,8 @@ int main(int argc,char *argv[]){
     std::string l3RateTracerFile = outputDir + "l3-rate-tracer.txt";      // L3速率追踪
     std::string pcapFile         = outputDir + "ndn-trace";               // PCAP抓包前缀（ns3自动追加-节点号.pcap）
     std::string pcapWriterFile   = outputDir + "ndn-trace.pcap";          // PcapWriter输出文件（p2p链路抓包）
-    std::string appDelayFile     = outputDir + "app-delay-tracer.txt";    // 应用层时延追踪
     std::string csTracerFile     = outputDir + "cs-tracer.txt";           // 内容存储命中率追踪
     std::string netAnimFile      = outputDir + "netanim-animation.xml";   // NetAnim动画
-    std::string sumoLogFile      = outputDir + "sumo.log";                // SUMO日志
     std::string aiTrainingTagDir = outputDir + "ai-training/";            // AI训练标签目录
     std::string aiTrainingTagFile= aiTrainingTagDir + "training-tag.csv"; // AI训练标签文件
    
@@ -64,6 +63,10 @@ int main(int argc,char *argv[]){
     bool enPcap = false;
     bool enLog = true;
     bool enSumoGui = false;
+    bool enDataSave = true;
+    bool handoverFrequencyBoost = false;
+    double obuFrequency = 40.0;
+    double handoverFrequencyMultiplier = 4.0;
     double startX = 300.0;//start node positon 刚开始没有使用的节点的位置
     double startY = 300.0;
     uint32_t usedNodeCounter = 0;//移动节点池   使用过的节点计数
@@ -78,20 +81,31 @@ int main(int argc,char *argv[]){
     cmd.AddValue ("pcap", "Enable PCAP", enPcap);
     cmd.AddValue ("log", "Enable Log", enLog);
     cmd.AddValue ("sumo-gui", "Enable SUMO with graphical user interface", enSumoGui);
+    cmd.AddValue ("save-data", "Enable simulation data output", enDataSave);
+    cmd.AddValue ("handover-frequency-boost",
+                  "Increase OBU request frequency when at least two RSUs are visible",
+                  handoverFrequencyBoost);
+    cmd.AddValue ("obu-frequency", "Normal OBU Interest frequency in Hz", obuFrequency);
+    cmd.AddValue ("handover-frequency-multiplier",
+                  "OBU request frequency multiplier in handover areas",
+                  handoverFrequencyMultiplier);
     cmd.Parse (argc, argv);
 
-    if (enLog)
+    if (enLog || enDataSave || enPcap)
       {
-        // 记录 circle-main、OBU、RSU 三个组件的全部级别日志
-        std::vector<std::string> componentsLogLevelAll;
-        componentsLogLevelAll.push_back ("vndn-circle-main");
-        componentsLogLevelAll.push_back ("ndn.VndnObu");
-        componentsLogLevelAll.push_back ("ndn.VndnRsu");
-        componentsLogLevelAll.push_back ("ndn.VndnRouter");
-        for (auto const &c : componentsLogLevelAll)
+        if (enLog)
           {
-            ns3::LogComponentEnable (c.c_str (), ns3::LOG_LEVEL_ALL);
-            ns3::LogComponentEnable (c.c_str (), ns3::LOG_PREFIX_ALL);
+            // 记录 circle-main、OBU、RSU、Router 四个组件的全部级别日志
+            std::vector<std::string> componentsLogLevelAll;
+            componentsLogLevelAll.push_back ("vndn-circle-main");
+            componentsLogLevelAll.push_back ("ndn.VndnObu");
+            componentsLogLevelAll.push_back ("ndn.VndnRsu");
+            componentsLogLevelAll.push_back ("ndn.VndnRouter");
+            for (auto const &c : componentsLogLevelAll)
+              {
+                ns3::LogComponentEnable (c.c_str (), ns3::LOG_LEVEL_ALL);
+                ns3::LogComponentEnable (c.c_str (), ns3::LOG_PREFIX_ALL);
+              }
           }
 
         {
@@ -198,6 +212,11 @@ int main(int argc,char *argv[]){
         ns3::Ptr<ns3::VndnObuApp>  ndnApp = ns3::CreateObject<ns3::VndnObuApp>();
         // ndnApp->SetAttribute("Frequency",ns3::DoubleValue(40.0));//频率
         ndnApp->SetAttribute("SumoClient",(ns3::PointerValue)(sumoClient));
+        ndnApp->SetAttribute("Frequency",ns3::DoubleValue(obuFrequency));
+        ndnApp->SetAttribute("HandoverFrequencyBoost",ns3::BooleanValue(handoverFrequencyBoost));
+        ndnApp->SetAttribute("HandoverFrequencyMultiplier",ns3::DoubleValue(handoverFrequencyMultiplier));
+        ndnApp->SetAttribute("EnableDataSave",ns3::BooleanValue(enDataSave));
+        ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));
         ndnApp->SetAttribute("CacheStrategy",(ns3::EnumValue)(vanet::CacheStrategy::CacheStrategy_Participate));
         ndnApp->SetAttribute("HandoverStrategy",(ns3::EnumValue)(vanet::HandoverStrategy::HandoverStrategy_Immediate));
         // ndnApp->SetAttribute("SaveDic",ns3::StringValue(aiTrainingTagDir));
@@ -275,18 +294,38 @@ int main(int argc,char *argv[]){
     ns3::Simulator::Schedule(ns3::Seconds(1.0),&VndnUtilsHelper::checkDisableNodes);//延迟移除被sumo移除的节点
 
     ///////////追踪，获取仿真数据
-    if (enPcap)
+    std::unique_ptr<ns3::AnimationInterface> animation;
+    std::unique_ptr<ns3::ndn::VndnPcapWriter> pcapWriter;
+    if (enDataSave)
       {
         ns3::ndn::L3RateTracer::InstallAll (l3RateTracerFile, ns3::Seconds (1.0));
-        ns3::ndn::VndnPcapWriter trace (pcapWriterFile);
+        ns3::ndn::CsTracer::InstallAll (csTracerFile, ns3::Seconds (1.0));
+        animation.reset (new ns3::AnimationInterface (netAnimFile));
+      }
+    if (enPcap)
+      {
+        pcapWriter.reset (new ns3::ndn::VndnPcapWriter (pcapWriterFile));
         ns3::Config::ConnectWithoutContext (
             "/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/MacTx",
-            ns3::MakeCallback (&ns3::ndn::VndnPcapWriter::TracePacket, &trace));
+            ns3::MakeCallback (&ns3::ndn::VndnPcapWriter::TracePacket, pcapWriter.get ()));
       }
 
     ns3::Simulator::Stop (ns3::Seconds (simTime));
     ns3::Simulator::Run();//正式运行
+    // SUMO 尚未移除、但在仿真结束时仍活跃的 OBU 也必须落盘最终统计。
+    for (uint32_t i = 0; i < nodePool.GetN (); ++i)
+      {
+        ns3::Ptr<ns3::Node> node = nodePool.Get (i);
+        for (uint32_t j = 0; j < node->GetNApplications (); ++j)
+          {
+            ns3::Ptr<ns3::VndnObuApp> obuApp =
+                ns3::DynamicCast<ns3::VndnObuApp> (node->GetApplication (j));
+            if (obuApp != nullptr)
+              {
+                obuApp->StopApplication ();
+              }
+          }
+      }
     ns3::Simulator::Destroy();
     return 0;
 }
-

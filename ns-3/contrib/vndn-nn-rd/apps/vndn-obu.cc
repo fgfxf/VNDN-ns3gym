@@ -19,7 +19,9 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include "../model/vndn-tag.hpp"
 
+#include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <map>
 
@@ -348,8 +350,8 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
 void
 VndnObu::OnData (const ndn::Interest &interest, const ndn::Data &data)
 {
-  // 收到数据包后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 收到数据包: " << data.getName ());
+  SaveRequestResult (interest, "DATA");
 }
 
 void
@@ -357,6 +359,8 @@ VndnObu::OnTimeout (const ndn::Interest &interest)
 {
   // 兴趣包超时后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 兴趣包超时: " << interest.getName ());
+  ++m_timeoutCount;
+  SaveRequestResult (interest, "TIMEOUT");
 }
 
 void
@@ -364,6 +368,7 @@ VndnObu::OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack)
 {
   // 收到 NACK 后不做额外处理，仅记录日志
   NS_LOG_DEBUG ("OBU 收到 NACK, reason: " << nack.getReason ());
+  SaveRequestResult (interest, "NACK");
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -375,8 +380,13 @@ VndnObu::ScheduleNextPacket ()
 {
   if (!m_active)
     return;
+  m_effectiveFrequency = m_frequency;
+  if (m_handoverFrequencyBoost && m_neighborBs.size () >= 2)
+    m_effectiveFrequency *= m_handoverFrequencyMultiplier;
+
   // 根据频率计算发送间隔（微秒），并加入少量随机抖动以避免同步风暴
-  ns3::Time reqTime = ns3::MicroSeconds (1000000 / m_frequency + rand () % 20000);
+  ns3::Time reqTime = ns3::MicroSeconds (
+      static_cast<uint64_t> (1000000.0 / m_effectiveFrequency) + rand () % 20000);
   m_requestScheduler = ns3::Simulator::Schedule (reqTime, &VndnObu::SendPacket, this);
 }
 
@@ -389,6 +399,7 @@ VndnObu::SendPacket ()
 
   // 构造兴趣包：前缀 /com/baidu + 递增序号，模拟用户请求不同内容
   m_seq++;
+  ++m_sendInterestCount;
   std::string userWatch = "/com/baidu/www/userid/" + std::to_string (m_thisNode->GetId ());
   std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> (userWatch);
   name->appendSequenceNumber (m_seq);
@@ -399,11 +410,47 @@ VndnObu::SendPacket ()
   interest->setCanBePrefix (true);
   interest->setMustBeFresh (false);
   interest->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (m_wirelessFaceId));
-  // 封装车联网元信息标签：发送者节点 ID、MAC、目标广播 MAC
+  // 封装车联网元信息标签。已驻留时将当前基站的无线 MAC 作为目标，
+  // NetDeviceTransport 会据此执行 Wi-Fi 定向发送；尚未驻留时退回广播。
+  uint64_t targetMac = m_broadcastMac;
+  auto currentBs = m_neighborBs.find (m_currentBsNodeId);
+  if (m_currentBsNodeId >= 0 && currentBs != m_neighborBs.end () &&
+      currentBs->second->senderMac != 0)
+    {
+      targetMac = currentBs->second->senderMac;
+    }
   auto vndnTag = std::make_shared<vanet::lp::VndnTag> (m_thisNode->GetId (),
                                                        m_wirelessMac,
-                                                       m_broadcastMac);
-  NS_LOG_INFO ("OBU 发送兴趣包: " << *name);
+                                                       targetMac);
+  interest->setTag (vndnTag);
+
+  if (m_enableDataSave && !m_saveFile.empty ())
+    {
+      RequestRecord record;
+      record.sequence = m_seq;
+      record.sendTimeMs = ns3::Simulator::Now ().GetMilliSeconds ();
+      record.sendRsuId = m_currentBsNodeId;
+      record.neighborRsuCount = m_neighborBs.size ();
+      record.frequencyHz = m_effectiveFrequency;
+      record.targetMac = targetMac;
+      if (m_traci != nullptr)
+        {
+          const std::string vehicleId = m_traci->GetVehicleId (m_thisNode);
+          libsumo::TraCIPosition pos = m_traci->TraCIAPI::vehicle.getPosition3D (vehicleId);
+          record.x = pos.x;
+          record.y = pos.y;
+          record.speed = m_traci->TraCIAPI::vehicle.getSpeed (vehicleId);
+          record.acceleration = m_traci->TraCIAPI::vehicle.getAcceleration (vehicleId);
+          record.angle = m_traci->TraCIAPI::vehicle.getAngle (vehicleId);
+          record.laneIndex = m_traci->TraCIAPI::vehicle.getLaneIndex (vehicleId);
+        }
+      m_requestRecords[*name] = record;
+    }
+  NS_LOG_INFO ("OBU 发送兴趣包: " << *name
+               << " 驻留基站=" << m_currentBsNodeId
+               << " 邻居基站数=" << m_neighborBs.size ()
+               << " frequency=" << m_effectiveFrequency << "Hz"
+               << " targetMac=" << targetMac);
   m_face.expressInterest (*interest,
                           std::bind (&VndnObu::OnData, this, _1, _2),
                           std::bind (&VndnObu::OnNack, this, _1, _2),
@@ -430,6 +477,26 @@ VndnObu::Stop ()
   m_requestScheduler.Cancel ();
   m_face.shutdown ();
   m_active = false;
+  while (!m_requestRecords.empty ())
+    {
+      ndn::Interest interest (m_requestRecords.begin ()->first);
+      SaveRequestResult (interest, "STOPPED");
+    }
+  if (m_enableDataSave && !m_saveFile.empty () && m_sendInterestCount > 0)
+    {
+      std::ofstream stats (GetPerVehicleSaveFile ("-stats.txt"),
+                           std::ios::out | std::ios::trunc);
+      if (stats.is_open ())
+        {
+          stats << "总计发送： " << m_sendInterestCount
+                << "      丢失：     " << m_timeoutCount;
+        }
+      else
+        {
+          NS_LOG_WARN ("OBU 无法写入统计文件: "
+                       << GetPerVehicleSaveFile ("-stats.txt"));
+        }
+    }
 }
 
 void
@@ -442,6 +509,96 @@ void
 VndnObu::setCacheStrategy (CacheStrategy strategy)
 {
   m_cacheStrategy = strategy;
+}
+
+void
+VndnObu::setFrequency (double frequency)
+{
+  if (frequency > 0.0)
+    {
+      m_frequency = frequency;
+      m_effectiveFrequency = frequency;
+    }
+}
+
+void
+VndnObu::setHandoverFrequencyBoost (bool enabled, double multiplier)
+{
+  m_handoverFrequencyBoost = enabled;
+  m_handoverFrequencyMultiplier = std::max (1.0, multiplier);
+}
+
+void
+VndnObu::setDataSave (bool enabled, const std::string &file)
+{
+  m_enableDataSave = enabled;
+  m_saveFile = file;
+  if (m_enableDataSave && !m_saveFile.empty ())
+    {
+      // 每辆车启动时清空本车上一次同名输出，避免多次仿真的数据串在一起。
+      std::ofstream training (GetPerVehicleSaveFile (".csv"),
+                              std::ios::out | std::ios::trunc);
+      std::ofstream rtt (GetPerVehicleSaveFile ("-rtt.csv"),
+                         std::ios::out | std::ios::trunc);
+      if (!training.is_open () || !rtt.is_open ())
+        {
+          NS_LOG_WARN ("OBU 无法初始化节点 " << m_thisNode->GetId ()
+                       << " 的仿真数据文件");
+        }
+    }
+}
+
+void
+VndnObu::SaveRequestResult (const ndn::Interest &interest, const std::string &status)
+{
+  auto it = m_requestRecords.find (interest.getName ());
+  if (it == m_requestRecords.end ())
+    return;
+
+  uint64_t resultTimeMs = ns3::Simulator::Now ().GetMilliSeconds ();
+  const RequestRecord &r = it->second;
+  // 与旧版一致：训练标签只保存有明确结果的 DATA/TIMEOUT 请求。
+  if (status == "DATA" || status == "TIMEOUT")
+    {
+      std::ofstream training (GetPerVehicleSaveFile (".csv"),
+                              std::ios::out | std::ios::app);
+      if (training.is_open ())
+        {
+          training << r.x << ',' << r.y << ',' << r.speed << ',' << r.acceleration << ','
+                   << r.angle << ',' << r.laneIndex << ',' << m_currentBsNodeId << '\n';
+        }
+      else
+        {
+          NS_LOG_WARN ("OBU 无法打开训练标签文件: "
+                       << GetPerVehicleSaveFile (".csv"));
+        }
+
+      std::ofstream rtt (GetPerVehicleSaveFile ("-rtt.csv"),
+                         std::ios::out | std::ios::app);
+      if (rtt.is_open ())
+        {
+          rtt << r.sendTimeMs << ',' << (resultTimeMs - r.sendTimeMs) << '\n';
+        }
+      else
+        {
+          NS_LOG_WARN ("OBU 无法打开RTT文件: "
+                       << GetPerVehicleSaveFile ("-rtt.csv"));
+        }
+    }
+  m_requestRecords.erase (it);
+}
+
+std::string
+VndnObu::GetPerVehicleSaveFile (const std::string &suffix) const
+{
+  std::string base = m_saveFile;
+  const std::string extension = ".csv";
+  if (base.size () >= extension.size () &&
+      base.compare (base.size () - extension.size (), extension.size (), extension) == 0)
+    {
+      base.erase (base.size () - extension.size ());
+    }
+  return base + "-" + std::to_string (m_thisNode->GetId ()) + suffix;
 }
 
 std::set<std::string>

@@ -312,7 +312,7 @@ VndnRsu::SendSyncSignal ()
                                                        m_broadcastMac);
   interest->setTag (vndnTag);
 
-  NS_LOG_INFO ("RSU 发送同步信号: " << *name);
+  // NS_LOG_INFO ("RSU 发送同步信号: " << *name);
   m_face.expressInterest (*interest,
                           std::bind (&VndnRsu::OnData, this, _1, _2),
                           std::bind (&VndnRsu::OnNack, this, _1, _2),
