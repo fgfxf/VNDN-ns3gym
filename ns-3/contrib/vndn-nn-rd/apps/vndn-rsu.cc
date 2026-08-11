@@ -29,6 +29,9 @@ VndnRsu::VndnRsu (ns3::Ptr<ns3::TraciClient> &traci)
     : m_scheduler (m_face.getIoService ())
     , m_traci (traci)
 {
+  m_syncSignalIntervalMs = 20;
+  m_vehicleTimeoutMs = 2 * m_syncSignalIntervalMs;
+
   // 在 face 上注册根前缀，所有收到的兴趣包都交给 ProcessInterest 处理
   m_face.setInterestFilter ("/", std::bind (&VndnRsu::ProcessInterest, this, _2),
                             [this] (const ndn::Name &, const std::string &reason) {
@@ -318,8 +321,9 @@ VndnRsu::SendSyncSignal ()
                           std::bind (&VndnRsu::OnNack, this, _1, _2),
                           std::bind (&VndnRsu::OnTimeout, this, _1));
 
-  // 每 20ms 发送一次同步信号
-  m_sendSyncSignal = m_scheduler.schedule (ndn::time::milliseconds (20), [this] { SendSyncSignal (); });
+  // 按设定间隔发送同步信号
+  m_sendSyncSignal = m_scheduler.schedule (
+      ndn::time::milliseconds (m_syncSignalIntervalMs), [this] { SendSyncSignal (); });
 }
 
 void
@@ -473,8 +477,8 @@ VndnRsu::Start ()
   m_active = true;
   NS_LOG_DEBUG ("RSU 启动...");
   // 启动周期性同步信号广播
-  m_sendSyncSignal =
-      m_scheduler.schedule (ndn::time::milliseconds (20), [this] { SendSyncSignal (); });
+  m_sendSyncSignal = m_scheduler.schedule (
+      ndn::time::milliseconds (m_syncSignalIntervalMs), [this] { SendSyncSignal (); });
   // 将不同节点的公告分散在仿真启动后的 500~1000ms 内。
   uint32_t delayMs = 500 + ((m_thisNode->GetId () * 17) % 50);
   m_p2pHandshakeEvent = ns3::Simulator::Schedule (

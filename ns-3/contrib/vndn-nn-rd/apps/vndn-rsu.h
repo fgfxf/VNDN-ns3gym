@@ -191,6 +191,7 @@ private:
 
   // 同步信号广播相关成员
   ndn::scheduler::EventId m_sendSyncSignal;  ///< 同步信号发送定时器
+  uint32_t m_syncSignalIntervalMs;           ///< hello 同步信号发送间隔（毫秒）
   ns3::Address m_wirelessAddress;            ///< 无线接口地址
   uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）
   uint64_t m_broadcastMac = 0;               ///< 广播地址 ff:ff:ff:ff:ff:ff 的 uint64 形式
@@ -205,7 +206,7 @@ private:
   /// 车辆节点ID -> 最近一次回复时间戳（毫秒）
   std::map<int64_t, uint64_t> m_vehicleLastReplyMs;
   /// 车辆超时时间（毫秒），超过该时间未回复则视为离开
-  uint32_t m_vehicleTimeoutMs = 2000;
+  uint32_t m_vehicleTimeoutMs;
 };
 
 } // namespace vanet
