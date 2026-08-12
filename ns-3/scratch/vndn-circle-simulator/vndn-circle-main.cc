@@ -72,6 +72,7 @@ int main(int argc,char *argv[]){
     vanet::HandoverStrategy handoverStrategy = vanet::HandoverStrategy_Immediate;
     vanet::RsuForwardStrategy rsuForwardStrategy =
         vanet::RsuForwardStrategy_VTDF; // 回程补救策略
+    uint32_t rsuForwardStrategyValue = static_cast<uint32_t> (rsuForwardStrategy);
     bool handoverFrequencyBoost = false;
     double obuFrequency = 40.0;
     double handoverFrequencyMultiplier = 4.0;
@@ -92,6 +93,9 @@ int main(int argc,char *argv[]){
     cmd.AddValue ("save-data", "Enable simulation data output", enDataSave);
     cmd.AddValue ("sumo-seed", "SUMO random seed", sumoSeed);
     cmd.AddValue ("srand-seed", "C rand() random seed", srandSeed);
+    cmd.AddValue ("rsu-forward-strategy",
+                  "RSU Data recovery strategy: 0=NoForward, 1=VTDF, 2=RealTimeVTDF",
+                  rsuForwardStrategyValue);
     cmd.AddValue ("handover-frequency-boost",
                   "Increase OBU request frequency when at least two RSUs are visible",
                   handoverFrequencyBoost);
@@ -100,6 +104,15 @@ int main(int argc,char *argv[]){
                   "OBU request frequency multiplier in handover areas",
                   handoverFrequencyMultiplier);
     cmd.Parse (argc, argv);
+
+    if (rsuForwardStrategyValue > 2)
+      {
+        std::cerr << "Invalid --rsu-forward-strategy value: "
+                  << rsuForwardStrategyValue << std::endl;
+        return 2;
+      }
+    rsuForwardStrategy =
+        static_cast<vanet::RsuForwardStrategy> (rsuForwardStrategyValue);
 
     // 在仿真中首次使用 rand() 之前应用用户设置的 C 随机种子。
     srand (srandSeed);

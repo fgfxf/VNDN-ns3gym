@@ -46,6 +46,11 @@ def build(bld):
             elif file.endswith(sourceExts):
                 module.source.append(filePath)
 
+    moduleTest = bld.create_ns3_module_test_library(moduleName)
+    moduleTest.source = [
+        'test/vndn-rsu-forwarding-policy-test.cc',
+    ]
+
     if bld.env.ENABLE_EXAMPLES:
         bld.recurse('examples')
     # bld.ns3_python_bindings()

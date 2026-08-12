@@ -15,7 +15,9 @@
 #include "ns3/ndnSIM/NFD/daemon/fw/forwarder.hpp"
 #include "ns3/ndnSIM/NFD/daemon/table/pit.hpp"
 #include "ns3/assert.h"
+#include "ns3/mobility-model.h"
 #include "ns3/simulator.h"
+#include "ns3/vndn-rsu-forwarding-policy.h"
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include "../model/vndn-tag.hpp"
@@ -209,6 +211,17 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
   m_vehicleNextRsu[obuNodeId] =
       j.value ("NextRsu", static_cast<int64_t> (m_thisNode->GetId ()));
   m_resolvedVehicleRsu.erase (static_cast<uint32_t> (obuNodeId));
+
+  // 补救 Data 可能比车辆在新 RSU 的首次 hello 注册更早到达。
+  // 注册完成后立即刷新这些暂存 Data，避免交接竞态造成丢包。
+  auto waitingRelay = m_relayDataWaitingForVehicle.find (
+      static_cast<uint32_t> (obuNodeId));
+  if (waitingRelay != m_relayDataWaitingForVehicle.end ())
+    {
+      for (const auto &packet : waitingRelay->second)
+        SendDataToVehicle (*packet, static_cast<uint32_t> (obuNodeId), 0);
+      m_relayDataWaitingForVehicle.erase (waitingRelay);
+    }
 
   NS_LOG_DEBUG ("RSU 收到车辆信息: OBU=" << obuNodeId
                 << " X=" << j.value ("LocateX", 0.0)
@@ -534,6 +547,54 @@ VndnRsu::ResolveRouterFace () const
   return m_p2pFaceIds.empty () ? 0 : m_p2pFaceIds.front ();
 }
 
+int64_t
+VndnRsu::ResolveRealtimeTargetRsu (uint32_t obuNodeId) const
+{
+  if (m_traci != nullptr && obuNodeId < ns3::NodeList::GetNNodes ())
+    {
+      try
+        {
+          ns3::Ptr<ns3::Node> obuNode = ns3::NodeList::GetNode (obuNodeId);
+          const std::string vehicleId = m_traci->GetVehicleId (obuNode);
+          const libsumo::TraCIPosition position =
+              m_traci->TraCIAPI::vehicle.getPosition3D (vehicleId);
+
+          std::vector<std::pair<uint32_t, ns3::Vector>> rsuPositions;
+          auto appendRsuPosition = [&rsuPositions] (uint32_t rsuNodeId) {
+            if (rsuNodeId >= ns3::NodeList::GetNNodes ())
+              return;
+            auto mobility = ns3::NodeList::GetNode (rsuNodeId)
+                                ->GetObject<ns3::MobilityModel> ();
+            if (mobility != nullptr)
+              rsuPositions.emplace_back (rsuNodeId, mobility->GetPosition ());
+          };
+          appendRsuPosition (m_thisNode->GetId ());
+          for (const auto &entry : m_infrastructureRoles)
+            {
+              if (entry.second == "rsu" && entry.first != m_thisNode->GetId ())
+                appendRsuPosition (entry.first);
+            }
+
+          const int64_t nearestRsu = VndnRsuForwardingPolicy::SelectNearestRsu (
+              ns3::Vector (position.x, position.y, position.z), rsuPositions);
+          if (nearestRsu >= 0)
+            {
+              NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " RealTimeVTDF 实时定位 OBU "
+                                   << obuNodeId << " -> 最近 RSU " << nearestRsu);
+              return nearestRsu;
+            }
+        }
+      catch (const std::exception &e)
+        {
+          NS_LOG_WARN ("RSU " << m_thisNode->GetId () << " 无法获取 OBU " << obuNodeId
+                               << " 的 TraCI 实时位置: " << e.what ());
+        }
+    }
+
+  auto predicted = m_vehicleNextRsu.find (obuNodeId);
+  return predicted == m_vehicleNextRsu.end () ? -1 : predicted->second;
+}
+
 void
 VndnRsu::ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNodeId,
                                  uint64_t obuMac)
@@ -610,11 +671,15 @@ VndnRsu::OnVehicleData (const ndn::Interest &interest, const ndn::Data &data)
 
   if (m_forwardStrategy == RsuForwardStrategy_RealTimeVtdf)
     {
-      auto predicted = m_vehicleNextRsu.find (request.obuNodeId);
-      if (predicted != m_vehicleNextRsu.end () && predicted->second >= 0 &&
-          static_cast<uint32_t> (predicted->second) != m_thisNode->GetId ())
+      const int64_t targetRsuId = ResolveRealtimeTargetRsu (request.obuNodeId);
+      if (targetRsuId == static_cast<int64_t> (m_thisNode->GetId ()))
         {
-          ForwardDataToRsu (static_cast<uint32_t> (predicted->second),
+          // hello 丢失导致误超时，但车辆实时位置仍最接近本 RSU。
+          SendDataToVehicle (data, request.obuNodeId, request.obuMac);
+        }
+      else if (targetRsuId >= 0)
+        {
+          ForwardDataToRsu (static_cast<uint32_t> (targetRsuId),
                             request.obuNodeId, data);
         }
       else
@@ -747,18 +812,20 @@ VndnRsu::OnRsuRelayData (const ndn::Data &data)
 
   if (action == "forward")
     {
-      if (m_vehicleLastReplyMs.count (obuNodeId) == 0)
-        {
-          NS_LOG_WARN ("RSU " << m_thisNode->GetId () << " 收到补救 Data，但 OBU "
-                               << obuNodeId << " 已不在本基站");
-          return;
-        }
       const auto &content = data.getContent ();
       auto parsed = ndn::Block::fromBuffer (content.value (), content.value_size ());
       if (!std::get<0> (parsed))
         return;
-      ndn::Data original (std::get<1> (parsed));
-      SendDataToVehicle (original, obuNodeId, 0);
+      auto original = std::make_shared<ndn::Data> (std::get<1> (parsed));
+      if (m_vehicleLastReplyMs.count (obuNodeId) == 0)
+        {
+          m_relayDataWaitingForVehicle[obuNodeId].push_back (original);
+          NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 暂存 OBU " << obuNodeId
+                               << " 尚未注册时到达的补救 Data: "
+                               << original->getName ());
+          return;
+        }
+      SendDataToVehicle (*original, obuNodeId, 0);
     }
 }
 

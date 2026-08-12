@@ -204,6 +204,9 @@ private:
   uint64_t
   ResolveRouterFace () const;
 
+  int64_t
+  ResolveRealtimeTargetRsu (uint32_t obuNodeId) const;
+
 private:
   struct PendingVehicleRequest
   {
@@ -228,6 +231,8 @@ private:
   uint64_t m_relaySequence = 0;
   std::map<ndn::Name, PendingVehicleRequest> m_pendingVehicleRequests;
   std::map<uint32_t, std::vector<std::shared_ptr<ndn::Data>>> m_waitingForwardData;
+  std::map<uint32_t, std::vector<std::shared_ptr<ndn::Data>>>
+      m_relayDataWaitingForVehicle;
   std::map<uint32_t, uint32_t> m_resolvedVehicleRsu;
 
   // 同步信号广播相关成员
