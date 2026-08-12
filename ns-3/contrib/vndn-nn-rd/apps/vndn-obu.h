@@ -231,7 +231,7 @@ private:
   bool m_enableDataSave = false;              ///< 是否保存逐请求仿真数据
   std::string m_saveFile;                     ///< 逐请求 CSV 文件路径
   std::map<ndn::Name, RequestRecord> m_requestRecords; ///< 尚未结束的请求
-  uint32_t m_sendInterestCount = 0;        ///< 总计发送 Interest 数量
+  uint32_t m_receivedDataCount = 0;        ///< 成功收到 Data 数量
   uint32_t m_timeoutCount = 0;             ///< 超时丢失数量
   ns3::Address m_wirelessAddress;            ///< 无线接口地址
   uint64_t m_wirelessMac = 0;                ///< 无线 MAC 地址（uint64 形式）

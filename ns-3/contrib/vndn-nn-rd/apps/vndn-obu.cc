@@ -351,6 +351,7 @@ void
 VndnObu::OnData (const ndn::Interest &interest, const ndn::Data &data)
 {
   NS_LOG_DEBUG ("OBU 收到数据包: " << data.getName ());
+  ++m_receivedDataCount;
   SaveRequestResult (interest, "DATA");
 }
 
@@ -399,7 +400,6 @@ VndnObu::SendPacket ()
 
   // 构造兴趣包：前缀 /com/baidu + 递增序号，模拟用户请求不同内容
   m_seq++;
-  ++m_sendInterestCount;
   std::string userWatch = "/com/baidu/www/userid/" + std::to_string (m_thisNode->GetId ());
   std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> (userWatch);
   name->appendSequenceNumber (m_seq);
@@ -482,13 +482,13 @@ VndnObu::Stop ()
       ndn::Interest interest (m_requestRecords.begin ()->first);
       SaveRequestResult (interest, "STOPPED");
     }
-  if (m_enableDataSave && !m_saveFile.empty () && m_sendInterestCount > 0)
+  if (m_enableDataSave && !m_saveFile.empty () && m_seq > 0)
     {
       std::ofstream stats (GetPerVehicleSaveFile ("-stats.txt"),
                            std::ios::out | std::ios::trunc);
       if (stats.is_open ())
         {
-          stats << "总计发送： " << m_sendInterestCount
+          stats << "收到数据包： " << m_receivedDataCount
                 << "      丢失：     " << m_timeoutCount;
         }
       else

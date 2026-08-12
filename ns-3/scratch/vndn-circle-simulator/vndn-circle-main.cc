@@ -38,12 +38,12 @@ int main(int argc,char *argv[]){
     std::string scenario_name = "circle-simple";
     std::string scenario_file = "circle";
 
-    // 生成仿真数据输出目录 ./data/<scenario_name>/yyyyMMdd/hh-mm/
+    // 生成仿真数据输出目录 ./data/<scenario_name>/yyyyMMdd/hh-mm-ss/
     auto t_now = std::time(nullptr);
     auto tm_now = std::localtime(&t_now);
     std::ostringstream dateDir, timeDir;
     dateDir << std::put_time(tm_now, "%Y%m%d");
-    timeDir << std::put_time(tm_now, "%H-%M");
+    timeDir << std::put_time(tm_now, "%H-%M-%S");
     std::string outputDir = "./data/" + scenario_name + "/" + dateDir.str() + "/" + timeDir.str() + "/";
 
     // 各类仿真数据输出路径
@@ -65,6 +65,9 @@ int main(int argc,char *argv[]){
     bool enLog = true;
     bool enSumoGui = false;
     bool enDataSave = true;
+    uint32_t srandSeed = ::time(NULL);
+    int sumoSeed = rand();
+
     vanet::CacheStrategy cacheStrategy = vanet::CacheStrategy_Participate;
     vanet::HandoverStrategy handoverStrategy = vanet::HandoverStrategy_Immediate;
     vanet::RsuForwardStrategy rsuForwardStrategy =
@@ -87,6 +90,8 @@ int main(int argc,char *argv[]){
     cmd.AddValue ("log", "Enable Log", enLog);
     cmd.AddValue ("sumo-gui", "Enable SUMO with graphical user interface", enSumoGui);
     cmd.AddValue ("save-data", "Enable simulation data output", enDataSave);
+    cmd.AddValue ("sumo-seed", "SUMO random seed", sumoSeed);
+    cmd.AddValue ("srand-seed", "C rand() random seed", srandSeed);
     cmd.AddValue ("handover-frequency-boost",
                   "Increase OBU request frequency when at least two RSUs are visible",
                   handoverFrequencyBoost);
@@ -95,6 +100,9 @@ int main(int argc,char *argv[]){
                   "OBU request frequency multiplier in handover areas",
                   handoverFrequencyMultiplier);
     cmd.Parse (argc, argv);
+
+    // 在仿真中首次使用 rand() 之前应用用户设置的 C 随机种子。
+    srand (srandSeed);
 
     if (enLog || enDataSave || enPcap)
       {
@@ -146,7 +154,9 @@ int main(int argc,char *argv[]){
               {"CacheStrategy", cacheStrategyName},
               {"HandoverStrategy", handoverStrategyName},
               {"obuFrequency", obuFrequencyValue.str ()},
-              {"RsuForwardStrategy", rsuForwardStrategyName}};
+              {"RsuForwardStrategy", rsuForwardStrategyName},
+              {"SumoSeed", std::to_string (sumoSeed)},
+              {"SrandSeed", std::to_string (srandSeed)}};
           if (!VndnUtilsHelper::SaveSimulationConfig (outputDir, simulationParameters))
             {
               std::cerr << "Warning: failed to create simulation config file: "
@@ -223,7 +233,7 @@ int main(int argc,char *argv[]){
     sumoClient->SetAttribute("PenetrationRate",ns3::DoubleValue(1.0));
     sumoClient->SetAttribute("SumoLogFile",ns3::BooleanValue(false));
     sumoClient->SetAttribute("SumoStepLog",ns3::BooleanValue(false));
-    sumoClient->SetAttribute("SumoSeed",ns3::IntegerValue(10));
+    sumoClient->SetAttribute("SumoSeed",ns3::IntegerValue(sumoSeed));
     sumoClient->SetAttribute("SumoAdditionalCmdOptions",ns3::StringValue("--verbose true"));
     sumoClient->SetAttribute("SumoWaitForSocket",ns3::TimeValue(ns3::Seconds(2.0)));//等待sumo服务启动
 

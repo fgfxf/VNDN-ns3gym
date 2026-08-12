@@ -33,6 +33,7 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ns3_dir=$(cd "${script_dir}/../.." && pwd)
 
 cd "${ns3_dir}" || exit 1
+./waf build -j 4
 
 for ((run_index = 1; run_index <= run_count; ++run_index)); do
   echo "[$run_index/$run_count] Starting vndn-circle-simulator (80-second limit)"
