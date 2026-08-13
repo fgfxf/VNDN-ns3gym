@@ -71,7 +71,7 @@ int main(int argc,char *argv[]){
     vanet::CacheStrategy cacheStrategy = vanet::CacheStrategy_Participate;
     vanet::HandoverStrategy handoverStrategy = vanet::HandoverStrategy_Immediate;
     vanet::RsuForwardStrategy rsuForwardStrategy =
-        vanet::RsuForwardStrategy_VTDF; // 回程补救策略
+        vanet::RsuForwardStrategy_NoForward; // 回程补救策略
     uint32_t rsuForwardStrategyValue = static_cast<uint32_t> (rsuForwardStrategy);
     bool handoverFrequencyBoost = false;
     double obuFrequency = 40.0;
