@@ -37,6 +37,8 @@ public:
   Stop ();
 
 private:
+  struct PendingRequest;
+
   void
   ProcessInterest (const ndn::Interest &interest);
 
@@ -80,6 +82,15 @@ private:
   void
   RelayRsuControlData (const ndn::Data &data);
 
+  /** 处理当前 RSU 随 Interest 发来的神经网络回程路由指令。 */
+  void
+  OnNeuralRouteInstruction (const ndn::Data &data);
+
+  /** 用目标 RSU ID 覆盖指定请求的回程接口。 */
+  bool
+  ApplyNeuralReturnRoute (PendingRequest &request,
+                          const std::vector<uint32_t> &returnRsuIds);
+
   void
   PushIdentityData (uint64_t faceId, uint32_t nodeId,
                     const std::string &role, const ndn::Name &name);
@@ -89,9 +100,7 @@ private:
   {
     std::shared_ptr<const ndn::Interest> originalInterest;
     std::set<uint64_t> returnFaceIds;
-    // 未来由基站指定回程 RSU 时，可在这里保存目标 RSU nodeId，随后通过
-    // m_infrastructureRoutes 将其解析为 returnFaceIds。
-    int64_t requestedReturnRsuId = -1;
+    std::vector<uint32_t> requestedReturnRsuIds;
   };
 
   ndn::Face m_face;
@@ -105,6 +114,7 @@ private:
   uint32_t m_p2pHandshakeRound = 0;
   uint64_t m_serverFaceId = 0;
   std::map<ndn::Name, PendingRequest> m_pendingRequests;
+  std::map<ndn::Name, std::vector<uint32_t>> m_neuralRouteInstructions;
 };
 
 } // namespace vanet

@@ -67,11 +67,12 @@ int main(int argc,char *argv[]){
     bool enDataSave = true;
     uint32_t srandSeed = ::time(NULL);
     int sumoSeed = rand();
+    uint32_t openGymPort = 5555; // ns3-gym 共享端口，神经网络策略启用时使用
 
     vanet::CacheStrategy cacheStrategy = vanet::CacheStrategy_Participate;
     vanet::HandoverStrategy handoverStrategy = vanet::HandoverStrategy_Immediate;
     vanet::RsuForwardStrategy rsuForwardStrategy =
-        vanet::RsuForwardStrategy_NoForward; // 回程补救策略
+        vanet::RsuForwardStrategy_NeuralNetwork; // 回程补救策略
     uint32_t rsuForwardStrategyValue = static_cast<uint32_t> (rsuForwardStrategy);
     bool handoverFrequencyBoost = false;
     double obuFrequency = 40.0;
@@ -93,8 +94,10 @@ int main(int argc,char *argv[]){
     cmd.AddValue ("save-data", "Enable simulation data output", enDataSave);
     cmd.AddValue ("sumo-seed", "SUMO random seed", sumoSeed);
     cmd.AddValue ("srand-seed", "C rand() random seed", srandSeed);
+    cmd.AddValue ("open-gym-port", "Shared ns3-gym port for neural return routing",
+                  openGymPort);
     cmd.AddValue ("rsu-forward-strategy",
-                  "RSU Data recovery strategy: 0=NoForward, 1=VTDF, 2=RealTimeVTDF",
+                  "RSU Data return strategy: 0=NoForward, 1=VTDF, 2=RealTimeVTDF, 3=NeuralNetwork",
                   rsuForwardStrategyValue);
     cmd.AddValue ("handover-frequency-boost",
                   "Increase OBU request frequency when at least two RSUs are visible",
@@ -105,7 +108,7 @@ int main(int argc,char *argv[]){
                   handoverFrequencyMultiplier);
     cmd.Parse (argc, argv);
 
-    if (rsuForwardStrategyValue > 2)
+    if (rsuForwardStrategyValue > 3)
       {
         std::cerr << "Invalid --rsu-forward-strategy value: "
                   << rsuForwardStrategyValue << std::endl;
@@ -160,6 +163,8 @@ int main(int argc,char *argv[]){
             rsuForwardStrategyName = "VTDF";
           else if (rsuForwardStrategy == vanet::RsuForwardStrategy_RealTimeVtdf)
             rsuForwardStrategyName = "RealTimeVTDF";
+          else if (rsuForwardStrategy == vanet::RsuForwardStrategy_NeuralNetwork)
+            rsuForwardStrategyName = "NeuralNetwork";
 
           std::ostringstream obuFrequencyValue;
           obuFrequencyValue << obuFrequency;
@@ -168,6 +173,7 @@ int main(int argc,char *argv[]){
               {"HandoverStrategy", handoverStrategyName},
               {"obuFrequency", obuFrequencyValue.str ()},
               {"RsuForwardStrategy", rsuForwardStrategyName},
+              {"OpenGymPort", std::to_string (openGymPort)},
               {"SumoSeed", std::to_string (sumoSeed)},
               {"SrandSeed", std::to_string (srandSeed)}};
           if (!VndnUtilsHelper::SaveSimulationConfig (outputDir, simulationParameters))
@@ -278,6 +284,15 @@ int main(int argc,char *argv[]){
         // ndnApp->SetAttribute("TargetRsuId",ns3::IntegerValue(targetRsu));
 
         newNode->AddApplication(ndnApp);
+        // 在 Simulator::Stop 之前停止应用，既能落盘最终统计，也避免在 Run()
+        // 返回后取消已从调度器取出的事件。
+        const ns3::Time stopDelay = ns3::Seconds (simTime) -
+                                    ns3::Simulator::Now () -
+                                    ns3::NanoSeconds (1);
+        if (stopDelay.IsPositive ())
+          ns3::Simulator::ScheduleWithContext (
+              newNode->GetId (), stopDelay,
+              &ns3::VndnObuApp::StopApplication, ndnApp);
         return newNode;
     };
 
@@ -303,14 +318,13 @@ int main(int argc,char *argv[]){
     ns3::ndn::AppHelper rsuApp("VndnRsuApp");
     rsuApp.SetAttribute("SumoClient",(ns3::PointerValue)(sumoClient));
     rsuApp.SetAttribute("RsuForwardStrategy",ns3::EnumValue(rsuForwardStrategy));
-    // rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(OpengymPort));/////////////////////这个设置神经网络
+    rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(openGymPort));
 
     ns3::Ptr<ns3::MobilityModel> rsuNode0 = nodePool.Get(0) ->GetObject<ns3::MobilityModel>();
     rsuNode0->SetPosition(ns3::Vector(-20,70,20));
     itsRsuNodes.Add (rsuApp.Install (nodePool.Get (0)));
     usedNodeCounter++;
 
-    // rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(0));m
     rsuNode0 = nodePool.Get(1) ->GetObject<ns3::MobilityModel>();
     rsuNode0->SetPosition(ns3::Vector(150,70,20));
     itsRsuNodes.Add (rsuApp.Install (nodePool.Get (1)));
@@ -335,6 +349,21 @@ int main(int argc,char *argv[]){
     ns3::ndn::AppHelper router("VndnRouterApp");
     ns3::ApplicationContainer routerApp = router.Install(routerNodes.Get(0));
     routerApp.Start(ns3::Seconds(0.0));
+
+    const ns3::Time applicationStopTime =
+        ns3::Seconds (simTime) - ns3::NanoSeconds (1);
+    // ndnSIM AppHelper 会立即执行 RSU 的 Initialize，因此事后修改 StopTime
+    // 不会重排停止事件；显式调度才能保证核心实例和 ns3-gym 正常关闭。
+    for (uint32_t i = 0; i < itsRsuNodes.GetN (); ++i)
+      {
+        ns3::Ptr<ns3::VndnRsuApp> app =
+            ns3::DynamicCast<ns3::VndnRsuApp> (itsRsuNodes.Get (i));
+        ns3::Simulator::ScheduleWithContext (
+            app->GetNode ()->GetId (), applicationStopTime,
+            &ns3::VndnRsuApp::StopApplication, app);
+      }
+    routerApp.Stop (applicationStopTime);
+    producerApp.Stop (applicationStopTime);
 
 
     //所有的基站，找不到缓存的数据前缀都向server请求。
@@ -365,20 +394,6 @@ int main(int argc,char *argv[]){
 
     ns3::Simulator::Stop (ns3::Seconds (simTime));
     ns3::Simulator::Run();//正式运行
-    // SUMO 尚未移除、但在仿真结束时仍活跃的 OBU 也必须落盘最终统计。
-    for (uint32_t i = 0; i < nodePool.GetN (); ++i)
-      {
-        ns3::Ptr<ns3::Node> node = nodePool.Get (i);
-        for (uint32_t j = 0; j < node->GetNApplications (); ++j)
-          {
-            ns3::Ptr<ns3::VndnObuApp> obuApp =
-                ns3::DynamicCast<ns3::VndnObuApp> (node->GetApplication (j));
-            if (obuApp != nullptr)
-              {
-                obuApp->StopApplication ();
-              }
-          }
-      }
     ns3::Simulator::Destroy();
     return 0;
 }

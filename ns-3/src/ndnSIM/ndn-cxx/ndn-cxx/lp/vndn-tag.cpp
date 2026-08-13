@@ -34,7 +34,15 @@ VndnTag::wireEncode(EncodingImpl<TAG>& encoder) const
 {
   size_t length = 0;
   // Encode in reverse order (prepend)
+  if (m_returnRsuSecondary >= 0) {
+    length += encoding::prependNonNegativeIntegerBlock(
+      encoder, tlv::VndnReturnRsuSecondary, static_cast<uint64_t>(m_returnRsuSecondary));
+  }
   length += encoding::prependDoubleBlock(encoder, tlv::VndnRxPowerDbm, m_rxPowerDbm);
+  if (m_returnRsuPrimary >= 0) {
+    length += encoding::prependNonNegativeIntegerBlock(
+      encoder, tlv::VndnReturnRsuPrimary, static_cast<uint64_t>(m_returnRsuPrimary));
+  }
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnTargetMac, m_targetMac);
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnSenderMac, m_senderMac);
   length += encoding::prependNonNegativeIntegerBlock(encoder, tlv::VndnSenderNodeId, m_senderNodeId);
@@ -82,6 +90,8 @@ VndnTag::wireDecode(const Block& wire)
   m_senderMac = 0;
   m_targetMac = 0;
   m_rxPowerDbm = -999.0;
+  m_returnRsuPrimary = -1;
+  m_returnRsuSecondary = -1;
 
   for (const Block& element : m_wire.elements()) {
     switch (element.type()) {
@@ -96,6 +106,12 @@ VndnTag::wireDecode(const Block& wire)
         break;
       case tlv::VndnRxPowerDbm:
         m_rxPowerDbm = encoding::readDouble(element);
+        break;
+      case tlv::VndnReturnRsuPrimary:
+        m_returnRsuPrimary = static_cast<int64_t>(readNonNegativeInteger(element));
+        break;
+      case tlv::VndnReturnRsuSecondary:
+        m_returnRsuSecondary = static_cast<int64_t>(readNonNegativeInteger(element));
         break;
       default:
         // ignore unknown sub-TLVs

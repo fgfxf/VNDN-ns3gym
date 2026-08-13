@@ -9,7 +9,9 @@ enum RsuForwardStrategy
 {
   RsuForwardStrategy_NoForward = 0,
   RsuForwardStrategy_VTDF = 1,
-  RsuForwardStrategy_RealTimeVtdf = 2
+  RsuForwardStrategy_RealTimeVtdf = 2,
+  /** 神经网络在 Interest 发出时指定一个或两个 Data 回程 RSU。 */
+  RsuForwardStrategy_NeuralNetwork = 3
 };
 
 } // namespace vanet

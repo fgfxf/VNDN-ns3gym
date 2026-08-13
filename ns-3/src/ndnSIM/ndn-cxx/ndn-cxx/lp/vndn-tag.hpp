@@ -112,23 +112,38 @@ public: // getters
     return m_rxPowerDbm;
   }
 
+  int64_t
+  getReturnRsuPrimary() const noexcept
+  {
+    return m_returnRsuPrimary;
+  }
+
+  int64_t
+  getReturnRsuSecondary() const noexcept
+  {
+    return m_returnRsuSecondary;
+  }
+
 public: // setters
   void
   setSenderNodeId(uint32_t nodeId) noexcept
   {
     m_senderNodeId = nodeId;
+    m_wire.reset();
   }
 
   void
   setSenderMac(uint64_t mac) noexcept
   {
     m_senderMac = mac;
+    m_wire.reset();
   }
 
   void
   setTargetMac(uint64_t mac) noexcept
   {
     m_targetMac = mac;
+    m_wire.reset();
   }
 
   /**
@@ -139,6 +154,23 @@ public: // setters
   setRxPowerDbm(double rxPowerDbm) noexcept
   {
     m_rxPowerDbm = rxPowerDbm;
+    m_wire.reset();
+  }
+
+  /** Set the primary RSU selected for the Data return path. */
+  void
+  setReturnRsuPrimary(int64_t nodeId) noexcept
+  {
+    m_returnRsuPrimary = nodeId;
+    m_wire.reset();
+  }
+
+  /** Set an optional second RSU selected for duplicated Data return. */
+  void
+  setReturnRsuSecondary(int64_t nodeId) noexcept
+  {
+    m_returnRsuSecondary = nodeId;
+    m_wire.reset();
   }
 
 private:
@@ -146,6 +178,8 @@ private:
   uint64_t m_senderMac = 0;     ///< sender wireless MAC address
   uint64_t m_targetMac = 0;     ///< target wireless MAC address
   double m_rxPowerDbm = -999.0;   ///< received signal power in dBm
+  int64_t m_returnRsuPrimary = -1; ///< primary neural-network return RSU
+  int64_t m_returnRsuSecondary = -1; ///< optional second return RSU
   mutable Block m_wire;
 };
 

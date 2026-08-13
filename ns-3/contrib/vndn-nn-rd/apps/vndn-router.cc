@@ -13,6 +13,7 @@
 
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/lp/tags.hpp>
+#include "../model/vndn-tag.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -78,10 +79,67 @@ VndnRouter::ResolveServerFace ()
 void
 VndnRouter::ForwardInterestToServer (const ndn::Interest &interest, uint64_t returnFaceId)
 {
+  std::set<uint64_t> requestedReturnFaces;
+  std::vector<uint32_t> requestedReturnRsuIds;
+  auto routeTag = interest.getTag<vanet::lp::VndnTag> ();
+  NS_LOG_DEBUG ("Router 解析回程标签: present=" << (routeTag != nullptr)
+                << " primary="
+                << (routeTag != nullptr ? routeTag->getReturnRsuPrimary () : -1)
+                << " secondary="
+                << (routeTag != nullptr ? routeTag->getReturnRsuSecondary () : -1));
+  if (routeTag != nullptr && routeTag->getReturnRsuPrimary () >= 0)
+    {
+      const int64_t requestedIds[] = {routeTag->getReturnRsuPrimary (),
+                                      routeTag->getReturnRsuSecondary ()};
+      for (int64_t requestedId : requestedIds)
+        {
+          if (requestedId < 0)
+            continue;
+          auto route = m_infrastructureRoutes.find (
+              static_cast<uint32_t> (requestedId));
+          auto role = m_infrastructureRoles.find (
+              static_cast<uint32_t> (requestedId));
+          if (route != m_infrastructureRoutes.end () &&
+              role != m_infrastructureRoles.end () && role->second == "rsu")
+            {
+              requestedReturnFaces.insert (route->second);
+              requestedReturnRsuIds.push_back (
+                  static_cast<uint32_t> (requestedId));
+            }
+          else
+            {
+              NS_LOG_WARN ("Router 找不到神经网络选择的回程 RSU " << requestedId);
+            }
+        }
+    }
+
+  // 默认路由可能比应用代理的同名 Interest 更早到达。若配套控制指令已
+  // 到达，则以神经网络结果覆盖普通反向接口。
+  auto instruction = m_neuralRouteInstructions.find (interest.getName ());
+  if (instruction != m_neuralRouteInstructions.end ())
+    {
+      PendingRequest instructedRequest;
+      if (ApplyNeuralReturnRoute (instructedRequest, instruction->second))
+        {
+          requestedReturnFaces = instructedRequest.returnFaceIds;
+          requestedReturnRsuIds = instructedRequest.requestedReturnRsuIds;
+        }
+      m_neuralRouteInstructions.erase (instruction);
+    }
+  if (requestedReturnFaces.empty ())
+    requestedReturnFaces.insert (returnFaceId);
+
   auto pending = m_pendingRequests.find (interest.getName ());
   if (pending != m_pendingRequests.end ())
     {
-      pending->second.returnFaceIds.insert (returnFaceId);
+      if (!requestedReturnRsuIds.empty ())
+        {
+          pending->second.returnFaceIds = requestedReturnFaces;
+          pending->second.requestedReturnRsuIds = requestedReturnRsuIds;
+        }
+      else
+        pending->second.returnFaceIds.insert (requestedReturnFaces.begin (),
+                                              requestedReturnFaces.end ());
       NS_LOG_DEBUG ("Router 合并同名请求: " << interest.getName ()
                     << " 回程接口数=" << pending->second.returnFaceIds.size ());
       return;
@@ -97,7 +155,8 @@ VndnRouter::ForwardInterestToServer (const ndn::Interest &interest, uint64_t ret
 
   PendingRequest request;
   request.originalInterest = std::make_shared<ndn::Interest> (interest);
-  request.returnFaceIds.insert (returnFaceId);
+  request.returnFaceIds = requestedReturnFaces;
+  request.requestedReturnRsuIds = requestedReturnRsuIds;
   m_pendingRequests.emplace (interest.getName (), std::move (request));
 
   // 删除基站请求创建的网络 PIT。服务器 Data 只交给 Router app，随后由
@@ -113,6 +172,11 @@ VndnRouter::ForwardInterestToServer (const ndn::Interest &interest, uint64_t ret
 
   ndn::Interest serverInterest (interest);
   serverInterest.refreshNonce ();
+  // 回程选择只在 Router 本地生效，无需继续发送到内容服务器。
+  // IncomingFaceId 也属于上一跳接收信息；保留它会让 Router app 把自己
+  // 新发出的服务器 Interest 再次误判成来自 RSU 的请求。
+  serverInterest.removeTag<ndn::lp::IncomingFaceIdTag> ();
+  serverInterest.removeTag<vanet::lp::VndnTag> ();
   serverInterest.setTag (
       std::make_shared<ndn::lp::NextHopFaceIdTag> (m_serverFaceId));
   NS_LOG_INFO ("Router 向服务器请求: " << serverInterest.getName ()
@@ -134,17 +198,33 @@ VndnRouter::OnServerData (const ndn::Interest &interest, const ndn::Data &data)
     return;
 
   const std::set<uint64_t> returnFaces = pending->second.returnFaceIds;
+  const std::vector<uint32_t> requestedReturnRsuIds =
+      pending->second.requestedReturnRsuIds;
+  auto routeTag =
+      pending->second.originalInterest->getTag<vanet::lp::VndnTag> ();
+  const bool isNeuralReturn =
+      !requestedReturnRsuIds.empty ();
   m_pendingRequests.erase (pending);
   for (uint64_t faceId : returnFaces)
     {
       auto response = std::make_shared<ndn::Data> (data);
+      if (routeTag != nullptr && isNeuralReturn)
+        {
+          auto responseRouteTag = std::make_shared<vanet::lp::VndnTag> (
+              routeTag->getSenderNodeId (), routeTag->getSenderMac (), 0);
+          responseRouteTag->setReturnRsuPrimary (requestedReturnRsuIds.front ());
+          if (requestedReturnRsuIds.size () > 1)
+            responseRouteTag->setReturnRsuSecondary (requestedReturnRsuIds[1]);
+          response->setTag (responseRouteTag);
+        }
       response->setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (faceId));
       response->wireEncode ();
       try
         {
           m_face.put (*response);
           NS_LOG_INFO ("Router 回传服务器数据: " << data.getName ()
-                       << " returnFaceId=" << faceId);
+                       << " returnFaceId=" << faceId
+                       << " 神经网络回程=" << isNeuralReturn);
         }
       catch (const ndn::Face::OversizedPacketError &e)
         {
@@ -210,6 +290,13 @@ VndnRouter::PushIdentityData (uint64_t faceId, uint32_t nodeId,
 void
 VndnRouter::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
 {
+  static const ndn::Name neuralRoutePrefix ("/vndn/control/neural-route");
+  if (neuralRoutePrefix.isPrefixOf (data.getName ()))
+    {
+      OnNeuralRouteInstruction (data);
+      return;
+    }
+
   static const ndn::Name relayPrefix ("/vndn/control/rsu-relay");
   if (relayPrefix.isPrefixOf (data.getName ()))
     {
@@ -246,6 +333,66 @@ VndnRouter::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data
       if (faceId != inFaceId)
         PushIdentityData (faceId, nodeId, role, data.getName ());
     }
+}
+
+bool
+VndnRouter::ApplyNeuralReturnRoute (
+    PendingRequest &request, const std::vector<uint32_t> &returnRsuIds)
+{
+  std::set<uint64_t> returnFaces;
+  std::vector<uint32_t> resolvedRsuIds;
+  for (uint32_t rsuId : returnRsuIds)
+    {
+      auto route = m_infrastructureRoutes.find (rsuId);
+      auto role = m_infrastructureRoles.find (rsuId);
+      if (route == m_infrastructureRoutes.end () ||
+          role == m_infrastructureRoles.end () || role->second != "rsu")
+        {
+          NS_LOG_WARN ("Router 找不到神经网络选择的回程 RSU " << rsuId);
+          continue;
+        }
+      if (returnFaces.insert (route->second).second)
+        resolvedRsuIds.push_back (rsuId);
+    }
+  if (returnFaces.empty ())
+    return false;
+
+  request.returnFaceIds = std::move (returnFaces);
+  request.requestedReturnRsuIds = std::move (resolvedRsuIds);
+  return true;
+}
+
+void
+VndnRouter::OnNeuralRouteInstruction (const ndn::Data &data)
+{
+  const ndn::Block &content = data.getContent ();
+  std::istringstream parser (
+      std::string (reinterpret_cast<const char *> (content.value ()),
+                   content.value_size ()));
+  std::string interestUri;
+  if (!(parser >> interestUri))
+    return;
+
+  std::vector<uint32_t> returnRsuIds;
+  uint32_t rsuId = 0;
+  while (parser >> rsuId)
+    returnRsuIds.push_back (rsuId);
+  if (returnRsuIds.empty ())
+    return;
+
+  ndn::Name interestName (interestUri);
+  auto pending = m_pendingRequests.find (interestName);
+  if (pending != m_pendingRequests.end ())
+    {
+      if (ApplyNeuralReturnRoute (pending->second, returnRsuIds))
+        NS_LOG_INFO ("Router 覆盖请求回程路由: " << interestName
+                     << " 目标RSU数="
+                     << pending->second.requestedReturnRsuIds.size ());
+      return;
+    }
+
+  m_neuralRouteInstructions[interestName] = returnRsuIds;
+  NS_LOG_DEBUG ("Router 暂存先到达的神经网络回程指令: " << interestName);
 }
 
 void

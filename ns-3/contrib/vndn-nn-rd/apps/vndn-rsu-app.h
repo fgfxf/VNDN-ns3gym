@@ -15,6 +15,7 @@
 #include "ns3/application.h"
 #include "ns3/traci-client.h"
 #include "ns3/enum.h"
+#include "ns3/uinteger.h"
 
 namespace ns3 {
 
@@ -42,13 +43,21 @@ public:
                            ns3::MakePointerChecker<ns3::TraciClient> ())
             .AddAttribute (
                 "RsuForwardStrategy",
-                "Vehicle handover Data recovery: NoForward, VTDF, or RealTimeVTDF",
+                "Vehicle Data return strategy: NoForward, VTDF, RealTimeVTDF, or NeuralNetwork",
                 ns3::EnumValue (vanet::RsuForwardStrategy_NoForward),
                 ns3::MakeEnumAccessor (&VndnRsuApp::m_forwardStrategy),
                 ns3::MakeEnumChecker (vanet::RsuForwardStrategy_NoForward, "NoForward",
                                       vanet::RsuForwardStrategy_VTDF, "VTDF",
                                       vanet::RsuForwardStrategy_RealTimeVtdf,
-                                      "RealTimeVTDF"));
+                                      "RealTimeVTDF",
+                                      vanet::RsuForwardStrategy_NeuralNetwork,
+                                      "NeuralNetwork"))
+            .AddAttribute (
+                "OpenGymPort",
+                "Shared ns3-gym port used by the NeuralNetwork return strategy; 0 disables it",
+                ns3::UintegerValue (0),
+                ns3::MakeUintegerAccessor (&VndnRsuApp::m_openGymPort),
+                ns3::MakeUintegerChecker<uint16_t> (0, 65535));
     return tid;
   }
 
@@ -60,6 +69,7 @@ public:
   {
     m_instance.reset (new vanet::VndnRsu (m_traci));
     m_instance->setRsuForwardStrategy (m_forwardStrategy);
+    m_instance->setOpenGymPort (m_openGymPort);
     m_instance->Start ();
   }
 
@@ -81,6 +91,7 @@ private:
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
   vanet::RsuForwardStrategy m_forwardStrategy =
       vanet::RsuForwardStrategy_NoForward;
+  uint16_t m_openGymPort = 0;
 };
 
 } // namespace ns3

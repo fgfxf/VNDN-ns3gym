@@ -28,9 +28,18 @@
 #include "../src/json/single_include/nlohmann/json.hpp"
 
 #include <map>
+#include <array>
+#include <deque>
+#include <queue>
 #include <set>
 #include <string>
 #include <vector>
+
+namespace ns3 {
+class OpenGymInterface;
+class OpenGymSpace;
+class OpenGymDataContainer;
+}
 
 namespace vanet {
 
@@ -67,6 +76,10 @@ public:
 
   void
   setRsuForwardStrategy (RsuForwardStrategy strategy);
+
+  /** 设置共享 ns3-gym 端口；0 表示关闭。 */
+  void
+  setOpenGymPort (uint16_t openGymPort);
 
 private:
   /**
@@ -180,7 +193,8 @@ private:
 
   void
   ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNodeId,
-                          uint64_t obuMac);
+                          uint64_t obuMac,
+                          const std::vector<uint32_t> &returnRsuIds = {});
 
   void
   OnVehicleData (const ndn::Interest &interest, const ndn::Data &data);
@@ -198,8 +212,17 @@ private:
   void
   OnRsuRelayData (const ndn::Data &data);
 
+  /** 处理 Router 根据神经网络回程选择直接推送的业务 Data。 */
+  void
+  OnNeuralReturnData (const ndn::Data &data);
+
   void
   SendRelayData (const ndn::Name &name, const uint8_t *content, size_t contentSize);
+
+  /** 将神经网络选择的 Data 回程 RSU 通知 Router。 */
+  void
+  SendNeuralRouteInstruction (const ndn::Name &interestName,
+                              const std::vector<uint32_t> &returnRsuIds);
 
   uint64_t
   ResolveRouterFace () const;
@@ -207,11 +230,55 @@ private:
   int64_t
   ResolveRealtimeTargetRsu (uint32_t obuNodeId) const;
 
+  ////////////////////////////////////////////////////////////////////////
+  // 共享 ns3-gym 神经网络回程决策接口
+  ////////////////////////////////////////////////////////////////////////
+  void
+  InitializeOpenGym ();
+
+  void
+  RequestNeuralRoute (const ndn::Interest &interest, uint32_t obuNodeId,
+                      uint64_t obuMac);
+
+  std::vector<uint32_t>
+  GetNeuralCandidateRsuIds () const;
+
+  ns3::Ptr<ns3::OpenGymSpace>
+  GetNeuralObservationSpace ();
+
+  ns3::Ptr<ns3::OpenGymSpace>
+  GetNeuralActionSpace ();
+
+  bool
+  GetNeuralGameOver ();
+
+  ns3::Ptr<ns3::OpenGymDataContainer>
+  GetNeuralObservation ();
+
+  float
+  GetNeuralReward ();
+
+  std::string
+  GetNeuralExtraInfo ();
+
+  bool
+  ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action);
+
 private:
   struct PendingVehicleRequest
   {
     uint32_t obuNodeId = 0;
     uint64_t obuMac = 0;
+  };
+
+  struct NeuralRouteJob
+  {
+    VndnRsu *source = nullptr;
+    std::shared_ptr<ndn::Interest> interest;
+    uint32_t obuNodeId = 0;
+    uint64_t obuMac = 0;
+    std::vector<std::array<double, 6>> observations;
+    std::vector<uint32_t> candidateRsuIds;
   };
 
   ndn::Face m_face;                          ///< 应用层与 NFD 交互的 face
@@ -228,6 +295,10 @@ private:
   ns3::EventId m_p2pHandshakeEvent;          ///< 启动阶段握手事件
   uint32_t m_p2pHandshakeRound = 0;           ///< 当前握手轮次
   RsuForwardStrategy m_forwardStrategy = RsuForwardStrategy_NoForward;
+  uint16_t m_openGymPort = 0;
+  bool m_openGymRegistered = false;
+  uint32_t m_neuralSequenceLength = 10;
+  double m_neuralDualPathProbabilityGap = 0.10;
   uint64_t m_relaySequence = 0;
   std::map<ndn::Name, PendingVehicleRequest> m_pendingVehicleRequests;
   std::map<uint32_t, std::vector<std::shared_ptr<ndn::Data>>> m_waitingForwardData;
@@ -255,8 +326,16 @@ private:
   std::map<int64_t, uint64_t> m_vehicleMac;
   /// 车辆节点ID -> 最后一次 hello 上报的次优 RSU（超时后仍保留）
   std::map<int64_t, int64_t> m_vehicleNextRsu;
+  /// 车辆节点ID -> 最近的 hello 特征序列，顺序与训练 CSV 一致
+  std::map<int64_t, std::deque<std::array<double, 6>>> m_vehicleObservationHistory;
   /// 车辆超时时间（毫秒），超过该时间未回复则视为离开
   uint32_t m_vehicleTimeoutMs;
+
+  /** 所有 RSU 共用一个阻塞式 ns3-gym 连接和决策队列。 */
+  static ns3::Ptr<ns3::OpenGymInterface> s_openGym;
+  static VndnRsu *s_openGymOwner;
+  static std::queue<NeuralRouteJob> s_neuralRouteJobs;
+  static uint32_t s_openGymUserCount;
 };
 
 } // namespace vanet

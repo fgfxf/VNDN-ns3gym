@@ -16,6 +16,18 @@
 #include "ns3/ndnSIM/NFD/daemon/table/pit.hpp"
 #include "ns3/assert.h"
 #include "ns3/mobility-model.h"
+// SUMO TraCI uses global TYPE_* macros that collide with protobuf enums pulled
+// in by ns3-gym. VndnRsu does not use these TraCI type-code macros directly.
+#undef TYPE_POLYGON
+#undef TYPE_UBYTE
+#undef TYPE_BYTE
+#undef TYPE_INTEGER
+#undef TYPE_DOUBLE
+#undef TYPE_STRING
+#undef TYPE_STRINGLIST
+#undef TYPE_COMPOUND
+#undef TYPE_COLOR
+#include "ns3/opengym-module.h"
 #include "ns3/simulator.h"
 #include "ns3/vndn-rsu-forwarding-policy.h"
 #include <ndn-cxx/lp/tags.hpp>
@@ -23,12 +35,20 @@
 #include "../model/vndn-tag.hpp"
 
 #include <iostream>
+#include <algorithm>
+#include <functional>
+#include <limits>
 #include <sstream>
 #include <tuple>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnRsu");
 
 namespace vanet {
+
+ns3::Ptr<ns3::OpenGymInterface> VndnRsu::s_openGym = nullptr;
+VndnRsu *VndnRsu::s_openGymOwner = nullptr;
+std::queue<VndnRsu::NeuralRouteJob> VndnRsu::s_neuralRouteJobs;
+uint32_t VndnRsu::s_openGymUserCount = 0;
 
 VndnRsu::VndnRsu (ns3::Ptr<ns3::TraciClient> &traci)
     : m_scheduler (m_face.getIoService ())
@@ -156,7 +176,10 @@ VndnRsu::OnInterest (const ndn::Interest &interest)
       return;
     }
 
-  ForwardVehicleInterest (interest, vndnTag->getSenderNodeId (), vndnTag->getSenderMac ());
+  if (m_forwardStrategy == RsuForwardStrategy_NeuralNetwork)
+    RequestNeuralRoute (interest, vndnTag->getSenderNodeId (), vndnTag->getSenderMac ());
+  else
+    ForwardVehicleInterest (interest, vndnTag->getSenderNodeId (), vndnTag->getSenderMac ());
   NS_LOG_DEBUG ("RSU 收到兴趣包: " << interest.getName ());
 }
 
@@ -211,6 +234,17 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
   m_vehicleNextRsu[obuNodeId] =
       j.value ("NextRsu", static_cast<int64_t> (m_thisNode->GetId ()));
   m_resolvedVehicleRsu.erase (static_cast<uint32_t> (obuNodeId));
+
+  // 保存与 training-tag CSV 六个输入列完全一致的 hello 时间序列。
+  // Keep the exact six-feature order used during TKAN-LSTM training.
+  std::array<double, 6> observation = {
+      j.value ("LocateX", 0.0), j.value ("LocateY", 0.0),
+      j.value ("Speed", 0.0), j.value ("Acceleration", 0.0),
+      j.value ("Angle", 0.0), static_cast<double> (j.value ("LaneIndex", 0))};
+  auto &history = m_vehicleObservationHistory[obuNodeId];
+  history.push_back (observation);
+  while (history.size () > m_neuralSequenceLength)
+    history.pop_front ();
 
   // 补救 Data 可能比车辆在新 RSU 的首次 hello 注册更早到达。
   // 注册完成后立即刷新这些暂存 Data，避免交接竞态造成丢包。
@@ -418,6 +452,13 @@ VndnRsu::PushIdentityData (uint64_t faceId, uint32_t nodeId,
 void
 VndnRsu::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
 {
+  static const ndn::Name servicePrefix ("/com/baidu");
+  if (servicePrefix.isPrefixOf (data.getName ()))
+    {
+      OnNeuralReturnData (data);
+      return;
+    }
+
   static const ndn::Name relayPrefix ("/vndn/control/rsu-relay");
   if (relayPrefix.isPrefixOf (data.getName ()))
     {
@@ -532,6 +573,12 @@ VndnRsu::setRsuForwardStrategy (RsuForwardStrategy strategy)
   m_forwardStrategy = strategy;
 }
 
+void
+VndnRsu::setOpenGymPort (uint16_t openGymPort)
+{
+  m_openGymPort = openGymPort;
+}
+
 uint64_t
 VndnRsu::ResolveRouterFace () const
 {
@@ -597,7 +644,8 @@ VndnRsu::ResolveRealtimeTargetRsu (uint32_t obuNodeId) const
 
 void
 VndnRsu::ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNodeId,
-                                 uint64_t obuMac)
+                                 uint64_t obuMac,
+                                 const std::vector<uint32_t> &returnRsuIds)
 {
   const uint64_t routerFace = ResolveRouterFace ();
   if (routerFace == 0)
@@ -629,13 +677,30 @@ VndnRsu::ForwardVehicleInterest (const ndn::Interest &interest, uint32_t obuNode
   // 代理 Interest，否则再次投递给本应用时会被误认为无线入包。
   upstream.removeTag<ndn::lp::IncomingFaceIdTag> ();
   upstream.removeTag<vanet::lp::VndnTag> ();
+  if (!returnRsuIds.empty ())
+    {
+      // 该 LP 标签随 Interest 到达 Router；Router 据此替换 Data 回程接口。
+      // OBU ID/MAC 同时随标签送达目标 RSU，供其完成最后一跳单播。
+      auto routeTag = std::make_shared<vanet::lp::VndnTag> (obuNodeId, obuMac, 0);
+      routeTag->setReturnRsuPrimary (returnRsuIds.front ());
+      if (returnRsuIds.size () > 1)
+        routeTag->setReturnRsuSecondary (returnRsuIds[1]);
+      upstream.setTag (routeTag);
+      NS_LOG_DEBUG ("RSU 写入神经网络回程标签: primary="
+                    << routeTag->getReturnRsuPrimary () << " secondary="
+                    << routeTag->getReturnRsuSecondary ());
+      // 同名 Interest 可能已被 NFD 的默认路由先行转发并被 PIT 聚合，因此
+      // 再发送一条控制 Data，确保 Router 能在服务器 Data 返回前覆盖回程接口。
+      SendNeuralRouteInstruction (interest.getName (), returnRsuIds);
+    }
   upstream.setTag (std::make_shared<ndn::lp::NextHopFaceIdTag> (routerFace));
   m_face.expressInterest (
       upstream, std::bind (&VndnRsu::OnVehicleData, this, _1, _2),
       std::bind (&VndnRsu::OnNack, this, _1, _2),
       std::bind (&VndnRsu::OnTimeout, this, _1));
   NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 代理 OBU " << obuNodeId
-                       << " 的 Interest: " << interest.getName ());
+                       << " 的 Interest: " << interest.getName ()
+                       << " 神经网络回程RSU数=" << returnRsuIds.size ());
 }
 
 void
@@ -736,6 +801,29 @@ VndnRsu::SendRelayData (const ndn::Name &name, const uint8_t *content,
 }
 
 void
+VndnRsu::SendNeuralRouteInstruction (
+    const ndn::Name &interestName, const std::vector<uint32_t> &returnRsuIds)
+{
+  if (returnRsuIds.empty ())
+    return;
+
+  std::ostringstream payload;
+  payload << interestName.toUri ();
+  for (uint32_t rsuId : returnRsuIds)
+    payload << ' ' << rsuId;
+  const std::string content = payload.str ();
+
+  ndn::Name name ("/vndn/control/neural-route");
+  name.appendNumber (m_thisNode->GetId ())
+      .appendNumber (++m_relaySequence);
+  SendRelayData (name, reinterpret_cast<const uint8_t *> (content.data ()),
+                 content.size ());
+  NS_LOG_DEBUG ("RSU " << m_thisNode->GetId ()
+                        << " 向 Router 发送神经网络回程指令: "
+                        << interestName << " 目标数=" << returnRsuIds.size ());
+}
+
+void
 VndnRsu::QueryVehicleLocation (uint32_t obuNodeId)
 {
   m_resolvedVehicleRsu.erase (obuNodeId);
@@ -830,11 +918,246 @@ VndnRsu::OnRsuRelayData (const ndn::Data &data)
 }
 
 void
+VndnRsu::OnNeuralReturnData (const ndn::Data &data)
+{
+  auto routeTag = data.getTag<vanet::lp::VndnTag> ();
+  if (routeTag == nullptr || routeTag->getReturnRsuPrimary () < 0)
+    return;
+
+  const uint32_t obuNodeId = routeTag->getSenderNodeId ();
+  const uint64_t obuMac = routeTag->getSenderMac ();
+  if (m_vehicleLastReplyMs.count (obuNodeId) == 0)
+    {
+      m_relayDataWaitingForVehicle[obuNodeId].push_back (
+          std::make_shared<ndn::Data> (data));
+      NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 暂存神经网络回程 Data: "
+                           << data.getName () << " OBU=" << obuNodeId);
+      return;
+    }
+
+  SendDataToVehicle (data, obuNodeId, obuMac);
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 执行神经网络回程: "
+                       << data.getName () << " OBU=" << obuNodeId);
+}
+
+std::vector<uint32_t>
+VndnRsu::GetNeuralCandidateRsuIds () const
+{
+  std::set<uint32_t> candidateSet;
+  candidateSet.insert (m_thisNode->GetId ());
+  for (const auto &entry : m_infrastructureRoles)
+    {
+      if (entry.second == "rsu")
+        candidateSet.insert (entry.first);
+    }
+  return std::vector<uint32_t> (candidateSet.begin (), candidateSet.end ());
+}
+
+void
+VndnRsu::InitializeOpenGym ()
+{
+  if (m_forwardStrategy != RsuForwardStrategy_NeuralNetwork ||
+      m_openGymPort == 0 || m_openGymRegistered)
+    return;
+
+  m_openGymRegistered = true;
+  ++s_openGymUserCount;
+  if (s_openGym != nullptr)
+    return;
+
+  s_openGymOwner = this;
+  s_openGym = ns3::CreateObject<ns3::OpenGymInterface> (m_openGymPort);
+  s_openGym->SetGetObservationSpaceCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralObservationSpace, this));
+  s_openGym->SetGetActionSpaceCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralActionSpace, this));
+  s_openGym->SetGetGameOverCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralGameOver, this));
+  s_openGym->SetGetObservationCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralObservation, this));
+  s_openGym->SetGetRewardCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralReward, this));
+  s_openGym->SetGetExtraInfoCb (
+      ns3::MakeCallback (&VndnRsu::GetNeuralExtraInfo, this));
+  s_openGym->SetExecuteActionsCb (
+      ns3::MakeCallback (&VndnRsu::ExecuteNeuralAction, this));
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 创建共享 ns3-gym 接口，端口="
+                       << m_openGymPort);
+}
+
+void
+VndnRsu::RequestNeuralRoute (const ndn::Interest &interest, uint32_t obuNodeId,
+                             uint64_t obuMac)
+{
+  if (s_openGym == nullptr)
+    {
+      NS_LOG_WARN ("神经网络策略未配置有效 ns3-gym 端口，回程退化为当前 RSU "
+                   << m_thisNode->GetId ());
+      ForwardVehicleInterest (interest, obuNodeId, obuMac,
+                              {m_thisNode->GetId ()});
+      return;
+    }
+
+  NeuralRouteJob job;
+  job.source = this;
+  job.interest = std::make_shared<ndn::Interest> (interest);
+  job.obuNodeId = obuNodeId;
+  job.obuMac = obuMac;
+  job.candidateRsuIds = GetNeuralCandidateRsuIds ();
+
+  auto history = m_vehicleObservationHistory.find (obuNodeId);
+  if (history != m_vehicleObservationHistory.end () && !history->second.empty ())
+    {
+      // 序列不足 10 步时用最早状态在左侧填充，最新状态始终位于末尾。
+      // Left-pad a short history with its earliest state.
+      while (job.observations.size () + history->second.size () <
+             m_neuralSequenceLength)
+        job.observations.push_back (history->second.front ());
+      job.observations.insert (job.observations.end (), history->second.begin (),
+                               history->second.end ());
+    }
+  else
+    {
+      job.observations.assign (m_neuralSequenceLength, std::array<double, 6> {});
+    }
+
+  if (job.candidateRsuIds.empty ())
+    job.candidateRsuIds.push_back (m_thisNode->GetId ());
+  s_neuralRouteJobs.push (std::move (job));
+  s_openGym->NotifyCurrentState ();
+}
+
+ns3::Ptr<ns3::OpenGymSpace>
+VndnRsu::GetNeuralObservationSpace ()
+{
+  NS_ASSERT_MSG (!s_neuralRouteJobs.empty (), "ns3-gym 初始化时应已有决策任务");
+  const uint32_t candidateCount =
+      static_cast<uint32_t> (s_neuralRouteJobs.front ().candidateRsuIds.size ());
+  auto space = ns3::CreateObject<ns3::OpenGymDictSpace> ();
+  space->Add ("features", ns3::CreateObject<ns3::OpenGymBoxSpace> (
+                                -1000000.0f, 1000000.0f,
+                                std::vector<uint32_t> {m_neuralSequenceLength, 6},
+                                "double"));
+  space->Add ("rsu_ids", ns3::CreateObject<ns3::OpenGymBoxSpace> (
+                               0.0f, 1000000.0f,
+                               std::vector<uint32_t> {candidateCount}, "uint32_t"));
+  space->Add ("obu_id", ns3::CreateObject<ns3::OpenGymBoxSpace> (
+                              0.0f, 1000000.0f,
+                              std::vector<uint32_t> {1}, "uint32_t"));
+  return space;
+}
+
+ns3::Ptr<ns3::OpenGymSpace>
+VndnRsu::GetNeuralActionSpace ()
+{
+  NS_ASSERT_MSG (!s_neuralRouteJobs.empty (), "ns3-gym 初始化时应已有决策任务");
+  const uint32_t candidateCount =
+      static_cast<uint32_t> (s_neuralRouteJobs.front ().candidateRsuIds.size ());
+  return ns3::CreateObject<ns3::OpenGymBoxSpace> (
+      0.0f, 1.0f, std::vector<uint32_t> {candidateCount}, "float");
+}
+
+bool
+VndnRsu::GetNeuralGameOver ()
+{
+  return false;
+}
+
+ns3::Ptr<ns3::OpenGymDataContainer>
+VndnRsu::GetNeuralObservation ()
+{
+  // NotifySimulationEnd() 也会请求一次最终状态；此时可能没有待决策任务。
+  if (s_neuralRouteJobs.empty ())
+    return nullptr;
+  const NeuralRouteJob &job = s_neuralRouteJobs.front ();
+  auto observation = ns3::CreateObject<ns3::OpenGymDictContainer> ();
+
+  auto features = ns3::CreateObject<ns3::OpenGymBoxContainer<double>> (
+      std::vector<uint32_t> {m_neuralSequenceLength, 6});
+  for (const auto &state : job.observations)
+    for (double value : state)
+      features->AddValue (value);
+  observation->Add ("features", features);
+
+  auto rsuIds = ns3::CreateObject<ns3::OpenGymBoxContainer<uint32_t>> (
+      std::vector<uint32_t> {
+          static_cast<uint32_t> (job.candidateRsuIds.size ())});
+  for (uint32_t rsuId : job.candidateRsuIds)
+    rsuIds->AddValue (rsuId);
+  observation->Add ("rsu_ids", rsuIds);
+
+  auto obuId = ns3::CreateObject<ns3::OpenGymBoxContainer<uint32_t>> (
+      std::vector<uint32_t> {1});
+  obuId->AddValue (job.obuNodeId);
+  observation->Add ("obu_id", obuId);
+  return observation;
+}
+
+float
+VndnRsu::GetNeuralReward ()
+{
+  return 0.0f;
+}
+
+std::string
+VndnRsu::GetNeuralExtraInfo ()
+{
+  if (s_neuralRouteJobs.empty ())
+    return "no-pending-neural-job";
+  std::ostringstream info;
+  info << "sourceRsu=" << s_neuralRouteJobs.front ().source->m_thisNode->GetId ()
+       << ",obu=" << s_neuralRouteJobs.front ().obuNodeId;
+  return info.str ();
+}
+
+bool
+VndnRsu::ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action)
+{
+  if (s_neuralRouteJobs.empty ())
+    return false;
+
+  NeuralRouteJob job = std::move (s_neuralRouteJobs.front ());
+  s_neuralRouteJobs.pop ();
+  auto probabilities =
+      ns3::DynamicCast<ns3::OpenGymBoxContainer<float>> (action);
+  if (probabilities == nullptr ||
+      probabilities->GetData ().size () != job.candidateRsuIds.size ())
+    {
+      NS_LOG_WARN ("ns3-gym 返回的概率数量无效，退化为当前 RSU");
+      job.source->ForwardVehicleInterest (*job.interest, job.obuNodeId, job.obuMac,
+                                          {job.source->m_thisNode->GetId ()});
+      return false;
+    }
+
+  const std::vector<float> values = probabilities->GetData ();
+  const std::vector<uint32_t> selectedRsuIds =
+      VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
+          job.candidateRsuIds, values,
+          job.source->m_neuralDualPathProbabilityGap);
+
+  std::vector<float> sortedValues = values;
+  std::sort (sortedValues.begin (), sortedValues.end (), std::greater<float> ());
+
+  std::ostringstream selected;
+  for (uint32_t rsuId : selectedRsuIds)
+    selected << rsuId << ' ';
+  NS_LOG_INFO ("神经网络回程决策 OBU=" << job.obuNodeId
+               << " top1=" << sortedValues.front ()
+               << " top2=" << (sortedValues.size () > 1 ? sortedValues[1] : -1.0f)
+               << " x=" << job.source->m_neuralDualPathProbabilityGap
+               << " 选择RSU=" << selected.str ());
+  job.source->ForwardVehicleInterest (*job.interest, job.obuNodeId, job.obuMac,
+                                      selectedRsuIds);
+  return true;
+}
+
+void
 VndnRsu::Start ()
 {
   m_face.processEvents ();
   m_active = true;
   NS_LOG_DEBUG ("RSU 启动...");
+  InitializeOpenGym ();
   // 启动周期性同步信号广播
   m_sendSyncSignal = m_scheduler.schedule (
       ndn::time::milliseconds (m_syncSignalIntervalMs), [this] { SendSyncSignal (); });
@@ -847,9 +1170,25 @@ VndnRsu::Start ()
 void
 VndnRsu::Stop ()
 {
-  NS_LOG_DEBUG ("RSU 关闭...");
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 关闭");
   m_sendSyncSignal.cancel ();
   m_p2pHandshakeEvent.Cancel ();
+  if (m_openGymRegistered)
+    {
+      m_openGymRegistered = false;
+      NS_ASSERT (s_openGymUserCount > 0);
+      --s_openGymUserCount;
+      // 第一个停止的 RSU 立即发送结束消息。若等待最后一个 RSU，最初注册
+      // callbacks 的 owner 可能已经析构，Python 端也会一直阻塞在 step()。
+      if (s_openGym != nullptr)
+        {
+          s_openGym->NotifySimulationEnd ();
+          s_openGym = nullptr;
+          s_openGymOwner = nullptr;
+          while (!s_neuralRouteJobs.empty ())
+            s_neuralRouteJobs.pop ();
+        }
+    }
   m_face.shutdown ();
   m_active = false;
 }

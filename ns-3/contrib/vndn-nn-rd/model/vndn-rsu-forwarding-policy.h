@@ -19,6 +19,15 @@ public:
   SelectNearestRsu (
       const ns3::Vector &vehiclePosition,
       const std::vector<std::pair<uint32_t, ns3::Vector>> &rsuPositions);
+
+  /**
+   * Select the highest-probability RSU and optionally the runner-up when the
+   * probability gap is no larger than dualPathGap.
+   */
+  static std::vector<uint32_t>
+  SelectNeuralReturnRsus (const std::vector<uint32_t> &candidateRsuIds,
+                          const std::vector<float> &probabilities,
+                          double dualPathGap);
 };
 
 } // namespace vanet

@@ -38,7 +38,7 @@ cd "${ns3_dir}" || exit 1
 for ((run_index = 1; run_index <= run_count; ++run_index)); do
   echo "[$run_index/$run_count] Starting vndn-circle-simulator (80-second limit)"
   NS_LOG=ndn.VndnObu:ndn.VndnRsu:ndn.VndnRouter \
-    timeout --foreground 80s ./waf --run "vndn-circle-simulator --log"
+    timeout --foreground 120s ./waf --run "vndn-circle-simulator --log"
   exit_code=$?
 
   if [[ $exit_code -eq 130 || $exit_code -eq 143 ]]; then

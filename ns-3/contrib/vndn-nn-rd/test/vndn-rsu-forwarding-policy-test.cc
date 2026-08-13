@@ -45,6 +45,48 @@ public:
   }
 };
 
+class NeuralReturnSelectionTestCase : public ns3::TestCase
+{
+public:
+  NeuralReturnSelectionTestCase ()
+      : TestCase ("Neural return routing selects one or two RSUs from probability gap")
+  {
+  }
+
+private:
+  void
+  DoRun () override
+  {
+    const std::vector<uint32_t> rsus = {0, 1};
+    auto single = vanet::VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
+        rsus, {0.8f, 0.2f}, 0.1);
+    NS_TEST_EXPECT_MSG_EQ (single.size (), 1, "A clear winner must use one return path");
+    NS_TEST_EXPECT_MSG_EQ (single.at (0), 0, "The highest probability RSU must win");
+
+    auto dual = vanet::VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
+        rsus, {0.47f, 0.53f}, 0.1);
+    NS_TEST_EXPECT_MSG_EQ (dual.size (), 2, "A small probability gap must use two paths");
+    NS_TEST_EXPECT_MSG_EQ (dual.at (0), 1, "The highest probability path is primary");
+    NS_TEST_EXPECT_MSG_EQ (dual.at (1), 0, "The runner-up is the second path");
+
+    auto invalid = vanet::VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
+        rsus, {1.0f}, 0.1);
+    NS_TEST_EXPECT_MSG_EQ (invalid.empty (), true,
+                           "Mismatched candidates and probabilities must be rejected");
+  }
+};
+
+class NeuralReturnSelectionTestSuite : public ns3::TestSuite
+{
+public:
+  NeuralReturnSelectionTestSuite ()
+      : TestSuite ("vndn-neural-return-selection", UNIT)
+  {
+    AddTestCase (new NeuralReturnSelectionTestCase, TestCase::QUICK);
+  }
+};
+
 static VndnRsuForwardingPolicyTestSuite g_vndnRsuForwardingPolicyTestSuite;
+static NeuralReturnSelectionTestSuite g_neuralReturnSelectionTestSuite;
 
 } // namespace
