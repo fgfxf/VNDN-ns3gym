@@ -86,6 +86,21 @@ private:
   void
   OnNeuralRouteInstruction (const ndn::Data &data);
 
+  /**
+   * 通知目标 RSU 为原始业务 Interest 在无线 face 上创建 PIT。
+   *
+   * 控制报文只负责提前铺设反向路径，真正的业务 Data 仍保持原名称，
+   * 到达目标 RSU 后由 NFD 按 PIT 的 in-record 自动发送到无线接口。
+   */
+  void
+  SendNeuralPitPrepare (uint32_t targetRsuId, uint64_t targetFaceId,
+                        uint32_t obuNodeId, uint64_t obuMac,
+                        const ndn::Interest &originalInterest);
+
+  /** 为尚未预备的神经网络目标 RSU 发送 PIT 控制报文。 */
+  void
+  PrepareNeuralReturnPits (PendingRequest &request);
+
   /** 用目标 RSU ID 覆盖指定请求的回程接口。 */
   bool
   ApplyNeuralReturnRoute (PendingRequest &request,
@@ -98,9 +113,14 @@ private:
 private:
   struct PendingRequest
   {
+    /// 最初到达 Router 的车辆业务 Interest，保留 OBU ID/MAC 等 LP 标签。
     std::shared_ptr<const ndn::Interest> originalInterest;
+    /// 服务器 Data 应被推送到的 RSU P2P face；双路径时包含两个 face。
     std::set<uint64_t> returnFaceIds;
+    /// 与 returnFaceIds 对应的 RSU 节点 ID，供回程日志和标签使用。
     std::vector<uint32_t> requestedReturnRsuIds;
+    /// 已发送过建 PIT 控制报文的 RSU，避免同名 Interest 聚合时重复预备。
+    std::set<uint32_t> preparedReturnRsuIds;
   };
 
   ndn::Face m_face;
@@ -113,6 +133,7 @@ private:
   ns3::EventId m_p2pHandshakeEvent;
   uint32_t m_p2pHandshakeRound = 0;
   uint64_t m_serverFaceId = 0;
+  uint64_t m_neuralPitSequence = 0;
   std::map<ndn::Name, PendingRequest> m_pendingRequests;
   std::map<ndn::Name, std::vector<uint32_t>> m_neuralRouteInstructions;
 };

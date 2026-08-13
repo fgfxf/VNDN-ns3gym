@@ -626,6 +626,15 @@ Forwarder::onNewNextHop(const Name& prefix, const fib::NextHop& nextHop)
 }
 
 void
+Forwarder::setProtocolPitExpiryTimer(const shared_ptr<pit::Entry>& pitEntry,
+                                     time::milliseconds duration)
+{
+  // 统一复用 Forwarder 原有定时器实现，确保主动插入的协议 PIT 与普通
+  // Interest 建立的 PIT 具有完全相同的取消和最终清理行为。
+  this->setExpiryTimer(pitEntry, duration);
+}
+
+void
 Forwarder::setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::milliseconds duration)
 {
   BOOST_ASSERT(pitEntry);

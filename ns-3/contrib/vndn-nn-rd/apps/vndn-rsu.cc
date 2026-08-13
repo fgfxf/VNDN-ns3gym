@@ -452,6 +452,15 @@ VndnRsu::PushIdentityData (uint64_t faceId, uint32_t nodeId,
 void
 VndnRsu::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
 {
+  // /vndn/control 是无 PIT 也会由 NFD 持久投递给本地应用的协议空间。
+  // neural-pit 必须优先分发，避免落入普通握手或 RSU 中继处理分支。
+  static const ndn::Name neuralPitPrefix ("/vndn/control/neural-pit");
+  if (neuralPitPrefix.isPrefixOf (data.getName ()))
+    {
+      OnNeuralPitPrepareData (data);
+      return;
+    }
+
   static const ndn::Name servicePrefix ("/com/baidu");
   if (servicePrefix.isPrefixOf (data.getName ()))
     {
@@ -495,6 +504,76 @@ VndnRsu::OnP2pHandshakeDataPush (const ndn::Interest &, const ndn::Data &data)
       if (faceId != inFaceId)
         PushIdentityData (faceId, nodeId, role, data.getName ());
     }
+}
+
+void
+VndnRsu::OnNeuralPitPrepareData (const ndn::Data &data)
+{
+  const ndn::Name &controlName = data.getName ();
+  // /vndn/control/neural-pit/<target-rsu>/<obu>/<obu-mac>/<sequence>
+  if (controlName.size () < 7)
+    return;
+
+  const uint32_t targetRsuId =
+      static_cast<uint32_t> (controlName.get (3).toNumber ());
+  const uint32_t obuNodeId =
+      static_cast<uint32_t> (controlName.get (4).toNumber ());
+  // Router 通过指定 face 正常只会送到一个目标；仍校验 ID，使协议在拓扑
+  // 或转发规则配置错误时不会在错误 RSU 上创建无效 PIT。
+  if (targetRsuId != m_thisNode->GetId ())
+    return;
+
+  const ndn::Block &content = data.getContent ();
+  auto parsed = ndn::Block::fromBuffer (content.value (), content.value_size ());
+  if (!std::get<0> (parsed))
+    {
+      NS_LOG_WARN ("RSU " << m_thisNode->GetId ()
+                            << " 无法解析神经网络 PIT 预备报文");
+      return;
+    }
+
+  auto originalInterest =
+      std::make_shared<ndn::Interest> (std::get<1> (parsed));
+  // 只允许为业务前缀代建 PIT，控制报文不能借此任意修改其他命名空间。
+  static const ndn::Name servicePrefix ("/com/baidu");
+  if (!servicePrefix.isPrefixOf (originalInterest->getName ()))
+    {
+      NS_LOG_WARN ("RSU " << m_thisNode->GetId ()
+                            << " 拒绝为非业务前缀创建神经网络 PIT: "
+                            << originalInterest->getName ());
+      return;
+    }
+
+  auto ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+  auto &forwarder = *ndnL3->getForwarder ();
+  // PIT 的下游必须是无线 face，而不是收到控制报文的 P2P face。这样原始
+  // Data 从 Router 到达后才会由 NFD 继续转给车辆。
+  auto *wirelessFace = ndnL3->getFaceTable ().get (m_wirelessFaceId);
+  if (wirelessFace == nullptr)
+    {
+      NS_LOG_WARN ("RSU " << m_thisNode->GetId ()
+                            << " 找不到无线 face，无法创建神经网络回程 PIT");
+      return;
+    }
+
+  auto inserted = forwarder.getPit ().insert (*originalInterest);
+  auto pitEntry = inserted.first;
+  if (pitEntry == nullptr)
+    return;
+
+  // 与旧版实现相同：恢复/补充无线 in-record。服务器 Data 从 Router 到达
+  // 后，NFD 会沿 PIT 自动发到无线 face，VndnTag 中的目标 MAC 保证单播。
+  pitEntry->insertOrUpdateInRecord (*wirelessFace, *originalInterest);
+  // 复用原始 InterestLifetime。超时后 NFD 自动清理预备 PIT，防止神经
+  // 网络误判或服务器无响应时遗留永久表项。
+  forwarder.setProtocolPitExpiryTimer (
+      pitEntry, ndn::time::duration_cast<ndn::time::milliseconds> (
+                    originalInterest->getInterestLifetime ()));
+  NS_LOG_INFO ("RSU " << m_thisNode->GetId ()
+                       << (inserted.second ? " 创建" : " 补充")
+                       << "神经网络回程 PIT: " << originalInterest->getName ()
+                       << " wirelessFaceId=" << m_wirelessFaceId
+                       << " OBU=" << obuNodeId);
 }
 
 void
@@ -712,6 +791,16 @@ VndnRsu::OnVehicleData (const ndn::Interest &interest, const ndn::Data &data)
 
   const PendingVehicleRequest request = pending->second;
   m_pendingVehicleRequests.erase (pending);
+  if (m_forwardStrategy == RsuForwardStrategy_NeuralNetwork)
+    {
+      // Router 的 /vndn/control/neural-pit 预备报文已经在选中 RSU 的
+      // 无线 face 上恢复了 PIT。NFD 会自动转发当前 Data；应用层不得再次
+      // put，否则源 RSU 会绕过神经网络选择并产生重复无线 Data。
+      NS_LOG_DEBUG ("RSU " << m_thisNode->GetId ()
+                            << " 神经网络回程 Data 由 PIT 自动转发: "
+                            << data.getName ());
+      return;
+    }
   if (m_vehicleLastReplyMs.count (request.obuNodeId) != 0)
     {
       SendDataToVehicle (data, request.obuNodeId, request.obuMac);
@@ -1130,10 +1219,13 @@ VndnRsu::ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action)
     }
 
   const std::vector<float> values = probabilities->GetData ();
+  // 双路径有两个触发条件：前两名十分接近，或第二名本身已有至少 0.10
+  // 的可信度。后者让 0.78/0.22 这类切换期结果也能获得冗余回程。
   const std::vector<uint32_t> selectedRsuIds =
       VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
           job.candidateRsuIds, values,
-          job.source->m_neuralDualPathProbabilityGap);
+          job.source->m_neuralDualPathProbabilityGap,
+          job.source->m_neuralDualPathMinSecondProbability);
 
   std::vector<float> sortedValues = values;
   std::sort (sortedValues.begin (), sortedValues.end (), std::greater<float> ());
@@ -1145,6 +1237,8 @@ VndnRsu::ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action)
                << " top1=" << sortedValues.front ()
                << " top2=" << (sortedValues.size () > 1 ? sortedValues[1] : -1.0f)
                << " x=" << job.source->m_neuralDualPathProbabilityGap
+               << " secondMin="
+               << job.source->m_neuralDualPathMinSecondProbability
                << " 选择RSU=" << selected.str ());
   job.source->ForwardVehicleInterest (*job.interest, job.obuNodeId, job.obuMac,
                                       selectedRsuIds);

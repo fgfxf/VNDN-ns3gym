@@ -4,13 +4,13 @@
 用途 / Purpose
 --------------
 接收 RSU 通过 ns3-gym 发来的最近 10 个车辆状态，加载训练好的 TKAN-LSTM
-checkpoint，返回每个候选 RSU 的 softmax 概率。概率前两名是否同时作为回程
-路径，由 C++ 的 VndnRsu 根据阈值 x=0.10 决定。
+checkpoint，返回每个候选 RSU 的 softmax 概率。前两名概率差不超过 0.10，
+或者第二名概率达到 0.10 时，由 C++ 的 VndnRsu 同时选择两条回程路径。
 
 The script receives an ordered vehicle-state sequence from ns-3, reconstructs
 the TKAN-LSTM architecture from checkpoint metadata, loads ``state_dict``, and
-returns a probability for every candidate RSU. C++ selects one or two return
-paths from these probabilities.
+returns a probability for every candidate RSU. C++ selects two return paths
+when their gap is at most 0.10 or the runner-up probability is at least 0.10.
 
 模型文件说明 / Checkpoint format
 --------------------------------
@@ -168,6 +168,8 @@ def probabilities_for_candidates(
     # 如果未来拓扑只暴露模型标签的子集，应在可用候选中重新归一化。
     # Renormalize when only a subset of trained labels exists in the topology.
     probabilities /= probability_sum
+    # Python 端只返回与候选 RSU 顺序一致的概率，不在这里截断候选。
+    # 是否启用双路径由 C++ 协议层统一决定，避免推理端和仿真端规则不一致。
     return probabilities
 
 

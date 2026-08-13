@@ -187,6 +187,13 @@ private:
   void
   OnP2pHandshakeDataPush (const ndn::Interest &interest, const ndn::Data &data);
 
+  /**
+   * 处理 Router 发来的 /vndn/control/neural-pit 预备控制报文。
+   * 解出原始业务 Interest，并在本 RSU 的无线 face 上恢复 PIT in-record。
+   */
+  void
+  OnNeuralPitPrepareData (const ndn::Data &data);
+
   void
   PushIdentityData (uint64_t faceId, uint32_t nodeId,
                     const std::string &role, const ndn::Name &name);
@@ -298,7 +305,10 @@ private:
   uint16_t m_openGymPort = 0;
   bool m_openGymRegistered = false;
   uint32_t m_neuralSequenceLength = 10;
+  /// 前两名概率足够接近时使用双路径的最大概率差。
   double m_neuralDualPathProbabilityGap = 0.10;
+  /** 第二名概率达到 0.10（不再是 0.0x）时也启用双路径。 */
+  double m_neuralDualPathMinSecondProbability = 0.10;
   uint64_t m_relaySequence = 0;
   std::map<ndn::Name, PendingVehicleRequest> m_pendingVehicleRequests;
   std::map<uint32_t, std::vector<std::shared_ptr<ndn::Data>>> m_waitingForwardData;

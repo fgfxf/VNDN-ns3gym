@@ -31,7 +31,8 @@ VndnRsuForwardingPolicy::SelectNearestRsu (
 std::vector<uint32_t>
 VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
     const std::vector<uint32_t> &candidateRsuIds,
-    const std::vector<float> &probabilities, double dualPathGap)
+    const std::vector<float> &probabilities, double dualPathGap,
+    double dualPathMinSecondProbability)
 {
   if (candidateRsuIds.empty () || candidateRsuIds.size () != probabilities.size ())
     return {};
@@ -44,10 +45,18 @@ VndnRsuForwardingPolicy::SelectNeuralReturnRsus (
                return probabilities[left] > probabilities[right];
              });
 
+  // 第一名始终作为主回程 RSU；第二名只在切换边界存在一定不确定性时加入。
   std::vector<uint32_t> selected = {candidateRsuIds[order[0]]};
-  if (order.size () > 1 &&
-      probabilities[order[0]] - probabilities[order[1]] <= dualPathGap)
-    selected.push_back (candidateRsuIds[order[1]]);
+  if (order.size () > 1)
+    {
+      const float secondProbability = probabilities[order[1]];
+      const float probabilityGap = probabilities[order[0]] - secondProbability;
+      // gap 条件覆盖 0.53/0.47 这类近似平局；secondProbability 条件覆盖
+      // 0.78/0.22 这类并非平局、但第二条路径仍有实际价值的情况。
+      if (probabilityGap <= dualPathGap ||
+          secondProbability >= dualPathMinSecondProbability)
+        selected.push_back (candidateRsuIds[order[1]]);
+    }
   return selected;
 }
 

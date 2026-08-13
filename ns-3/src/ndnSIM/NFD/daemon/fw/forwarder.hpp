@@ -135,6 +135,15 @@ public: // forwarding entrypoints and tables
     return m_pit;
   }
 
+  /** \brief 设置由协议应用主动插入的 PIT 条目的过期时间
+   *
+   * 这是专门提供给 VNDN 控制协议的窄接口：目标 RSU 收到控制报文后先
+   * 恢复 PIT，随后对应 Data 才会从另一个 face 到达。
+   */
+  void
+  setProtocolPitExpiryTimer(const shared_ptr<pit::Entry>& pitEntry,
+                            time::milliseconds duration);
+
   Cs&
   getCs()
   {
