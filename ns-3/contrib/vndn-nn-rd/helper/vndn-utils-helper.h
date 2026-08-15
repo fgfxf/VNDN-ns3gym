@@ -121,6 +121,23 @@ public:
                    const std::string &routeFileName);
 
   /**
+   * \brief Read RSU coordinates from a SUMO GUI settings file.
+   *
+   * 只读取 ``<decal type="rsu" ...>``，并按 XML 中的出现顺序返回坐标；
+   * 这个顺序同时也是新仿真中使用的 RSU ID。旧版 grid 和 spidermap
+   * 已经把基站位置保存在 settings.xml 中，因此不需要在每个 scratch
+   * 主程序里再次硬编码一份。
+   *
+   * \param contribFolder path to the VNDN traces parent directory
+   * \param scenarioName scenario sub-directory under \p contribFolder
+   * \param settingsFileName settings file name, normally ``settings.xml``
+   * \return RSU positions in declaration order; an empty vector on failure
+   */
+  static std::vector<ns3::Vector>
+  GetRsuLocations (const std::string &contribFolder, const std::string &scenarioName,
+                   const std::string &settingsFileName = "settings.xml");
+
+  /**
    * \brief Save simulation parameters as key=value lines in an output directory.
    * \param outputDir output directory, which must already exist
    * \param parameters ordered parameter name/value pairs

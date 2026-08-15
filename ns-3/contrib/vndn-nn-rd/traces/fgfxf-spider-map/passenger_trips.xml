@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- generated on 2022-08-26 17:33:55.473052 by $Id$
+  options: -n map.net.xml -r passenger_routes.rou.xml -o passenger_trips.xml -b 0 -e 10 -p 0.5 <doubleminus>vehicle-class passenger
+-->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="passenger" vClass="passenger"/>
+    <trip id="0" depart="0.00" from="A1B6" to="B2B3" type="passenger"/>
+    <trip id="1" depart="0.50" from="B5B6" to="C6B6" type="passenger"/>
+    <trip id="2" depart="1.00" from="C5C4" to="B6C6" type="passenger"/>
+    <trip id="3" depart="1.50" from="B2B3" to="C5C4" type="passenger"/>
+    <trip id="4" depart="2.00" from="C5C4" to="C2C1" type="passenger"/>
+    <trip id="5" depart="2.50" from="B2A1" to="B4A1" type="passenger"/>
+    <trip id="6" depart="3.00" from="B4B3" to="B2B1" type="passenger"/>
+    <trip id="7" depart="3.50" from="B2B3" to="A1B2" type="passenger"/>
+    <trip id="8" depart="4.00" from="B3A1" to="B2B3" type="passenger"/>
+    <trip id="9" depart="4.50" from="C3B3" to="B4B3" type="passenger"/>
+    <trip id="10" depart="5.00" from="A1B6" to="C5C6" type="passenger"/>
+    <trip id="11" depart="5.50" from="A1B5" to="B5C5" type="passenger"/>
+    <trip id="12" depart="6.00" from="B6A1" to="C4B4" type="passenger"/>
+    <trip id="13" depart="6.50" from="B2A1" to="C2B2" type="passenger"/>
+    <trip id="14" depart="7.00" from="A1B6" to="B2A1" type="passenger"/>
+    <trip id="15" depart="7.50" from="B1B6" to="C5B5" type="passenger"/>
+    <trip id="16" depart="8.00" from="B2B1" to="B1C1" type="passenger"/>
+    <trip id="17" depart="8.50" from="C6C1" to="C2C1" type="passenger"/>
+    <trip id="18" depart="9.00" from="C1C6" to="B3B4" type="passenger"/>
+    <trip id="19" depart="9.50" from="B4C4" to="B4B3" type="passenger"/>
+</routes>

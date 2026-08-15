@@ -99,6 +99,81 @@ VndnUtilsHelper::GetVehicleCount (const std::string &contribFolder, const std::s
   return count;
 }
 
+std::vector<ns3::Vector>
+VndnUtilsHelper::GetRsuLocations (const std::string &contribFolder,
+                                  const std::string &scenarioName,
+                                  const std::string &settingsFileName)
+{
+  const std::string filePath =
+      contribFolder + "/" + scenarioName + "/" + settingsFileName;
+  std::ifstream settingsFile (filePath);
+  if (!settingsFile.is_open ())
+    {
+      std::cerr << "VndnUtilsHelper::GetRsuLocations: cannot open " << filePath
+                << std::endl;
+      return {};
+    }
+
+  // rapidxml 会直接修改输入缓冲区，所以必须保留一个可写且以 '\0' 结尾的副本。
+  // rapidxml parses in place; keep a writable, null-terminated copy of the file.
+  std::vector<char> buffer ((std::istreambuf_iterator<char> (settingsFile)),
+                            std::istreambuf_iterator<char> ());
+  buffer.push_back ('\0');
+
+  std::vector<ns3::Vector> locations;
+  try
+    {
+      rapidxml::xml_document<> document;
+      document.parse<0> (buffer.data ());
+      rapidxml::xml_node<> *viewSettings = document.first_node ("viewsettings");
+      rapidxml::xml_node<> *decals =
+          viewSettings == nullptr ? nullptr : viewSettings->first_node ("decals");
+      if (decals == nullptr)
+        {
+          std::cerr << "VndnUtilsHelper::GetRsuLocations: no <decals> in "
+                    << filePath << std::endl;
+          return {};
+        }
+
+      for (rapidxml::xml_node<> *decal = decals->first_node ("decal"); decal != nullptr;
+           decal = decal->next_sibling ("decal"))
+        {
+          rapidxml::xml_attribute<> *type = decal->first_attribute ("type");
+          if (type == nullptr || std::string (type->value ()) != "rsu")
+            continue;
+
+          rapidxml::xml_attribute<> *centerX = decal->first_attribute ("centerX");
+          rapidxml::xml_attribute<> *centerY = decal->first_attribute ("centerY");
+          if (centerX == nullptr || centerY == nullptr)
+            {
+              std::cerr << "VndnUtilsHelper::GetRsuLocations: RSU decal misses centerX/centerY in "
+                        << filePath << std::endl;
+              continue;
+            }
+
+          // settings.xml 里的 centerZ 是 SUMO GUI 图片高度，并不可靠（旧 grid
+          // 的第三个 RSU 甚至写成了 120）。旧仿真安装无线节点时统一使用 12 m，
+          // 新场景也保持这一物理高度，避免 GUI 元数据意外改变无线覆盖。
+          const double z = 12.0;
+          locations.emplace_back (std::stod (centerX->value ()),
+                                  std::stod (centerY->value ()), z);
+        }
+    }
+  catch (const rapidxml::parse_error &error)
+    {
+      std::cerr << "VndnUtilsHelper::GetRsuLocations: invalid XML in " << filePath
+                << ": " << error.what () << std::endl;
+      return {};
+    }
+  catch (const std::exception &error)
+    {
+      std::cerr << "VndnUtilsHelper::GetRsuLocations: invalid RSU coordinate in "
+                << filePath << ": " << error.what () << std::endl;
+      return {};
+    }
+  return locations;
+}
+
 bool
 VndnUtilsHelper::SaveSimulationConfig (
     const std::string &outputDir,
