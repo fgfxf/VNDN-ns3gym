@@ -1,0 +1,213 @@
+"""Acceptance tests for the gate; all builds and C++ suites use temporary fakes."""
+
+import contextlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import sys
+import tempfile
+import time
+import unittest
+
+
+MODULE_PATH = Path(__file__).resolve().parents[1] / "validate.py"
+SPEC = importlib.util.spec_from_file_location("project_validate", MODULE_PATH)
+validate = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(validate)
+
+
+class ValidationGateTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        cache = self.root / "build/c4che/_cache.py"
+        cache.parent.mkdir(parents=True)
+        cache.write_text("ENABLE_TESTS = True\n", encoding="utf-8")
+        (self.root / "state.json").write_text("{}", encoding="utf-8")
+        waf = self.root / "waf"
+        waf.write_text(
+            "#!" + sys.executable + "\n"
+            "import json, os, pathlib, sys\n"
+            "p = pathlib.Path.cwd()\n"
+            "(p / 'build-call.json').write_text(json.dumps({"
+            "'argv': sys.argv[1:], 'jobs': os.environ.get('JOBS'), 'cwd': str(p)}))\n"
+            "sys.exit(json.loads((p / 'state.json').read_text()).get('build_rc', 0))\n",
+            encoding="utf-8",
+        )
+        waf.chmod(0o755)
+        (self.root / "test.py").write_text(
+            "import json, pathlib, sys\n"
+            "from xml.etree.ElementTree import Element, SubElement, ElementTree\n"
+            "p = pathlib.Path.cwd()\n"
+            "state = json.loads((p / 'state.json').read_text())\n"
+            "assert '--nowaf' in sys.argv\n"
+            "suite = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--suite='))\n"
+            "out = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--xml='))\n"
+            "tree = Element('Results')\n"
+            "if state.get('xml') != 'empty':\n"
+            "    test = SubElement(tree, 'Test')\n"
+            "    SubElement(test, 'Name').text = state.get('suite', suite)\n"
+            "    SubElement(test, 'Result').text = state.get('result', 'PASS')\n"
+            "    if state.get('xml') != 'no-cases':\n"
+            "        case = SubElement(test, 'Test')\n"
+            "        SubElement(case, 'Name').text = 'a real case'\n"
+            "        SubElement(case, 'Result').text = state.get('case_result', 'PASS')\n"
+            "if state.get('xml') != 'missing':\n"
+            "    ElementTree(tree).write(out + '.xml')\n"
+            "sys.exit(state.get('cpp_rc', 0))\n",
+            encoding="utf-8",
+        )
+        self.python_tests = self.root / "contrib/vndn-nn-rd/ai-training/circle/tests"
+        self.python_tests.mkdir(parents=True)
+        (self.python_tests / "test_sample.py").write_text(
+            "import os, unittest\n"
+            "class Sample(unittest.TestCase):\n"
+            "    def test_jobs(self):\n"
+            "        self.assertEqual(os.environ['JOBS'], '4')\n",
+            encoding="utf-8",
+        )
+
+    def invoke(self, *args):
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = validate.main(["--python", sys.executable] + list(args), root=self.root)
+        reports = sorted((self.root / "build/validation").glob("*/report.json"))
+        self.assertTrue(reports, "Every attempted validation must leave a report")
+        return code, json.loads(reports[-1].read_text(encoding="utf-8"))
+
+    def state(self, **values):
+        (self.root / "state.json").write_text(json.dumps(values), encoding="utf-8")
+
+    def test_success_runs_all_gates_from_unrelated_cwd_with_four_jobs(self):
+        before = Path.cwd()
+        old_jobs = os.environ.get("JOBS")
+        try:
+            os.chdir(self.root.parent)
+            os.environ["JOBS"] = "99"
+            code, report = self.invoke()
+        finally:
+            os.chdir(before)
+            if old_jobs is None:
+                os.environ.pop("JOBS", None)
+            else:
+                os.environ["JOBS"] = old_jobs
+        self.assertEqual(code, 0)
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(len(report["steps"]), 4)
+        call = json.loads((self.root / "build-call.json").read_text())
+        self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
+        for step in report["steps"]:
+            self.assertEqual(step["status"], "passed")
+            self.assertEqual(step["returncode"], 0)
+            self.assertEqual(step["cwd"], str(self.root))
+            self.assertGreaterEqual(step["duration_seconds"], 0)
+            self.assertTrue(Path(step["log"]).is_file())
+
+    def test_missing_or_disabled_configuration_fails_without_building(self):
+        cache = self.root / "build/c4che/_cache.py"
+        for contents in (None, "ENABLE_TESTS = False\n", "ENABLE_TESTS = 1\n"):
+            with self.subTest(contents=contents):
+                if contents is None:
+                    cache.unlink()
+                else:
+                    cache.write_text(contents, encoding="utf-8")
+                code, report = self.invoke()
+                self.assertNotEqual(code, 0)
+                self.assertEqual(report["status"], "failed")
+                self.assertIn("ENABLE_TESTS", report["error"])
+                self.assertFalse((self.root / "build-call.json").exists())
+
+    def test_failed_build_stops_before_tests(self):
+        self.state(build_rc=7)
+        code, report = self.invoke()
+        self.assertNotEqual(code, 0)
+        self.assertEqual(len(report["steps"]), 1)
+        self.assertEqual(report["steps"][0]["returncode"], 7)
+
+    def test_zero_exit_cannot_hide_missing_skipped_or_wrong_cpp_tests(self):
+        for state in ({"xml": "missing"}, {"xml": "empty"}, {"xml": "no-cases"},
+                      {"suite": "other-suite"}, {"result": "SKIP"},
+                      {"case_result": "SKIP"}, {"case_result": "FAIL"}):
+            with self.subTest(state=state):
+                self.state(**state)
+                code, report = self.invoke("--skip-build")
+                self.assertNotEqual(code, 0)
+                self.assertEqual(report["steps"][-1]["status"], "failed")
+
+    def test_nonzero_cpp_exit_fails_even_with_passing_xml(self):
+        self.state(cpp_rc=3)
+        code, report = self.invoke("--skip-build")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["returncode"], 3)
+
+    def test_empty_python_discovery_is_failure(self):
+        (self.python_tests / "test_sample.py").unlink()
+        code, report = self.invoke("--skip-build")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["name"], "circle-python")
+
+    def test_skipped_python_test_is_failure(self):
+        (self.python_tests / "test_sample.py").write_text(
+            "import unittest\nclass Sample(unittest.TestCase):\n"
+            "    @unittest.skip('missing dependency')\n"
+            "    def test_skipped(self): pass\n", encoding="utf-8")
+        code, report = self.invoke("--skip-build")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["status"], "failed")
+
+    def test_python_assertion_failure_is_failure(self):
+        (self.python_tests / "test_sample.py").write_text(
+            "import unittest\nclass Sample(unittest.TestCase):\n"
+            "    def test_failure(self): self.fail('regression')\n", encoding="utf-8")
+        code, report = self.invoke("--skip-build")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["status"], "failed")
+
+    def test_skip_build_is_explicit_and_reports_are_unique(self):
+        self.assertEqual(self.invoke("--skip-build")[0], 0)
+        code, report = self.invoke("--skip-build")
+        self.assertEqual(code, 0)
+        self.assertTrue(report["build_skipped"])
+        self.assertEqual(len(list((self.root / "build/validation").glob("*/report.json"))), 2)
+        self.assertFalse((self.root / "build-call.json").exists())
+
+    def test_missing_interpreter_is_failure(self):
+        code, report = self.invoke("--skip-build", "--python", str(self.root / "missing-python"))
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["status"], "missing")
+
+    def test_timeout_kills_process_group_and_records_timeout(self):
+        logdir = self.root / "timeout-log"
+        logdir.mkdir()
+        child_pid = self.root / "child.pid"
+        child_code = (
+            "import os, pathlib, signal, time; "
+            "signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+            "pathlib.Path({!r}).write_text(str(os.getpid())); time.sleep(30)"
+        ).format(str(child_pid))
+        command = [sys.executable, "-c",
+                   "import subprocess, sys, time; "
+                   "subprocess.Popen([sys.executable, '-c', {!r}]); "
+                   "time.sleep(30)".format(child_code)]
+        step = validate.run_step("timeout", command, self.root, logdir, 0.5)
+        self.assertEqual(step["status"], "timeout")
+        self.assertIsNotNone(step["returncode"])
+        self.assertLess(step["duration_seconds"], 4)
+        self.assertTrue(child_pid.exists(), "The descendant must have started before timeout")
+        status_file = Path("/proc") / child_pid.read_text() / "status"
+        deadline = time.monotonic() + 1
+        while status_file.exists() and time.monotonic() < deadline:
+            try:
+                if "State:\tZ" in status_file.read_text():
+                    break  # Exited; the container's init may not have reaped it yet.
+            except FileNotFoundError:
+                break
+            time.sleep(0.01)
+        else:
+            self.assertFalse(status_file.exists(), "A SIGTERM-resistant descendant survived timeout")
+
+
+if __name__ == "__main__":
+    unittest.main()
