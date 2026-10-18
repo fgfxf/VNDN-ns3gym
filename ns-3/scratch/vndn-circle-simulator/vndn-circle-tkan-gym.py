@@ -34,13 +34,14 @@ when their gap is at most 0.10 or the runner-up probability is at least 0.10.
 """
 
 import argparse
+import importlib.util
+from numbers import Integral
 import sys
 from pathlib import Path
 from typing import Dict, Sequence
 
 import numpy as np
 import torch
-from ns3gym import ns3env
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -48,8 +49,19 @@ NS3_ROOT = SCRIPT_DIRECTORY.parents[1]
 AI_CIRCLE_DIRECTORY = (
     NS3_ROOT / "contrib" / "vndn-nn-rd" / "ai-training" / "circle"
 )
-sys.path.insert(0, str(AI_CIRCLE_DIRECTORY))
-from train_tkan_lstm import CircleTKANLSTM  # noqa: E402
+# 三个场景的训练入口同名；按绝对文件加载，避免已经导入 grid/spidermap
+# 的训练模块时，Python 的模块缓存把 circle 模型绑定到另一训练入口。
+_TRAINING_MODULE_NAME = "_vndn_circle_tkan_training"
+if _TRAINING_MODULE_NAME not in sys.modules:
+    _spec = importlib.util.spec_from_file_location(
+        _TRAINING_MODULE_NAME, AI_CIRCLE_DIRECTORY / "train_tkan_lstm.py"
+    )
+    _training_module = importlib.util.module_from_spec(_spec)
+    sys.modules[_TRAINING_MODULE_NAME] = _training_module
+    _spec.loader.exec_module(_training_module)
+CircleTKANLSTM = sys.modules[_TRAINING_MODULE_NAME].CircleTKANLSTM
+FEATURE_NAMES = ("x", "y", "speed", "acceleration", "angle", "lane_index")
+SCENARIO_LABELS = {"circle": (0, 1), "grid": tuple(range(7)), "spidermap": tuple(range(7))}
 
 
 DEFAULT_MODEL_FILE = (
@@ -63,19 +75,22 @@ DEFAULT_MODEL_FILE = (
 )
 
 
-def parse_arguments() -> argparse.Namespace:
+def parse_arguments(argv=None, scenario="circle", require_model_file=False) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="VNDN circle TKAN-LSTM ns3-gym 推理控制器"
+        description="VNDN {} TKAN-LSTM ns3-gym 推理控制器".format(scenario)
     )
     parser.add_argument("--port", type=int, default=5555, help="ns3-gym TCP port")
-    parser.add_argument("--model-file", type=Path, default=DEFAULT_MODEL_FILE)
+    parser.add_argument(
+        "--model-file", type=Path, required=require_model_file,
+        default=None if require_model_file else DEFAULT_MODEL_FILE,
+    )
     parser.add_argument(
         "--device", choices=("auto", "cpu", "cuda"), default="auto"
     )
     parser.add_argument(
         "--debug", action="store_true", help="Enable ns3-gym bridge debug output"
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def select_device(requested: str) -> torch.device:
@@ -87,7 +102,7 @@ def select_device(requested: str) -> torch.device:
 
 
 def load_model(
-    model_file: Path, device: torch.device
+    model_file: Path, device: torch.device, expected_scenario="circle"
 ) -> tuple:
     """按 checkpoint 元数据重建模型 / Rebuild model from checkpoint metadata."""
     model_file = model_file.expanduser().resolve()
@@ -97,17 +112,7 @@ def load_model(
     # 本地训练生成的可信 checkpoint；显式参数也避免 PyTorch 的默认值警告。
     # This is a trusted local checkpoint; make the intended pickle mode explicit.
     checkpoint = torch.load(str(model_file), map_location=device, weights_only=False)
-    required = {
-        "model_parameters",
-        "state_dict",
-        "feature_names",
-        "label_values",
-        "normalization_mean",
-        "normalization_std",
-    }
-    missing = required.difference(checkpoint)
-    if missing:
-        raise ValueError("checkpoint 缺少字段 / missing keys: {}".format(sorted(missing)))
+    validate_checkpoint(checkpoint, expected_scenario)
 
     parameters = checkpoint["model_parameters"]
     model = CircleTKANLSTM(
@@ -121,6 +126,63 @@ def load_model(
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
     return model, checkpoint, model_file
+
+
+def validate_checkpoint(checkpoint: Dict, expected_scenario: str) -> None:
+    """Validate the model's scenario and fixed C++ 10×6 observation contract."""
+    if expected_scenario not in SCENARIO_LABELS:
+        raise ValueError("unsupported scenario: {}".format(expected_scenario))
+    if not isinstance(checkpoint, dict):
+        raise ValueError("checkpoint must be a dictionary")
+    required = {
+        "model_parameters",
+        "state_dict",
+        "feature_names",
+        "label_values",
+        "normalization_mean",
+        "normalization_std",
+    }
+    missing = required.difference(checkpoint)
+    if missing:
+        raise ValueError("checkpoint 缺少字段 / missing keys: {}".format(sorted(missing)))
+
+    # 保留旧 circle checkpoint 的无 scenario 元数据兼容性；新七类场景
+    # 必须明确标记名称，不能靠相同的输出维度推断场景。
+    scenario = checkpoint.get("scenario", "circle" if expected_scenario == "circle" else None)
+    if scenario != expected_scenario:
+        raise ValueError(
+            "checkpoint scenario must be {!r}, got {!r}".format(expected_scenario, scenario)
+        )
+    parameters = checkpoint["model_parameters"]
+    if not isinstance(parameters, dict):
+        raise ValueError("model_parameters must be a dictionary")
+    expected_labels = SCENARIO_LABELS[expected_scenario]
+    for field, expected in (
+        ("input_size", len(FEATURE_NAMES)), ("sequence_length", 10),
+        ("output_size", len(expected_labels)),
+    ):
+        actual = parameters.get(field)
+        if isinstance(actual, bool) or not isinstance(actual, Integral) or actual != expected:
+            raise ValueError("{} must be {}, got {!r}".format(field, expected, actual))
+    if list(checkpoint["feature_names"]) != list(FEATURE_NAMES):
+        raise ValueError("feature_names must match the C++ order: {}".format(FEATURE_NAMES))
+    labels = checkpoint["label_values"]
+    if (
+        not isinstance(labels, (list, tuple))
+        or len(labels) != len(expected_labels)
+        or any(isinstance(label, bool) or not isinstance(label, Integral) for label in labels)
+        or set(labels) != set(expected_labels)
+    ):
+        raise ValueError("label_values must contain each RSU exactly once: {}".format(expected_labels))
+    for field in ("normalization_mean", "normalization_std"):
+        try:
+            values = np.asarray(checkpoint[field], dtype=np.float32)
+        except (ValueError, TypeError) as error:
+            raise ValueError("invalid {}: {}".format(field, error)) from error
+        if values.shape != (len(FEATURE_NAMES),) or not np.isfinite(values).all():
+            raise ValueError("{} must contain six finite values".format(field))
+        if field == "normalization_std" and not (values > 0).all():
+            raise ValueError("normalization_std must be strictly positive")
 
 
 def probabilities_for_candidates(
@@ -173,14 +235,19 @@ def probabilities_for_candidates(
     return probabilities
 
 
-def main() -> int:
-    arguments = parse_arguments()
+def main(argv=None, expected_scenario="circle", require_model_file=False) -> int:
+    arguments = parse_arguments(argv, expected_scenario, require_model_file)
     device = select_device(arguments.device)
-    model, checkpoint, model_file = load_model(arguments.model_file, device)
+    model, checkpoint, model_file = load_model(
+        arguments.model_file, device, expected_scenario=expected_scenario
+    )
     print("Model / 模型: {}".format(model_file))
     print("Device / 设备: {}".format(device))
     print("Labels / 标签: {}".format(checkpoint["label_values"]))
     print("Waiting for ns-3 / 等待仿真连接: tcp://localhost:{}".format(arguments.port))
+
+    # 离线加载/验证不依赖 Gym，也不会创建 socket；元数据错误在连接前报告。
+    from ns3gym import ns3env
 
     environment = ns3env.Ns3Env(
         port=arguments.port,

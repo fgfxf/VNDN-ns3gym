@@ -16,16 +16,23 @@ import sys
 from pathlib import Path
 
 
-if not any(argument == "--model-file" or argument.startswith("--model-file=")
-           for argument in sys.argv[1:]):
-    raise SystemExit(
-        "grid 必须通过 --model-file 指定包含 7 个 RSU 标签的 checkpoint / "
-        "a grid checkpoint with all seven RSU labels is required"
-    )
-
-controller = (
+_CONTROLLER_PATH = (
     Path(__file__).resolve().parents[1]
     / "vndn-circle-simulator"
     / "vndn-circle-tkan-gym.py"
 )
-runpy.run_path(str(controller), run_name="__main__")
+_CONTROLLER = runpy.run_path(str(_CONTROLLER_PATH))
+probabilities_for_candidates = _CONTROLLER["probabilities_for_candidates"]
+
+
+def load_model(model_file, device):
+    """Load a seven-RSU grid checkpoint without opening a Gym connection."""
+    return _CONTROLLER["load_model"](model_file, device, expected_scenario="grid")
+
+
+def main(argv=None):
+    return _CONTROLLER["main"](argv, expected_scenario="grid", require_model_file=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

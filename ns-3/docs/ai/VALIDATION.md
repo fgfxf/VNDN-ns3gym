@@ -57,7 +57,12 @@ python3.8 tools/validate.py
 1. 检查测试已启用，不自行重新 configure。
 2. `./waf build -j 4 --targets=test-runner`，仅构建测试运行器及依赖。
 3. `vndn-rsu-forwarding-policy` 和 `vndn-neural-return-selection` 两个 C++ 套件。
-4. `ai-training/circle/tests` 的 Python unittest。
+4. 分别在独立 Python 进程运行 `ai-training/circle/tests`、`ai-training/grid/tests`、`ai-training/spidermap/tests`。
+5. `ai-training/tests/test_tkan_inference.py` 的模型加载与推理兼容性测试。
+
+新训练测试包含临时合成七类数据的一轮 CPU 训练及模型保存/重载，产物随临时目录清理；不采集 SUMO 数据，不训练正式实验模型。
+独立进程避免三个同名 `train_tkan_lstm.py` 的导入缓存相互污染。
+推理测试放在 `ai-training/tests/`，避免在 `scratch/` 新建纯 Python 子目录而被 waf 自动识别为 C++ 程序。
 
 标准 ns-3 test-runner 链接所有启用模块的测试库，首次构建会编译部分上游测试。
 实际执行范围仍只有两个研究套件；不意味着所有 ns-3 测试都已运行。
@@ -79,6 +84,9 @@ python3.8 -m unittest discover -s tools/tests -p 'test_validate.py' -v
 
 这些是工具的行为测试，使用临时测试夹具，不替代真实 C++ / 模型测试。
 
+仅修改 Python 训练/推理时，可先分别运行对应目录的测试，设置 `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1` 限制小规模验证的 CPU 开销。
+新增场景的训练使用说明见 [grid README](../../contrib/vndn-nn-rd/ai-training/grid/README.md) 和 [spidermap README](../../contrib/vndn-nn-rd/ai-training/spidermap/README.md)。
+
 ## 手动诊断命令
 
 ```bash
@@ -88,6 +96,12 @@ python3.8 test.py --nowaf --suite=vndn-rsu-forwarding-policy
 python3.8 test.py --nowaf --suite=vndn-neural-return-selection
 python3.8 -m unittest discover \
   -s contrib/vndn-nn-rd/ai-training/circle/tests -p 'test_*.py' -v
+python3.8 -m unittest discover \
+  -s contrib/vndn-nn-rd/ai-training/grid/tests -p 'test_*.py' -v
+python3.8 -m unittest discover \
+  -s contrib/vndn-nn-rd/ai-training/spidermap/tests -p 'test_*.py' -v
+python3.8 -m unittest discover \
+  -s contrib/vndn-nn-rd/ai-training/tests -p 'test_tkan_inference.py' -v
 ```
 
 本项目跳过 test.py 自动构建的选项是 `--nowaf`。test.py 会将 SKIP 计入成功，
@@ -118,6 +132,7 @@ timeout --signal=TERM --kill-after=10s 300s ./waf --run \
 例如 `python3.8 scratch/vndn-circle-simulator/vndn-circle-tkan-gym.py --model-file /absolute/path/model.pt --port 5555`，
 仿真端指定 `--open-gym-port=5555`。完成或失败后都要收敛本次控制器与 SUMO 进程。
 方阵和蜘蛛网必须提供匹配本场景全部 RSU 标签的模型；不能用圆圈两类模型代替七类模型。
+控制器加载时会核对模型元数据；它一次只服务一轮仿真。两个场景的批量脚本默认 NoForward，不会自动启动模型或切换神经策略。
 同机仿真默认共用 SUMO 3400 / gym 5555 端口，应顺序运行，避免端口冲突和产物混杂。
 
 场景验收至少记录：
@@ -137,7 +152,7 @@ timeout --signal=TERM --kill-after=10s 300s ./waf --run \
 | 层次 | 已覆盖 | 仍需针对任务补充 |
 |---|---|---|
 | C++ 策略 | 最近 RSU、空候选、单双路径概率选择、长度不匹配 | NFD/PIT 生命周期、无线交付、控制时序 |
-| Python | 窗口时序与运行隔离、输出形状和反向传播 | 模型泛化、实际 checkpoint 与跨进程推理一致性 |
+| Python | 窗口/运行隔离、无效断点、七类训练、checkpoint 保存重载、场景校验及候选概率映射 | 真实数据上的模型泛化、Gym 跨进程通信与实际无线交付 |
 | 仿真 | 已有三个场景入口 | 固定种子下切换与回程的自动断言、统计意义上的效果 |
 
 现有测试通过仅能支持相应覆盖范围。科研有效性还需要合适的对照、重复实验和统计分析。

@@ -1,6 +1,6 @@
 # 项目事实与导航
 
-更新日期：2026-10-18。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
+更新日期：2026-10-19。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
 
 ## 用户确认的定位
 
@@ -40,19 +40,26 @@
 ## 离线训练与在线推理
 
 - OBU 输出每车 `training-tag-<obu>.csv`、RTT 和统计文件；训练行包含请求发送时的六维状态，以及 DATA/TIMEOUT 结果出现时的服务 RSU 编号。
-- [训练说明](../../contrib/vndn-nn-rd/ai-training/circle/README.md) 和 [训练代码](../../contrib/vndn-nn-rd/ai-training/circle/train_tkan_lstm.py) 定义 TKAN-LSTM 服务 RSU 分类器；KAN 投影来自共享的 `ai-training/efficient_kan/kan.py`。
+- 三个场景分别在 `ai-training/circle/`、`ai-training/grid/`、`ai-training/spidermap/` 内维护完整的训练脚本、测试、README 和 Python 3.8 依赖。训练与模型实现各自独立，KAN 投影共享 `ai-training/efficient_kan/kan.py`。
+- 训练说明：[圆圈](../../contrib/vndn-nn-rd/ai-training/circle/README.md)、[方阵](../../contrib/vndn-nn-rd/ai-training/grid/README.md)、[蜘蛛网](../../contrib/vndn-nn-rd/ai-training/spidermap/README.md)。三个训练器沿用相同 TKAN-LSTM 网络和 checkpoint 权重结构。
 - 训练使用交叉熵与 Adam。窗口保持时间顺序，不跨车辆或运行边界；训练与验证按完整运行划分，归一化参数只从训练数据估计。
 - 数据选择默认只接受 `simulation-config.txt` 标记为 NoForward 的运行，并等待每车 `-stats.txt` 完成标记；RTT 文件不作为训练输入。
 - 窗口最后一条样本的 RSU 标签作为分类输出。标签来自请求结果时刻，不能仅凭窗口索引将其描述为“当前基站标签”。
 - checkpoint 保存模型结构参数、标签映射、归一化参数及权重。Python 控制器重建模型并执行 softmax 推理，不进行在线训练。
 - `VndnRsu::GetNeuralReward()` 当前恒返回 0；gym 在本方案中承担仿真与推理桥接。
-- 仿真输出位于 `data/<scenario>/<日期>/<时间>/`；circle 模型默认写入 `data/models/circle/tkan-lstm/<时间戳>/`。路径中的示例日期或模型不是永久可用承诺。
+- 仿真输出位于 `data/<scenario>/<日期>/<时间>/`；模型默认写入 `data/models/<circle|grid|spidermap>/tkan-lstm/<时间戳>/`，附训练历史和摘要。路径中的示例日期或模型不是永久可用承诺。
+
+方阵和蜘蛛网训练必须显式提供 `--data-root` 日期目录，分别对应 `data/grid-vanet-test/<日期>` 和 `data/fgfxf-spider-map/<日期>`，默认只选择 NoForward 数据。新增训练器将无效行（例如失联标签 -1、越界标签或非有限数值）作为序列断点，报告排除量，不允许窗口跨越断点。训练与验证仍按完整 run 隔离；有效训练窗口目标必须覆盖全部 0–6 基站，否则报错提示补采。输入配置当前没有可信的场景标识字段，使用者仍须核对采样来源。
+
+至少两个 run 是划分训练/验证集的技术下限，不代表科研样本量充分。每车 stats 也不证明整轮仿真成功；正式训练前需核实采样进程完成状态。
 
 ## 模型与场景兼容性
 
 圆圈控制器 [`vndn-circle-tkan-gym.py`](../../scratch/vndn-circle-simulator/vndn-circle-tkan-gym.py) 有默认 checkpoint 路径，运行前必须核实文件存在并匹配本次实验。
 
-方阵与蜘蛛网的控制器复用圆圈推理逻辑，但强制显式传入 `--model-file`；应分别使用对应场景、覆盖全部 7 个 RSU 标签的 checkpoint，不能把圆圈的两类模型当作可用替代。启动参数检查不等于训练数据、标签覆盖和模型效果已验证。
+方阵与蜘蛛网的控制器复用圆圈推理逻辑，并要求显式传入 `--model-file`。连接 Gym 前校验场景、完整七类标签、模型输入输出维度、10 步序列、特征顺序和归一化参数，拒绝圆圈模型及另一个七基站场景的模型。校验通过只证明接口匹配，不证明训练数据来源或模型效果。
+
+两个场景的 `run-vndn-*.sh` 默认运行 NoForward；带模型仿真需显式指定 `--rsu-forward-strategy=3`。当前 Python 控制器收到 done 后退出，一次启动服务一轮仿真；批量运行十轮不会自动重启十次控制器。
 
 ## 关键文件导航
 
@@ -65,11 +72,14 @@
 | NFD 控制报文特殊行为 | [forwarder.cpp](../../src/ndnSIM/NFD/daemon/fw/forwarder.cpp)、[strategy.cpp](../../src/ndnSIM/NFD/daemon/fw/strategy.cpp) |
 | SUMO 与 gym 集成 | [src/traci](../../src/traci/)、[src/opengym](../../src/opengym/) |
 | 圆圈训练与模型 | [ai-training/circle](../../contrib/vndn-nn-rd/ai-training/circle/) |
+| 方阵训练与模型 | [ai-training/grid](../../contrib/vndn-nn-rd/ai-training/grid/) |
+| 蜘蛛网训练与模型 | [ai-training/spidermap](../../contrib/vndn-nn-rd/ai-training/spidermap/) |
 
 ## 现有覆盖及证据边界
 
 - [C++ 测试](../../contrib/vndn-nn-rd/test/vndn-rsu-forwarding-policy-test.cc) 注册 `vndn-rsu-forwarding-policy` 和 `vndn-neural-return-selection` 两个套件，覆盖最近 RSU、空候选、单双路径选择和候选/概率长度不匹配等行为。
 - [Python 测试](../../contrib/vndn-nn-rd/ai-training/circle/tests/test_circle_tkan.py) 覆盖窗口顺序与运行边界、模型输出形状及反向传播。
+- 新场景训练测试覆盖数据筛选、无效断点、七类窗口、checkpoint 和临时七类数据的一轮 CPU 训练；[推理测试](../../contrib/vndn-nn-rd/ai-training/tests/test_tkan_inference.py) 验证场景/标签兼容性及候选概率映射。各目录独立进程运行，避免同名训练模块相互干扰。
 - 这些单元测试的存在不证明三场景端到端回程、PIT 生命周期、模型泛化或切换收益已验证；实际执行结果应进入变更记录。
 - 本文初始化依据是本次可见对话、当前源码及本地 Git 历史；没有读取或声称分析全部历史聊天。
 - 近期 Git 记录提供演进线索：`858cbda` 修复 RTVTDF，`f5f92b5` 添加训练代码，`0a2973d` 添加神经网络决策，`74145ce` 修复神经网络问题，`e1d0bd6` 添加更多场景。提交标题不能替代测试和实验结果。

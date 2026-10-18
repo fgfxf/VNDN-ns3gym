@@ -1,9 +1,11 @@
 #!/usr/bin/env python3.8
 """Run the project's focused unit regressions, not scenario or scientific validation.
 
-No configure, training, SUMO simulation, or sampling script is invoked here.
-The configured test-runner target is built before the two C++ suites and the
-circle Python tests. Every subprocess inherits JOBS=4, including nested waf.
+No configure, production training, SUMO simulation, or sampling script is invoked here.
+The configured test-runner target is built before the two C++ suites, the three
+training suites and inference tests. Each Python suite runs in a fresh process
+so same-named trainer modules cannot leak between scenarios. Every subprocess
+inherits JOBS=4, including nested waf.
 """
 
 import argparse
@@ -23,10 +25,15 @@ from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
 CPP_SUITES = ("vndn-rsu-forwarding-policy", "vndn-neural-return-selection")
-PYTHON_TESTS = "contrib/vndn-nn-rd/ai-training/circle/tests"
+PYTHON_SUITES = (
+    ("circle-python", "contrib/vndn-nn-rd/ai-training/circle/tests", "test_*.py"),
+    ("grid-python", "contrib/vndn-nn-rd/ai-training/grid/tests", "test_*.py"),
+    ("spidermap-python", "contrib/vndn-nn-rd/ai-training/spidermap/tests", "test_*.py"),
+    ("inference-python", "contrib/vndn-nn-rd/ai-training/tests", "test_tkan_inference.py"),
+)
 PYTHON_RUNNER = """
 import json, sys, unittest
-suite = unittest.defaultTestLoader.discover(sys.argv[1], pattern='test_*.py')
+suite = unittest.defaultTestLoader.discover(sys.argv[1], pattern=sys.argv[3])
 result = unittest.TextTestRunner(verbosity=2).run(suite)
 summary = dict(tests_run=result.testsRun, failures=len(result.failures),
                errors=len(result.errors), skipped=len(result.skipped),
@@ -175,10 +182,11 @@ def main(argv=None, root=None):
             steps.append((suite, [args.python, str(root / "test.py"), "--nowaf", "--suite=" + suite,
                                   "--xml=" + str(output / suite)], args.timeout,
                           lambda path=xml_path, name=suite: verify_cpp(path, name)))
-        python_summary = output / "circle-python.json"
-        steps.append(("circle-python", [args.python, "-c", PYTHON_RUNNER,
-                                        str(root / PYTHON_TESTS), str(python_summary)], args.timeout,
-                      lambda: verify_python(python_summary)))
+        for name, directory, pattern in PYTHON_SUITES:
+            python_summary = output / (name + ".json")
+            steps.append((name, [args.python, "-c", PYTHON_RUNNER,
+                                 str(root / directory), str(python_summary), pattern], args.timeout,
+                          lambda path=python_summary: verify_python(path)))
         for name, command, timeout, verify in steps:
             step = run_step(name, command, root, output, timeout)
             report["steps"].append(step)

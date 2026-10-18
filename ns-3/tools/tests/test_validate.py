@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import time
@@ -60,13 +61,33 @@ class ValidationGateTest(unittest.TestCase):
             "sys.exit(state.get('cpp_rc', 0))\n",
             encoding="utf-8",
         )
-        self.python_tests = self.root / "contrib/vndn-nn-rd/ai-training/circle/tests"
-        self.python_tests.mkdir(parents=True)
-        (self.python_tests / "test_sample.py").write_text(
-            "import os, unittest\n"
+        self.python_suites = {
+            "circle-python": ("contrib/vndn-nn-rd/ai-training/circle/tests", "test_sample.py"),
+            "grid-python": ("contrib/vndn-nn-rd/ai-training/grid/tests", "test_sample.py"),
+            "spidermap-python": ("contrib/vndn-nn-rd/ai-training/spidermap/tests", "test_sample.py"),
+            "inference-python": ("contrib/vndn-nn-rd/ai-training/tests", "test_tkan_inference.py"),
+        }
+        for name in self.python_suites:
+            self.write_python_fixture(name)
+        self.python_tests = self.root / self.python_suites["circle-python"][0]
+
+    def write_python_fixture(self, name):
+        directory, filename = self.python_suites[name]
+        path = self.root / directory
+        path.mkdir(parents=True, exist_ok=True)
+        # Every suite imports a different module with the same name, as real trainers do.
+        (path.parent / "train_tkan_lstm.py").write_text(
+            "SCENARIO = {!r}\n".format(name), encoding="utf-8")
+        (path / filename).write_text(
+            "import json, os, pathlib, sys, unittest\n"
+            "sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))\n"
+            "import train_tkan_lstm\n"
             "class Sample(unittest.TestCase):\n"
             "    def test_jobs(self):\n"
-            "        self.assertEqual(os.environ['JOBS'], '4')\n",
+            "        self.assertEqual(os.environ['JOBS'], '4')\n"
+            "        self.assertEqual(train_tkan_lstm.SCENARIO, {!r})\n"
+            "        with open('python-calls.jsonl', 'a') as output:\n"
+            "            output.write(json.dumps(dict(name={!r}, pid=os.getpid())) + '\\n')\n".format(name, name),
             encoding="utf-8",
         )
 
@@ -95,7 +116,7 @@ class ValidationGateTest(unittest.TestCase):
                 os.environ["JOBS"] = old_jobs
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
-        self.assertEqual(len(report["steps"]), 4)
+        self.assertEqual(len(report["steps"]), 7)
         call = json.loads((self.root / "build-call.json").read_text())
         self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
         for step in report["steps"]:
@@ -164,6 +185,88 @@ class ValidationGateTest(unittest.TestCase):
         code, report = self.invoke("--skip-build")
         self.assertNotEqual(code, 0)
         self.assertEqual(report["steps"][-1]["status"], "failed")
+
+    def test_missing_new_python_suite_is_failure(self):
+        for name, (directory, _) in self.python_suites.items():
+            if name == "circle-python":
+                continue
+            with self.subTest(suite=name):
+                shutil.rmtree(self.root / directory)
+                try:
+                    code, report = self.invoke("--skip-build")
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(report["steps"][-1]["name"], name)
+                    self.assertEqual(report["steps"][-1]["status"], "failed")
+                finally:
+                    self.write_python_fixture(name)
+
+    def test_empty_new_python_suite_is_failure(self):
+        for name, (directory, filename) in self.python_suites.items():
+            if name == "circle-python":
+                continue
+            with self.subTest(suite=name):
+                (self.root / directory / filename).unlink()
+                try:
+                    code, report = self.invoke("--skip-build")
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(report["steps"][-1]["name"], name)
+                    self.assertIn("at least one test", report["error"])
+                finally:
+                    self.write_python_fixture(name)
+
+    def test_skipped_new_python_suite_is_failure(self):
+        for name, (directory, filename) in self.python_suites.items():
+            if name == "circle-python":
+                continue
+            with self.subTest(suite=name):
+                (self.root / directory / filename).write_text(
+                    "import unittest\nclass Sample(unittest.TestCase):\n"
+                    "    @unittest.skip('missing dependency')\n"
+                    "    def test_skipped(self): pass\n", encoding="utf-8")
+                try:
+                    code, report = self.invoke("--skip-build")
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(report["steps"][-1]["name"], name)
+                    self.assertIn("without skips", report["error"])
+                finally:
+                    self.write_python_fixture(name)
+
+    def test_failed_new_python_suite_is_failure(self):
+        for name, (directory, filename) in self.python_suites.items():
+            if name == "circle-python":
+                continue
+            with self.subTest(suite=name):
+                (self.root / directory / filename).write_text(
+                    "import unittest\nclass Sample(unittest.TestCase):\n"
+                    "    def test_failure(self): self.fail('new scenario regression')\n",
+                    encoding="utf-8")
+                try:
+                    code, report = self.invoke("--skip-build")
+                    self.assertNotEqual(code, 0)
+                    self.assertEqual(report["steps"][-1]["name"], name)
+                    self.assertEqual(report["steps"][-1]["status"], "failed")
+                    self.assertNotEqual(report["steps"][-1]["returncode"], 0)
+                finally:
+                    self.write_python_fixture(name)
+
+    def test_python_suites_have_separate_processes_logs_and_evidence(self):
+        # The inference gate selects its own test file, not unrelated Python tests.
+        inference_directory = self.root / self.python_suites["inference-python"][0]
+        (inference_directory / "test_unrelated.py").write_text(
+            "raise RuntimeError('unrelated Python test must not run')\n", encoding="utf-8")
+        code, report = self.invoke("--skip-build")
+        self.assertEqual(code, 0)
+        steps = report["steps"][2:]
+        self.assertEqual([step["name"] for step in steps], list(self.python_suites))
+        calls = [json.loads(line) for line in (self.root / "python-calls.jsonl").read_text().splitlines()]
+        self.assertEqual([call["name"] for call in calls], list(self.python_suites))
+        self.assertEqual(len({call["pid"] for call in calls}), 4)
+        for step in steps:
+            self.assertEqual(step["evidence"]["tests_run"], 1)
+            self.assertEqual(step["evidence"]["skipped"], 0)
+            self.assertEqual(Path(step["log"]).name, step["name"] + ".log")
+            summary = Path(step["log"]).with_suffix(".json")
+            self.assertEqual(json.loads(summary.read_text()), step["evidence"])
 
     def test_skip_build_is_explicit_and_reports_are_unique(self):
         self.assertEqual(self.invoke("--skip-build")[0], 0)
