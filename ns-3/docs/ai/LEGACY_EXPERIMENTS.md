@@ -1,0 +1,284 @@
+# 旧论文实验与出图记录
+
+记录日期：2026-10-19。本文供后续 AI 接续研究时阅读，记录旧工作的实际数据、处理方法和证据边界；当前项目开发规则仍以 `AGENTS.md` 为准。
+
+## 1. 范围、来源与研究意图
+
+用户确认以[旧效果图目录][figures]顶层的 **8 张 SVG** 为论文草稿参考版本。其下[论文出图旧数据和代码-2026-10-18][archive]同时保存数据、对应脚本和工作中的中间代码，不能将所有脚本都视为最终版本。
+
+- 图目录：`/home/fgfxf/ndnSIM/ns-3_old/旧的实验效果图`，下文记作 **F**。
+- 归档目录：`F/论文出图旧数据和代码-2026-10-18`，下文记作 **A**。表中未特别说明的代码、数据路径均相对 A。
+- 旧手写项目：`/home/fgfxf/ndnSIM/ns-3_old`，只读参考。
+- 当前 AI 重写项目：`/home/fgfxf/ndnSIM/ns-3`，当前协议和训练接口见 [PROJECT.md](PROJECT.md)。
+
+用户描述的旧论文论证思路：在圆圈、方阵、蜘蛛网三个场景中，比较车辆切换基站时的 NDN Data 交付。四算法的 3D 图展示随发送时间变化的 RTT；三个补救算法的箱线图突出主体 RTT 接近、少量高延迟样本存在差异；总流量图用于讨论补救开销。用户给出的机制解释是：本方案不重传业务数据包，增加的是控制类型报文，因此流量应低于另两种补救算法，并略高于无补救的 Naive。
+
+**区分三种证据：**用户描述记录研究意图；现存脚本和数据记录历史处理方式；图内标注记录当时展示结果。少量高 RTT 是否逐条对应车辆交接、流量差异是否完全由重传机制导致，需要事件或报文级证据，不能仅凭这几张图完成因果验证。
+
+本次读取本地材料、核对代码、只读复算统计并检查 SVG；没有读取不可见的历史聊天，没有重新仿真、训练或运行旧出图脚本，也没有改写旧归档。
+
+从留存材料可以还原的工作链条是：旧 C++ 场景采集车辆状态/结果标签、RTT 与 L3 trace → Python 离线训练 KAN 并保存 `.pth` → 加载模型，经 ns3-gym 将单基站决策交给 C++ → 选择各场景四算法的固定运行文件出 RTT/流量图 → 另行加载模型制作混淆矩阵。混淆矩阵采用的 2024-12 模型晚于这些性能数据的运行前缀，不能自动认为它就是此前性能实验所用模型。Gym 奖励在旧接口中也恒为 0，这条工作链不应记为在线强化学习训练。
+
+## 2. 八张参考图与对应入口
+
+| 顶层参考图 | 内容 | 对应归档代码 |
+|---|---|---|
+| [delay_circle_2025_01_07_20_25_41_3D.svg][circle3d] | 场景 1，圆圈，四算法 | [delay_graph_circle_vanet_3D.py][circle3d-code] |
+| [delay_grid_2024_11_13_18_11_27_3D.svg][grid3d] | 场景 2，方阵，四算法 | [delay_graph_grid_vanet_3D.py][grid3d-code] |
+| [delay_spider_2025_01_07_20_35_21_3D.svg][spider3d] | 场景 3，蜘蛛网，四算法 | [delay_graph_spider_map_3D.py][spider3d-code] |
+| [delay_circle_2025_01_07_20_30_53_box.svg][circlebox] | 圆圈，三个补救算法 | [delay_graph_circle_vanet_box.py][circlebox-code] |
+| [delay_grid_2024_11_13_18_52_35_box.svg][gridbox] | 方阵，三个补救算法 | [delay_graph_grid_vanet_box.py][gridbox-code] |
+| [delay_spider_2024_11_18_09_46_09_box.svg][spiderbox] | 蜘蛛网，三个补救算法 | [delay_graph_spider_map_box.py][spiderbox-code] |
+| [RateTrace_compare2024_11_13_18_54_13.svg][traffic] | 三场景、四算法的历史总流量口径 | [CompareRateTrace-allsecond-lightLine.py][traffic-code] |
+| [KNN-AI-matrix2024_12_18_19_45_08.svg][matrix] | 蜘蛛网 KAN 七输出类别的混淆矩阵 | [confusion_matrix_compare-KAN.py][matrix-code] |
+
+六张 RTT 图与 `A/GraphRet/` 同名 SVG 均逐字节一致；混淆矩阵与 A 根目录同名 SVG 逐字节一致。顶层总流量 SVG 未找到同名归档副本，但其全部 12 个柱子数值可由上述脚本公式和指定 trace 复算吻合。日期是图名/图内元数据中的出图时间，不能直接当作仿真运行日期。
+
+版本区别必须保留：RTT 顶层图写 `Our proposed`，现存 RTT 脚本写 `TKAN-VTIF`；六个脚本默认保存格式是 PDF，方阵箱线图保存语句还被注释。总流量、混淆矩阵脚本的保存语句也已注释。它们足以说明处理方法，但不是每张 SVG 生成时的完整冻结快照。不要只改路径后便承诺原样重现所有图。
+
+归档还有较早的 `GraphRet/delay_spider_2024_11_13_18_24_49_3D.svg`；本记录以用户放到顶层的 2025-01-07 版本为准。
+
+## 3. 场景、算法与固定输入清单
+
+旧图场景顺序：`Scenario 1 = circle-itu1411`，`Scenario 2 = grid-vanet-test`，`Scenario 3 = fgfxf-spider-map`。旧圆圈数据目录名与当前 `circle-simple` 不同；但留存旧主程序的 SUMO `scenario_name` 已是 `circle-simple`，不能仅由输出目录名推断路网不同。
+
+| 图中算法名 | 本文简称 | 历史材料中的关联 |
+|---|---|---|
+| Our proposed | Proposed | 旧 KAN/offload 方案；部分后期脚本标签改为 TKAN-VTIF |
+| R-T VTDF / RTVTDF | RTVTDF | 旧代码中有 `RsuStrategy_Kalman`，显示名为 RTVTDF |
+| VTDF | VTDF | 旧 VTDF 对照 |
+| Naive NDN / Naive NDN without retransmission | Naive | 无补救基线；不参与三个算法的箱线图 |
+
+下面是绘图脚本**实际选用**的运行前缀。RTT 文件格式为 `<前缀>_<节点>_rtt.csv`，流量文件为 `<前缀>_rate_trace.txt`。
+
+| 数据子目录 | Proposed | RTVTDF | VTDF | Naive | RTT 节点 |
+|---|---|---|---|---|---|
+| `circle-itu1411/` | `1729929363` | `1729917892` | `1729928934` | `1729929179` | `2` |
+| `grid-vanet-test/` | `1729940250` | `1729938734` | `1729938297` | `1729937740` | `8` |
+| `fgfxf-spider-map/` | `1730174022_KALMAN_AI5555` | `1730123172_KALMAN_AI0` | `1730119635` | `1730106670` | `7,9,10,11,13,14,15,17,18,19,20,22,25` |
+
+例如圆圈 Proposed RTT 是 `A/circle-itu1411/1729929363_2_rtt.csv`，流量是同目录的 `1729929363_rate_trace.txt`。合计 **60 个 RTT CSV、12 个 rate trace**，本次均确认存在。箱线图使用同一清单的前三种算法。
+
+每个场景、每种算法只选定一轮运行；蜘蛛网的 13 辆车属于同一轮，不是 13 次独立重复实验。现存图没有跨多轮均值或置信区间；运行前缀也不能代替完整的种子、参数、模型与代码版本清单。
+
+数据旁的 `.cfg` 保存“总计发送/丢失”等汇总，不是完整仿真配置文件。不能从扩展名推断所有配置均已归档。
+
+旧采样输出原位于 `./fgfxf_train/<场景>/`，以 `time(NULL)` 形成前缀；蜘蛛网部分版本追加策略/AI 端口。按 Unix 秒解释，上表圆圈/方阵前缀落在 2024-10-26，蜘蛛网落在 2024-10-28 至 29，归档目录的 2026-10-18 是整理标识。
+
+留存旧 OBU 源码导出 `<run>_<obu>.txt`，无表头，字段为 `x,y,speed,acceleration,angle,laneIndex,endRsuId`：车辆状态取请求发送时，标签取 Data 到达或请求超时时的服务 RSU。`_timeout.txt` 是超时请求的状态/标签子集，不是时间戳清单。圆圈较早的五特征训练文件见第 8 节，不要强行套用六特征格式。
+
+留存旧采样代码还有选择性：三个主程序当前只允许在 RSU 0/1/3（圆圈/方阵/蜘蛛网）发起请求；方阵 `ObuExtendData=true`，邻近至少两个基站时请求频率乘 4；OBU 使用 `srand(time(NULL))` 和 `rand()%20000` 间隔抖动。证据为三个 `scratch/fgfxfvanet-*.cc` 入口及 [fgfxf-obu.cc][old-obu] 232–233、338–364 行。这些是**留存源码默认行为**，没有每轮冻结配置证明全部归档数据采用同一设置，不能把旧数据先验当作全基站均匀采样。圆圈留存入口甚至已注释 L3 tracer、改用 PCAP，进一步说明当前旧源码与历史采样时点存在版本差异。
+
+## 4. RTT 的记录语义
+
+旧采集链路见 [ndn-rtt-estimator.cc][rtt-estimator] 44–74 行和 [fgfxf-obu.cc][old-obu] 311–329 行：
+
+1. 发送 Interest 时记录发送时间。
+2. 收到 Data 时调用 `AckRecord`；超时时也调用 `AckRecord(..., true)`，Nack 则清除记录。
+3. 导出时跳过没有结束记录的项，写出 `send_time, recv_time - send_time`，两列均为整数毫秒，无表头。
+4. 导出代码没有按 `m_nbTimeout` 排除超时，也没有向 CSV 写入这个标记。
+
+因此这些 CSV 同时包含**成功收包耗时和超时终结耗时**，样本中存在大量 `3000 ms`。不能把所有行都当作成功 Data 的 RTT，也不能仅靠 RTT 数值无歧义地还原每行的完成状态。
+
+所选记录的发送时刻范围约为：圆圈 8.84–83.85 秒、方阵 24.11–183.20 秒、蜘蛛网 1.00–64.70 秒。这是被记录样本的时间范围，不是仿真总时长。
+
+## 5. 四算法 RTT 随时间的 3D 图
+
+共同坐标口径：X 轴是请求发送时刻，读取值仍为毫秒，仅刻度格式化为秒；Y 轴是算法类别；Z 轴为处理后的 RTT（毫秒），图中文字为 `The clustered and averaged RTT (ms)`。
+
+| 场景 | 当前归档脚本的实际处理 | 每算法点数 |
+|---|---|---:|
+| 圆圈 | 按原始行序，每 20 行同时平均 `send_time` 与 `rtt`；再保留平均 RTT `<3000` 的组 | 56；本次没有组被该阈值删除 |
+| 方阵 | 按原始行序，每 40 行同时平均两列；没有启用时间/RTT 筛选 | 35 |
+| 蜘蛛网 | 先按第 3 节节点列表拼接 13 个 CSV，每 40 行同时平均两列，然后按平均发送时刻排序 | 87 |
+
+证据位置：圆圈脚本 71–99 行、方阵 72–101 行、蜘蛛网 118–226 行。末尾不足一个完整组的记录也参与均值。
+
+这是**固定记录条数的均值**，没有固定秒数窗口、交接事件分段或跨实验重复的统计。蜘蛛网每算法有 12 个均值组跨越车辆文件边界；事后按平均时间排序并不能让组内记录重新变成同车连续时间窗口。
+
+`3000 ms` 超时记录对分组均值仍有贡献。因此 Naive 的高峰可能包含超时结束时间，解释时应连同完成/丢失口径一起阅读，不能称其全部为成功收包延迟。
+
+## 6. 三算法箱线图
+
+这些图保留 Proposed、RTVTDF、VTDF，未绘制 Naive。标题/轴标签用 `The RTT without timeouts (ms)`；实际做法是先按数值范围筛选，没有读入独立的 timeout 标记或交接事件表。
+
+| 场景 | 筛选条件（毫秒，严格不等式） | 当前脚本显示设置 |
+|---|---|---|
+| 圆圈 | `rtt < 800` | 常规箱线图 |
+| 方阵 | `250 < rtt < 1200` | 常规箱线图 |
+| 蜘蛛网 | `250 < rtt < 2800` | 额外固定 `ylim(200,1390)` |
+
+证据位置：圆圈脚本 74–80 行、方阵 72–81 行、蜘蛛网 172–197 行。未显式设置 `whis` 或 `showmeans`，使用箱线图默认须线规则；红线为中位数，空心点为箱线图规则识别的离群点，不是人工标注的车辆交接事件。
+
+蜘蛛网参考 SVG 含 1400 ms 刻度，按 SVG 坐标推算纵轴约为 200–1500 ms，与现存脚本的 1390 ms 上界有版本差异；不要将当前显示设置视为原图的完全相同参数。
+
+以下是本次对现存输入按脚本阈值的只读复算。P99 使用排序后的线性插值，**是此次核对补充的指标，不是旧脚本原有输出**。
+
+| 场景 | 算法 | 原始行数 | 保留行数 | 删除行数 | 保留后中位数 ms | 保留后 P99 ms |
+|---|---|---:|---:|---:|---:|---:|
+| 圆圈 | Proposed | 1111 | 1109 | 2 | 182 | 230.92 |
+| 圆圈 | RTVTDF | 1112 | 1110 | 2 | 181 | 310.82 |
+| 圆圈 | VTDF | 1119 | 1106 | 13 | 181 | 412.50 |
+| 方阵 | Proposed | 1388 | 1368 | 20 | 303 | 439.33 |
+| 方阵 | RTVTDF | 1384 | 1377 | 7 | 303 | 514.24 |
+| 方阵 | VTDF | 1379 | 1365 | 14 | 303 | 800.00 |
+| 蜘蛛网 | Proposed | 3441 | 3345 | 96 | 303 | 441.56 |
+| 蜘蛛网 | RTVTDF | 3441 | 3376 | 65 | 303 | 506.00 |
+| 蜘蛛网 | VTDF | 3443 | 3344 | 99 | 303 | 804.57 |
+
+还需保留的处理细节：方阵 Proposed 删除了 8 个 `≤250 ms` 低值，蜘蛛网 Proposed 删除了 26 个此类低值；圆圈 VTDF 删除的 13 行中只有 11 行等于 3000，方阵 VTDF 删除的 14 行中只有 13 行等于 3000。因此不能把所有删除行自动标为超时。蜘蛛网 VTDF 保留的 3 个点为 1617、1910、2046 ms，按现存脚本参与统计，却会被 1390 ms 上界隐藏；它们也超过参考 SVG 约 1500 ms 的显示上界。
+
+所选数据经上述处理后呈现“主体分布接近、本次复算的 Proposed P99 更低”。这与用户关注少量高延迟样本的思路相符；不等于所有高分位或所有 RTT 都更低，也尚未证明每个尾部样本正好发生于交接。
+
+## 7. 三场景总流量图
+
+### 7.1 顶层图的计算公式
+
+[CompareRateTrace-allsecond-lightLine.py][traffic-code] 32–62 行选定第 3 节的 12 份 trace，95–117 行执行：
+
+1. 按制表符读取 `Time, Node, FaceId, FaceDescr, Type, Packets, Kilobytes, PacketRaw, KilobytesRaw`。
+2. 排除 `Packets、Kilobytes、PacketRaw、KilobytesRaw` 同时 `<1e-5` 的行。
+3. 保留 `FaceId > 256`、`Node ∈ {0,1,2,3,4,5,6}`。
+4. 保留 `Type ∈ {InInterests, OutInterests, InData, OutData}`。
+5. 对全文件全部时间的 `Kilobytes` 求和，计算 `sum(Kilobytes) / 1024 * 8`。
+
+图的历史轴名为 `Total traffic (Mbits)`；每柱标注两位小数，Y 轴下界为 **100**，不是 0。只读复算的 12 个两位小数值均与 SVG 标注一致：
+
+| 场景 | Proposed | RTVTDF | VTDF | Naive |
+|---|---:|---:|---:|---:|
+| 圆圈 | 112.72 | 114.20 | 114.44 | 111.38 |
+| 方阵 | 131.48 | 139.27 | 136.98 | 121.55 |
+| 蜘蛛网 | 206.62 | 206.75 | 209.01 | 197.45 |
+
+在这些固定输入和公式下，Proposed 都小于两种补救算法，大于 Naive；蜘蛛网相对 RTVTDF 的差异尤其小。没有重复运行分布，不能从这些单柱判断统计显著性。
+
+### 7.2 “总流量”在旧代码中的具体含义
+
+旧 [ndn-l3-rate-tracer.cpp][rate-tracer] 206–259、297–337 行说明：`KilobytesRaw` 是周期内原始字节数除以 1024；`Kilobytes` 则是 **α=0.8 的指数平滑 KiB/s 速率**。旧图用了后者，没有使用原始字节计数。
+
+- 本次 12 个 trace 的时间间隔均为 1 秒，因此求和数值上相当于按 1 秒积分平滑速率；脚本未显式乘周期。`/1024*8` 对应二进制容量换算，旧图标签仍写 `Mbits`。复述历史结果时必须同时给出公式，不能悄悄换算单位后沿用原数值。
+- 字节计数来自 Interest/Data 的 `wireEncode().size()`，不包括全部 MAC/PHY 开销。
+- `FaceId > 256` 仍包含 `ndnFace://`、`appFace://` 等应用接口，不只 `netdev://`。
+- 同时累加 In/Out 和多个接口、节点，同一包可能多次计数；它不是去重后的实际发送字节总量。
+- `Node0–6` 也不是三个场景的统一“全网”：trace 节点范围为圆圈 0–5、方阵 0–11、蜘蛛网 0–28，后两者只取前七个节点。
+- 代码没有按名字区分控制报文、业务报文、重传报文，不能单靠此图分解“控制开销”和“减少重传”各自贡献。
+
+trace 记录的时间范围与文件完整性也不完全一致，顺序为 Proposed / RTVTDF / VTDF / Naive；记录终点不能直接视为仿真实际结束时间：
+
+| 场景 | trace 时间范围（秒） | 不完整末行 |
+|---|---|---|
+| 圆圈 | 1–93 / 1–91 / 1–93 / 1–88 | 四文件各 1 行 |
+| 方阵 | 四文件均 1–229 | 无 |
+| 蜘蛛网 | 1–242 / 1–229 / 1–229 / 1–229 | Proposed 有 1 行 |
+
+旧脚本未报告缺失值或统一观察时长。本次复算明确跳过上述不完整行，仍得到图内数值；这不补全被截断的数据。
+
+### 7.3 归档中的其他流量版本
+
+[CompareRateTrace-allsecond-lightLine2.py][handover-traffic-code] 对同一批输入增加 `FaceDescr` 以 `netdev` 开头的条件，并只取手工列出的时段（两端均包含）：
+
+- 圆圈：`[15,22]、[28,36]、[42,49]、[56,63]、[69,77]` 秒。
+- 方阵：`[25,49]、[55,76]、[81,106]、[111,133]、[138,163]` 秒。
+- 蜘蛛网：`[5,17]、[19,27]、[35,41]、[48,53]` 秒。
+
+仍汇总四种 Interest/Data 收发类型，公式仍为 `sum(Kilobytes)/1024*8`。按此公式复算的数值与归档 `RateTrace_compare2025_04_21_20_41_54.svg` 一致；该图轴名 `Total data during handover (Mbits)`，下界 18，并不是顶层总流量图，也不是只统计 Data。其三组数值分别为 `19.85/19.90/20.27/18.94`、`40.31/43.94/44.06/36.67`、`58.15/58.49/59.04/55.71`。该 SVG 写 `Our proposed`，现存脚本写 `TKAN-VTIF`，这里只确认数值口径一致。时段是脚本内人工清单，不能自动推广到新轨迹。
+
+其他中间文件：`CompareRateTrace-allsecond.py` 使用相同全时长公式，但算法列顺序不同；`CompareRateTrace.py` 和 `CompareRateTrace-persecond.py` 是蜘蛛网逐时刻图，采用 `KilobytesRaw*8`，Y 轴却写 `Packets`，不能拿来解释顶层柱状图。`*_Rate_Trace_20241030.txt` 及 `rate_trace_files_brief_20241030.txt` 也不是顶层柱状图脚本读取的原始路径。
+
+## 8. 混淆矩阵与旧模型训练
+
+### 8.1 顶层矩阵的可追溯流程
+
+虽然文件名前缀为 `KNN-AI-matrix`，图标题和代码实际是 **KAN `[6,100,7]`**，不是 KNN。标题记录 `Trained for 500 Epochs: 97.15 %`；本次未重新加载模型计算该准确率。
+
+[confusion_matrix_compare-KAN.py][matrix-code] 的现存版本：
+
+1. 第 37 行指定 `model/KAN-spider-6-100-7-0.001_2024_12_18_18_40_14spider_map_.pth`，第 123–126 行构造 KAN 并加载 `state_dict`。
+2. 第 41–81 行读取蜘蛛网 **39 个 `.txt`**：第 3 节的 Naive、VTDF、RTVTDF 三个运行前缀，每个配同样的 13 个节点。不读取 Proposed 的 RTT CSV。
+3. 合并后 10385 行；标签为 `3999963171` 的 58 行被 `0 ≤ label ≤ 1000` 条件排除，余 10327 行。这个条件不是严格的 0–6 标签校验。
+4. 对保留数据打乱行序，再将**全部保留数据**用于预测和 accuracy，没有另行留出测试集。
+5. 指定类别 0–6，混淆矩阵按真实类别的行总数归一化，NaN 置零（146–147 行）。
+
+过滤后真实标签计数：`0:31、1:165、2:170、3:9795、4:0、5:54、6:112`。因此矩阵 `Node 4` 的整行 0 是缺少该类真实样本，不能解释为该类准确率已测得为零或已充分验证。类别 3 占据绝大多数样本；图内 97.15% 应记作这份历史全样本评估的展示值，不能改称独立测试集泛化准确率。
+
+与它读取相同 39 文件的 `神经网络训练效果对比-spider-map-KAN[6,100,7]生成数据.py`，现存代码把训练/测试都设为整个数据集，并使用人工类别权重 `[4.9,3.4,3.0,0.1,3,3,4.4]`；其保存整个模型的写法又与矩阵加载 `state_dict` 的接口不同。相同文件清单及模型名提供追溯线索，但不能据此断言该中间脚本当前版本恰好产出了图中 checkpoint。
+
+### 8.2 三个“最终版”训练脚本的现状
+
+| 脚本 | 当前归档内的结构与输入特征 | 需要保留的版本事实 |
+|---|---|---|
+| [KAN神经网络训练模型最终版-circle.py][old-train-circle] | 静态 KAN `[5,100,2]`；单行 5 特征 | 输入 `1727084799.txt`，1026 行，标签 `0:857、1:169` |
+| [KAN神经网络训练模型最终版-grid.py][old-train-grid] | 静态 KAN `[6,100,5]`；标签映射 `0,1,2,4,5` | 后续赋值覆盖输入为 `1729941105_8_timeout.txt`，仅 14 行（`0:9、2:5`），并加载既有模型继续训练 |
+| [KAN神经网络训练模型最终版-spider-map.py][old-train-spider] | 静态 KAN `[6,100,7]`；单行 6 特征 | 读取上述 39 文件；过滤后缺标签 4 |
+
+这三个脚本使用随机按行打乱、90%/10% 划分、500 epoch、Adam（学习率 0.001），保存裸权重 `.pth`；并非当前按 run 隔离、包含归一化与标签元数据的 TKAN-LSTM checkpoint 流程。文件名中的“最终版”不足以覆盖代码中的续训/试验状态。RTT/流量每轮运行与具体 checkpoint 的一一对应关系仍未闭合。
+
+## 9. 旧实现与当前重写版的边界
+
+留存旧采样与推理入口如下；它们是代码导航，不代表已经恢复了每轮运行命令或当时的固定版本。
+
+| 场景 | 旧 C++ 入口 | 旧 KAN 推理入口 |
+|---|---|---|
+| 圆圈 | [fgfxfvanet-circle-itu1411.cc][old-circle-main] | [fgfxfvanet-circle-itu1411-KAN.py][old-circle-gym] |
+| 方阵 | [fgfxfvanet-grid-test.cc][old-grid-main] | [fgfxfvanet-grid-test-KAN-node1.py][old-grid-gym] |
+| 蜘蛛网 | [fgfxfvanet-spider-map.cc][old-spider-main] | [fgfxfvanet-spider-KAN-node3.py][old-spider-gym] |
+
+旧代码位置为 `ns-3_old/contrib/ndn4ivc/`。旧 [fgfxf-rsu-strategy.h][old-strategy] 枚举是 `0=No_forward、1=VTDF、2=Kalman`，AI 另由 gym 端口启用；不能套用当前四策略编号。旧 RSU 的 RTVTDF 分支注释提到以 Kalman 替代论文最小二乘处理，不能只凭图例就宣称与原论文实现完全一致。
+
+旧推理使用单时刻车辆特征，通过静态 KAN 选出一个目标 RSU。旧 [fgfxf-rsu.cc][old-rsu] 952–1007 行处理动作：目标为本站就接下请求；目标是其他站，则经邻居接口发送 `/control/offload` Data，其中携带编码后的原始 Interest 和目标信息。它与当前上级 Router 接收 `/vndn/control/neural-route`、预备 PIT 并转发回程 Data 的链路不同。
+
+| 对照点 | 旧材料中的实现 | 当前 `ns-3` |
+|---|---|---|
+| 模型输入 | 单时刻 5/6 特征 | 10 步 × 6 特征 |
+| 网络 | 静态 KAN，另有多种中间对比网络 | TKAN-LSTM |
+| 决策 | Python 选一个目标 RSU | Python 返回候选概率，C++ 按规则选一个或两个 |
+| 控制路径 | 邻居 RSU 任务卸载 `/control/offload` | 上级 Router 回程选择与目标 RSU PIT 准备 |
+| 数据/模型约定 | 时间戳文件、裸 `.pth`、部分按行随机划分 | 日期/run 目录、带元数据 `.pt`、按 run 划分 |
+
+这些是现存源码可确认的差异，不是每个历史 run 的完整运行证明。后续工作继承研究问题和比较思路，不能把旧模型直接塞入当前控制器，或把旧图数值作为当前重写代码已经通过的性能验收。
+
+## 10. 后续 AI 如何接续
+
+先从第 2、3 节锁定参考图、算法顺序和输入清单，再按第 4–8 节理解指标。需要复现历史图时，在新的输出/工作目录复制所需脚本和输入，保留 `circle-itu1411/`、`grid-vanet-test/`、`fgfxf-spider-map/`、`GraphRet/`、`model/`、`efficient_kan/` 及 `timesnewromansongti.ttf` 的相对关系；不要在只读旧归档直接运行会保存文件的脚本。
+
+旧绘图用到 pandas、matplotlib，部分脚本还导入 numpy/scipy；矩阵额外依赖 PyTorch、scikit-learn、seaborn 和归档 KAN。未找到与这些图一一绑定的完整环境锁定文件，本次也未验证旧脚本可在当前环境原样执行。直接 `plt.show()`、硬编码输入、注释掉的保存语句及 checkpoint 格式差异需要在复现副本中明确处理，不能覆盖原件。
+
+下一轮若重做当前项目实验，应明确记录：场景与轨迹、算法实现/提交、种子、运行参数、模型及训练数据、每轮完成状态；分别保留成功/超时/失联状态与交接时刻，明确流量的节点、方向、接口、采样周期、字节层级和观察时段。旧阈值、固定节点清单和手工时间段只作为历史记录，是否沿用须依据新实验定义；不得因想复现原图形状而隐含筛选。
+
+尚未由现有材料闭合的项目：每轮原始命令/种子及固定代码版本、每轮 Proposed 模型对应关系、尾部 RTT 与交接事件逐条关联、业务重传与控制报文的开销分解。后续若找到实验日志或论文方法细节，应补充证据，不抹掉本记录的历史口径。
+
+本次为文档工作，没有运行 waf/configure。将来涉及仿真或构建，仍须 `export JOBS=4`，尽可能复用配置，避免日常重复 `./waf configure`。
+
+[figures]: ../../../ns-3_old/旧的实验效果图/
+[archive]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/
+[circle3d]: ../../../ns-3_old/旧的实验效果图/delay_circle_2025_01_07_20_25_41_3D.svg
+[grid3d]: ../../../ns-3_old/旧的实验效果图/delay_grid_2024_11_13_18_11_27_3D.svg
+[spider3d]: ../../../ns-3_old/旧的实验效果图/delay_spider_2025_01_07_20_35_21_3D.svg
+[circlebox]: ../../../ns-3_old/旧的实验效果图/delay_circle_2025_01_07_20_30_53_box.svg
+[gridbox]: ../../../ns-3_old/旧的实验效果图/delay_grid_2024_11_13_18_52_35_box.svg
+[spiderbox]: ../../../ns-3_old/旧的实验效果图/delay_spider_2024_11_18_09_46_09_box.svg
+[traffic]: ../../../ns-3_old/旧的实验效果图/RateTrace_compare2024_11_13_18_54_13.svg
+[matrix]: ../../../ns-3_old/旧的实验效果图/KNN-AI-matrix2024_12_18_19_45_08.svg
+[circle3d-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_circle_vanet_3D.py
+[grid3d-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_grid_vanet_3D.py
+[spider3d-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_spider_map_3D.py
+[circlebox-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_circle_vanet_box.py
+[gridbox-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_grid_vanet_box.py
+[spiderbox-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/delay_graph_spider_map_box.py
+[traffic-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/CompareRateTrace-allsecond-lightLine.py
+[handover-traffic-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/CompareRateTrace-allsecond-lightLine2.py
+[matrix-code]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/confusion_matrix_compare-KAN.py
+[old-train-circle]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/KAN神经网络训练模型最终版-circle.py
+[old-train-grid]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/KAN神经网络训练模型最终版-grid.py
+[old-train-spider]: ../../../ns-3_old/旧的实验效果图/论文出图旧数据和代码-2026-10-18/KAN神经网络训练模型最终版-spider-map.py
+[rtt-estimator]: ../../../ns-3_old/contrib/ndn4ivc/helper/ndn-rtt-estimator.cc
+[old-obu]: ../../../ns-3_old/contrib/ndn4ivc/apps/fgfxf-obu.cc
+[rate-tracer]: ../../../ns-3_old/src/ndnSIM/utils/tracers/ndn-l3-rate-tracer.cpp
+[old-strategy]: ../../../ns-3_old/contrib/ndn4ivc/apps/fgfxf-rsu-strategy.h
+[old-rsu]: ../../../ns-3_old/contrib/ndn4ivc/apps/fgfxf-rsu.cc
+[old-circle-main]: ../../../ns-3_old/scratch/fgfxfvanet-circle-itu1411.cc
+[old-circle-gym]: ../../../ns-3_old/scratch/fgfxfvanet-circle-itu1411-KAN.py
+[old-grid-main]: ../../../ns-3_old/scratch/fgfxfvanet-grid-test.cc
+[old-grid-gym]: ../../../ns-3_old/scratch/fgfxfvanet-grid-test-KAN-node1.py
+[old-spider-main]: ../../../ns-3_old/scratch/fgfxfvanet-spider-map.cc
+[old-spider-gym]: ../../../ns-3_old/scratch/fgfxfvanet-spider-KAN-node3.py
