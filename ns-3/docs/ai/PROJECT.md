@@ -1,6 +1,6 @@
 # 项目事实与导航
 
-更新日期：2026-10-20。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
+更新日期：2026-10-21。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
 
 ## 用户确认的定位
 
@@ -22,6 +22,19 @@
 6. RSU 经 `/vndn/control/neural-route` 通知 Router；Router 经 `/vndn/control/neural-pit` 为目标 RSU 预备无线 PIT，Data 返回时向选定 RSU 转发，再送往车辆。
 
 这不是只改应用层的项目。NFD 的 `forwarder.cpp`、`strategy.cpp` 对 `/vndn/control` 具有特定的 CS、PIT 和记录清理规则；修改协议必须考虑这些底层行为。
+
+2026-10-20 用户批准了交付缺陷的正式修复，修改已落实到 Router cc/h 和两个传输层文件。
+Router 对已有有效神经回程的 pending 业务请求，在网络 Face 收包后清除匹配 PIT 的网络 in-record，
+保留本地应用 in-record、服务器 out-record 和原有定时器。这样即使默认 BestRoute2 抑制了重复 Interest
+向应用的再次投递，服务器 Data 仍先交给 Router 应用，由应用附加目标 OBU 标签后发往选定 RSU。
+晚到的神经路由指令也清理已经留下的网络下游；Stop 断开收包订阅。
+
+`GenericLinkService` 在分片前读取完整包的非零目标 MAC，通过发送 endpoint 传给每个分片；
+`NetDeviceTransport` 的非 P2P 分支优先使用该 endpoint，endpoint 为零时保留原 LP 标签处理。
+P2P 设备仍按原路径发送，本地传输和接收重组未修改。此修复沿用项目已有的八字节
+`ns3::Address` 编码约定，未修改模型权重、概率选择阈值或增加应用补救策略。
+作用范围与实际验收见 [正式修复记录](NEURAL_DELIVERY_FIX_20261020.md)，
+修改前定位与隔离原型见 [原计划](NEURAL_DELIVERY_FIX_PLAN_20261020.md)。
 
 ## 三个场景与策略
 
@@ -83,14 +96,17 @@ Nack 单列次数。控制子集包含 hello、p2p-handshake、search/find、neu
 额外 Data 指标是应用可观察的预测额外路径、补救转送和同一无线方向重复提交，
 不涵盖所有隐式 NFD 副本，也不证明设备实际接受或发送成功。论文必须保留这些限定。
 
-本次采集工作不修改 `src/` 的传输、转发、策略或重组代码，也不改变既有模型权重。
-未指定实验配置时保留旧运行方式；正式出图、独立重复和效应统计仍是后续工作。
+上述采集工作当时未修改 `src/` 的传输、转发、策略或重组代码，也未改变既有模型权重。
+随后获准的交付修复涉及两个传输层文件，统计口径仍是 L3 出站字节及应用显式提交次数，
+不能将分片目的地址修复后的 L3 数值解释为完整 MAC 开销。
+未指定实验配置时仍使用旧运行入口；正式出图、独立重复和效应统计需要另外验收。
 
 | 关注点 | 文件 |
 |---|---|
 | 车辆请求、切换、数据记录 | [apps/vndn-obu.cc](../../contrib/vndn-nn-rd/apps/vndn-obu.cc) |
 | RSU 状态、gym、回程决策 | [apps/vndn-rsu.cc](../../contrib/vndn-nn-rd/apps/vndn-rsu.cc) |
 | Router 控制与 Data 回程 | [apps/vndn-router.cc](../../contrib/vndn-nn-rd/apps/vndn-router.cc) |
+| 分片目的地址传递与设备发送 | [generic-link-service.cpp](../../src/ndnSIM/NFD/daemon/face/generic-link-service.cpp)、[ndn-net-device-transport.cpp](../../src/ndnSIM/model/ndn-net-device-transport.cpp) |
 | 最近 RSU 与单双路径选择 | [model/vndn-rsu-forwarding-policy.cc](../../contrib/vndn-nn-rd/model/vndn-rsu-forwarding-policy.cc) |
 | NFD 控制报文特殊行为 | [forwarder.cpp](../../src/ndnSIM/NFD/daemon/fw/forwarder.cpp)、[strategy.cpp](../../src/ndnSIM/NFD/daemon/fw/strategy.cpp) |
 | SUMO 与 gym 集成 | [src/traci](../../src/traci/)、[src/opengym](../../src/opengym/) |
@@ -105,7 +121,18 @@ Nack 单列次数。控制子集包含 hello、p2p-handshake、search/find、neu
 - 新场景训练测试覆盖数据筛选、无效断点、七类窗口、checkpoint 和临时七类数据的一轮 CPU 训练；[推理测试](../../contrib/vndn-nn-rd/ai-training/tests/test_tkan_inference.py) 验证场景/标签兼容性及候选概率映射。各目录独立进程运行，避免同名训练模块相互干扰。
 - 新增 `vndn-experiment-config`、`vndn-experiment-recorder`、`vndn-l3-experiment-tracer` 三个 C++ 套件，
   及 `tools/experiments/tests/` 的输入、运行和汇总测试；统一回归入口执行上述测试。
-- 这些单元测试的存在不证明三场景端到端回程、PIT 生命周期、模型泛化或切换收益已验证；实际执行结果应进入变更记录。
+- [Router PIT 测试](../../contrib/vndn-nn-rd/test/vndn-router-neural-pit-test.cc) 的十例使用真实 P2P、NFD 和 Router 应用，
+  覆盖默认 BestRoute2 抑制窗口内的重复请求、单双目标、晚路由指令、非神经/无 pending/不同 selector/非业务请求、
+  Stop 销毁、Nack 和超时后重试。
+- [分片目的地址测试](../../contrib/vndn-nn-rd/test/vndn-fragment-destination-test.cc) 的十九例覆盖真实 GLS 分片与逆序重组、
+  endpoint/标签优先级、设备发送地址、无标签与零目标控制包、P2P、本地 AppLinkService 和 InternalForwarderTransport。
+  记录设备发送调用不等于验证 WiFi 空口交付或 MAC 重试。
+- 2026-10-20 正式修复后的统一回归包含构建、七个 C++ 套件和五组 Python 测试，共十三步骤全部通过，
+  见 [单元报告](../../build/validation/20261020T154751.173146Z-c470c777/report.json)。
+  Router 测试明确使用 CS-miss、静态 P2P Face；动态新增 Face、CS-hit、
+  按 Name 聚合之外的完整多 selector 应用语义及开启 LP 可靠重传后的目的地址保持，不在该保证内。
+- 单元通过不证明三场景端到端交付、模型泛化或神经方案的性能非劣性；场景证据与限制统一记录于
+  [正式修复记录](NEURAL_DELIVERY_FIX_20261020.md)，不能以套件数量代替实验结论。
 - 本文初始化依据是本次可见对话、当前源码及本地 Git 历史；没有读取或声称分析全部历史聊天。
 - 近期 Git 记录提供演进线索：`858cbda` 修复 RTVTDF，`f5f92b5` 添加训练代码，`0a2973d` 添加神经网络决策，`74145ce` 修复神经网络问题，`e1d0bd6` 添加更多场景。提交标题不能替代测试和实验结果。
 - 构建和测试的实际执行证据见 [CHANGELOG.md](CHANGELOG.md)；源码核对本身不能认证性能优势或论文结论。

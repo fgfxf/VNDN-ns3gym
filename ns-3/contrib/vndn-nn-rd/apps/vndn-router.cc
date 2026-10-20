@@ -144,6 +144,7 @@ VndnRouter::ForwardInterestToServer (const ndn::Interest &interest, uint64_t ret
       else
         pending->second.returnFaceIds.insert (requestedReturnFaces.begin (),
                                               requestedReturnFaces.end ());
+      RemoveNeuralNetworkInRecords (interest);
       NS_LOG_DEBUG ("Router 合并同名请求: " << interest.getName ()
                     << " 回程接口数=" << pending->second.returnFaceIds.size ());
       return;
@@ -195,6 +196,40 @@ VndnRouter::ForwardInterestToServer (const ndn::Interest &interest, uint64_t ret
       std::bind (&VndnRouter::OnServerNack, this,
                  std::placeholders::_1, std::placeholders::_2),
       std::bind (&VndnRouter::OnServerTimeout, this, std::placeholders::_1));
+}
+
+void
+VndnRouter::RemoveNeuralNetworkInRecords (const ndn::Interest &interest)
+{
+  static const ndn::Name servicePrefix ("/com/baidu");
+  auto pending = m_pendingRequests.find (interest.getName ());
+  if (!m_active || !servicePrefix.isPrefixOf (interest.getName ()) ||
+      pending == m_pendingRequests.end () ||
+      pending->second.requestedReturnRsuIds.empty () ||
+      pending->second.originalInterest == nullptr)
+    return;
+
+  auto ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+  auto pitEntry = ndnL3->getForwarder ()->getPit ().find (interest);
+  if (pitEntry == nullptr ||
+      !pitEntry->canMatch (*pending->second.originalInterest))
+    return;
+
+  // NFD 在抑制重复 Interest 之前已写入 in-record；该包未必再交给 app。
+  // 只清除网络下游，保留本地 app 的 in-record、服务器 out-record 和定时器。
+  // Data 必须先到 OnServerData，由它附加目标 OBU 标签并按模型选站。
+  std::vector<nfd::Face *> networkFaces;
+  for (const auto &record : pitEntry->getInRecords ())
+    {
+      if (record.getFace ().getScope () == ndn::nfd::FACE_SCOPE_NON_LOCAL)
+        networkFaces.push_back (&record.getFace ());
+    }
+  for (auto *face : networkFaces)
+    {
+      pitEntry->deleteInRecord (*face);
+      NS_LOG_INFO ("Router 清除神经请求的网络 PIT in-record: "
+                   << interest.getName () << " faceId=" << face->getId ());
+    }
 }
 
 void
@@ -514,6 +549,9 @@ VndnRouter::OnNeuralRouteInstruction (const ndn::Data &data)
     {
       if (ApplyNeuralReturnRoute (pending->second, returnRsuIds))
         {
+          // 指令也可能晚于重复 Interest；激活神经回程时清理已留下的网络下游。
+          if (pending->second.originalInterest != nullptr)
+            RemoveNeuralNetworkInRecords (*pending->second.originalInterest);
           PrepareNeuralReturnPits (pending->second);
           NS_LOG_INFO ("Router 覆盖请求回程路由: " << interestName
                        << " 目标RSU数="
@@ -635,6 +673,24 @@ VndnRouter::Start ()
 {
   m_face.processEvents ();
   m_active = true;
+  if (m_networkInterestConnections.empty ())
+    {
+      auto ndnL3 = m_thisNode->GetObject<ns3::ndn::L3Protocol> ();
+      for (uint64_t faceId : m_p2pFaceIds)
+        {
+          auto *face = ndnL3->getFaceTable ().get (faceId);
+          if (face == nullptr ||
+              face->getScope () != ndn::nfd::FACE_SCOPE_NON_LOCAL)
+            continue;
+          // Forwarder 在 Face 加入表时已连接此信号；后注册的回调在其
+          // 同步 Interest 管线完成后执行，即使策略没有把重复包送到 app。
+          m_networkInterestConnections.emplace_back (
+              face->afterReceiveInterest.connect (
+                  [this] (const ndn::Interest &interest, const nfd::EndpointId &) {
+                    RemoveNeuralNetworkInRecords (interest);
+                  }));
+        }
+    }
   NS_LOG_INFO ("VNDN Router 启动");
   ResolveServerFace ();
   uint32_t delayMs = 500 + ((m_thisNode->GetId () * 17) % 50);
@@ -647,6 +703,7 @@ VndnRouter::Stop ()
 {
   NS_LOG_INFO ("VNDN Router 关闭");
   m_p2pHandshakeEvent.Cancel ();
+  m_networkInterestConnections.clear ();
   m_face.shutdown ();
   m_active = false;
 }

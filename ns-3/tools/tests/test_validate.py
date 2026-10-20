@@ -6,10 +6,12 @@ import io
 import json
 import os
 from pathlib import Path
+import runpy
 import shutil
 import sys
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 
 
@@ -46,6 +48,7 @@ class ValidationGateTest(unittest.TestCase):
             "state = json.loads((p / 'state.json').read_text())\n"
             "assert '--nowaf' in sys.argv\n"
             "suite = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--suite='))\n"
+            "state.update(state.get('suites', {}).get(suite, {}))\n"
             "out = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--xml='))\n"
             "tree = Element('Results')\n"
             "if state.get('xml') != 'empty':\n"
@@ -117,7 +120,7 @@ class ValidationGateTest(unittest.TestCase):
                 os.environ["JOBS"] = old_jobs
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
-        self.assertEqual(len(report["steps"]), 11)
+        self.assertEqual(len(report["steps"]), 13)
         call = json.loads((self.root / "build-call.json").read_text())
         self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
         for step in report["steps"]:
@@ -135,6 +138,52 @@ class ValidationGateTest(unittest.TestCase):
             "vndn-experiment-config", "vndn-experiment-recorder",
             "vndn-l3-experiment-tracer", "experiments-python",
         }.issubset(names), "The old unit gate does not exercise the new measurement contract")
+
+    def test_neural_delivery_suites_are_mandatory_parts_of_the_gate(self):
+        code, report = self.invoke()
+        self.assertEqual(code, 0)
+        names = [step["name"] for step in report["steps"]]
+        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination"):
+            with self.subTest(suite=suite):
+                self.assertEqual(names.count(suite), 1,
+                                 "Delivery regressions must execute exactly once")
+                step = next(step for step in report["steps"] if step["name"] == suite)
+                self.assertEqual(step["evidence"]["suite"], suite)
+                self.assertGreater(step["evidence"]["test_nodes"], 0)
+
+    def test_neural_delivery_suite_evidence_is_required(self):
+        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination"):
+            for evidence in ({"xml": "empty"}, {"case_result": "SKIP"}, {"cpp_rc": 3}):
+                with self.subTest(suite=suite, evidence=evidence):
+                    self.state(suites={suite: evidence})
+                    code, report = self.invoke("--skip-build")
+                    self.assertNotEqual(code, 0,
+                                        "Missing, skipped or failed delivery tests must reject the run")
+                    self.assertEqual(report["steps"][-1]["name"], suite)
+                    self.assertEqual(report["steps"][-1]["status"], "failed")
+
+    def test_neural_delivery_tests_are_registered_for_the_module_build(self):
+        class RecordingBuild:
+            env = SimpleNamespace(ENABLE_EXAMPLES=False)
+
+            def create_ns3_module(self, name, dependencies):
+                return SimpleNamespace(use=[])
+
+            def __call__(self, **kwargs):
+                return SimpleNamespace()
+
+            def create_ns3_module_test_library(self, name):
+                self.test_library = SimpleNamespace()
+                return self.test_library
+
+        build = RecordingBuild()
+        wscript = MODULE_PATH.parents[1] / "contrib/vndn-nn-rd/wscript"
+        runpy.run_path(str(wscript))["build"](build)
+        for source in ("test/vndn-router-neural-pit-test.cc",
+                       "test/vndn-fragment-destination-test.cc"):
+            with self.subTest(source=source):
+                self.assertEqual(build.test_library.source.count(source), 1,
+                                 "The test-runner must link each delivery regression")
 
     def test_missing_or_disabled_configuration_fails_without_building(self):
         cache = self.root / "build/c4che/_cache.py"

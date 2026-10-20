@@ -57,17 +57,23 @@ python3.8 tools/validate.py
 1. 检查测试已启用，不自行重新 configure。
 2. `./waf build -j 4 --targets=test-runner`，仅构建测试运行器及依赖。
 3. `vndn-rsu-forwarding-policy`、`vndn-neural-return-selection`、`vndn-experiment-config`、
-   `vndn-experiment-recorder`、`vndn-l3-experiment-tracer` 五个 C++ 套件。
+   `vndn-experiment-recorder`、`vndn-l3-experiment-tracer`、`vndn-router-neural-pit`、
+   `vndn-fragment-destination` 七个 C++ 套件。
 4. 分别在独立 Python 进程运行 `ai-training/circle/tests`、`ai-training/grid/tests`、`ai-training/spidermap/tests`。
 5. `ai-training/tests/test_tkan_inference.py` 的模型加载与推理兼容性测试。
 6. `tools/experiments/tests/` 的输入生成、串行运行器、请求闭合及负载汇总测试。
+
+报告中的执行步骤共十三项：一次构建、七个 C++ 套件、五组 Python 测试。
+2026-10-20 正式交付修复后的这十三项已全部通过，见
+[实际单元报告](../../build/validation/20261020T154751.173146Z-c470c777/report.json)；
+这不包含三场景端到端仿真。
 
 新训练测试包含临时合成七类数据的一轮 CPU 训练及模型保存/重载，产物随临时目录清理；不采集 SUMO 数据，不训练正式实验模型。
 独立进程避免三个同名 `train_tkan_lstm.py` 的导入缓存相互污染。
 推理测试放在 `ai-training/tests/`，避免在 `scratch/` 新建纯 Python 子目录而被 waf 自动识别为 C++ 程序。
 
 标准 ns-3 test-runner 链接所有启用模块的测试库，首次构建会编译部分上游测试。
-实际执行范围仍只有上述五个研究套件；不意味着所有 ns-3 测试都已运行。
+实际执行范围仍只有上述七个研究套件；不意味着所有 ns-3 测试都已运行。
 
 报告保存在 `build/validation/<唯一运行目录>/report.json`，附每步日志、C++ XML 和 Python 测试统计。
 只有选中的套件实际执行并通过、Python 测试数大于零且未跳过时才成功。
@@ -96,6 +102,8 @@ export JOBS=4
 ./waf build -j 4 --targets=test-runner
 python3.8 test.py --nowaf --suite=vndn-rsu-forwarding-policy
 python3.8 test.py --nowaf --suite=vndn-neural-return-selection
+python3.8 test.py --nowaf --suite=vndn-router-neural-pit
+python3.8 test.py --nowaf --suite=vndn-fragment-destination
 python3.8 -m unittest discover \
   -s contrib/vndn-nn-rd/ai-training/circle/tests -p 'test_*.py' -v
 python3.8 -m unittest discover \
@@ -121,6 +129,10 @@ python3.8 -m unittest discover \
 
 共用转发、NFD 控制/PIT 或跨场景逻辑改动，除单元回归外还需针对圆圈、方阵、蜘蛛网验收。
 先建立能触发目标行为的复现与断言，再改实现。仅启动成功或运行几秒不能证明发生过切换。
+本次用户已授权并落实 Router cc/h、`generic-link-service.cpp` 和 `ndn-net-device-transport.cpp`
+的正式修复；三场景的实际运行范围、结果和剩余限制由
+[正式修复与验收记录](NEURAL_DELIVERY_FIX_20261020.md) 承接。
+此前采集工作“不改底层”是当时的实施范围；本次底层修复并未把采集器扩展为 MAC/LP 计量。
 
 ```bash
 export JOBS=4
@@ -161,8 +173,17 @@ timeout --signal=TERM --kill-after=10s 300s ./waf --run \
 
 | 层次 | 已覆盖 | 仍需针对任务补充 |
 |---|---|---|
-| C++ 策略 | 最近 RSU、空候选、单双路径概率选择、长度不匹配 | NFD/PIT 生命周期、无线交付、控制时序 |
+| C++ 策略 | 最近 RSU、空候选、单双路径概率选择、长度不匹配 | 真实模型决策效果、切换与无线交付 |
+| Router PIT（十例） | 真实 P2P/NFD/App、默认 BestRoute2 下重复 Interest 不进 app 仍清理网络 in-record；保留本地及服务器记录；单双回程、晚指令、适用范围隔离、Stop、Nack/超时后重试 | CS-hit、动态新增 Face、同名多 selector 的完整应用语义、三场景实际控制时序 |
+| 分片目的地址（十九例） | 10KB Data 的真实 GLS 分片/逆序重组、endpoint 与标签优先级、设备发送地址、零目标/无标签控制包、P2P 和两类本地传输 | WiFi 空口交付与 MAC 重试、开启 LP 可靠重传后的目的地址保持 |
 | Python | 窗口/运行隔离、无效断点、七类训练、checkpoint 保存重载、场景校验及候选概率映射 | 真实数据上的模型泛化、Gym 跨进程通信与实际无线交付 |
-| 仿真 | 已有三个场景入口 | 固定种子下切换与回程的自动断言、统计意义上的效果 |
+| 仿真 | 已有三个场景入口；本次实际执行证据见正式修复记录 | 未覆盖负载与参数下的行为、独立重复和统计意义上的效果 |
 
-现有测试通过仅能支持相应覆盖范围。科研有效性还需要合适的对照、重复实验和统计分析。
+Router 清理回调位于 Forwarder 收包处理之后，CS-hit 已发出的 Data 不会被该回调撤回；
+收包订阅针对启动时已有的 P2P Face。不同 selector 用例证明清理不误删另一 PIT，
+没有改变原应用按 Name 聚合 pending 的设计。Stop 用例覆盖停机销毁后收包，
+不承诺同一个已 shutdown 的 `ndn::Face` 可以重新启动。
+分片修复针对当前未启用 LP 可靠重传的发送路径；可靠重传仍使用 endpoint 0，需要启用该功能时另行验证。
+
+现有测试通过仅能支持相应覆盖范围。科研有效性还需要合适的对照、重复实验和统计分析，
+尤其不能把无回归、模型选站覆盖率或单次交付改善当作神经方案已不劣于转发策略。

@@ -7,8 +7,8 @@
 - 研究旧论文图、比较指标或延续历史实验时，先读 [旧实验与出图记录](docs/ai/LEGACY_EXPERIMENTS.md)；
   旧图的筛选/流量口径与旧 KAN 实现不能直接当作当前重写版本的实验定义或验证结果。
 - 新的三自变量、五指标对比按 [实验与出图方案](docs/ai/EXPERIMENT_COMPARISON_PLAN.md) 理解口径；
-  当前获准实现以 [实验采集使用说明](docs/ai/EXPERIMENT_COLLECTION.md) 为准：
-  不改底层，仅记录网络 Face 的 L3 出站 Interest/Data 字节，以及应用显式提交的额外 Data 次数。
+  采集口径以 [实验采集使用说明](docs/ai/EXPERIMENT_COLLECTION.md) 为准：
+  采集实现当时未改底层，仅记录网络 Face 的 L3 出站 Interest/Data 字节，以及应用显式提交的额外 Data 次数。
   后者不能标成全部实际发送副本；负载不包含 LP/分片/MAC 开销。控制负载按自定义协议功能分类。
   正式参数、模型和重复次数仍需预实验冻结，不把小规模流程验证当作性能结论。
 - 测试先行：相关基线 → 新行为测试预期失败 → 最小实现 → 新测试和相关回归通过 → 更新文档。
@@ -20,6 +20,14 @@
 - 核查采集修改是否影响四策略、或判断真实神经模型效果时，先读
   [策略回归与模型核查记录](docs/ai/STRATEGY_REGRESSION_20261020.md)。
   区分同策略修改前后回归、模型目标覆盖率和业务满足率；旧离线100%准确率不能替代在线交付验收。
+- 排查神经回程“RSU有出站、车辆未交付”时，先读
+  [正式交付修复与验收记录](docs/ai/NEURAL_DELIVERY_FIX_20261020.md)；
+  [原型定位与计划](docs/ai/NEURAL_DELIVERY_FIX_PLAN_20261020.md) 保留修改前证据。
+  用户已授权正式修复，Router cc/h 与 `generic-link-service.cpp`、
+  `ndn-net-device-transport.cpp` 已落实网络 PIT 下游清理及所有分片的目的地址传递。
+  这次获准的两个底层文件修改不扩大采集统计口径；L3 负载仍不包含 LP/分片/MAC 开销。
+  统一单元回归现含七个 C++ 套件及五组 Python 测试；Router 与分片测试分别覆盖十例、十九例。
+  单元通过和交付改善不等于神经策略已不劣于转发策略，三场景结果及未覆盖边界以验收记录为准。
 - 修改 `contrib/vndn-nn-rd/` 或 `src/ndnSIM/NFD/` 时跟踪 Interest、控制消息、PIT、Data 回程全链路。
 - 修改 `scratch/vndn-map-simulator-common.h` 同时影响方阵和蜘蛛网；圆圈有独立主程序，也需检查语义一致性。
 - 当前学习方案是离线监督训练与模型推理。`GetNeuralReward() == 0` 不意味着研究方案缺失。

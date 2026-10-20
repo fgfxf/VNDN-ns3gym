@@ -5,6 +5,7 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/util/signal/scoped-connection.hpp>
 
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
@@ -50,6 +51,10 @@ private:
 
   void
   ForwardInterestToServer (const ndn::Interest &interest, uint64_t returnFaceId);
+
+  /** 保留神经请求的本地应用下游，清除同名网络 Interest 重建的下游。 */
+  void
+  RemoveNeuralNetworkInRecords (const ndn::Interest &interest);
 
   void
   OnServerData (const ndn::Interest &interest, const ndn::Data &data);
@@ -136,6 +141,7 @@ private:
   uint64_t m_neuralPitSequence = 0;
   std::map<ndn::Name, PendingRequest> m_pendingRequests;
   std::map<ndn::Name, std::vector<uint32_t>> m_neuralRouteInstructions;
+  std::vector<ndn::util::signal::ScopedConnection> m_networkInterestConnections;
 };
 
 } // namespace vanet

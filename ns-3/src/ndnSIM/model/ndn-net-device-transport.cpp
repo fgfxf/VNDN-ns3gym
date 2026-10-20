@@ -128,25 +128,29 @@ NetDeviceTransport::doSend(const Block& packet, const nfd::EndpointId& endpoint)
   else {
     // 无线链路：尝试从 LP 包中提取 VndnTag，判断是否需要单播
     // Wireless link: try to extract VndnTag from the LP packet to decide unicast
-    bool isSingleCast = false;
-    uint64_t targetMac = 0;
+    // sendNetPacket supplies the original target for every fragment; an
+    // endpoint of zero retains the existing first-fragment tag fallback.
+    bool isSingleCast = endpoint != 0;
+    uint64_t targetMac = endpoint;
 
-    try {
-      // 将 Block 解析为 LP 包 / Parse the Block as an LP packet
-      ndn::lp::Packet lpPacket(packet);
-      if (lpPacket.has<ndn::lp::VndnTagField>()) {
-        auto vndnTag = lpPacket.get<ndn::lp::VndnTagField>();
-        targetMac = vndnTag.getTargetMac();
-        // 目标 MAC 不为 0 且不等于广播地址时，进行单播发送
-        // When target MAC is non-zero and not the broadcast address, send unicast
-        if (targetMac != 0) {
-          isSingleCast = true;
+    if (!isSingleCast) {
+      try {
+        // 将 Block 解析为 LP 包 / Parse the Block as an LP packet
+        ndn::lp::Packet lpPacket(packet);
+        if (lpPacket.has<ndn::lp::VndnTagField>()) {
+          auto vndnTag = lpPacket.get<ndn::lp::VndnTagField>();
+          targetMac = vndnTag.getTargetMac();
+          // 目标 MAC 不为 0 且不等于广播地址时，进行单播发送
+          // When target MAC is non-zero and not the broadcast address, send unicast
+          if (targetMac != 0) {
+            isSingleCast = true;
+          }
         }
       }
-    }
-    catch (const std::exception& e) {
-      // 解析失败时按广播处理 / Fall back to broadcast on parse failure
-      NS_LOG_WARN("doSend: failed to parse LP packet for VndnTag: " << e.what());
+      catch (const std::exception& e) {
+        // 解析失败时按广播处理 / Fall back to broadcast on parse failure
+        NS_LOG_WARN("doSend: failed to parse LP packet for VndnTag: " << e.what());
+      }
     }
 
     if (isSingleCast) {

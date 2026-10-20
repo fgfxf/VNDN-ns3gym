@@ -1,0 +1,153 @@
+# 神经回程交付缺陷：正式修复与验收记录
+
+任务开始：2026-10-20；验收完成：2026-10-21（Asia/Shanghai）。起始提交 `86ef39c`。用户在收到
+[小规模验证与修复计划](NEURAL_DELIVERY_FIX_PLAN_20261020.md) 后明确要求“执行修改”，
+本次授权包含计划中的 Router cc/h 和两个底层 cpp 文件。
+前一轮文档中“尚未授权、未合入”描述的是当时状态。
+
+本次证据目录为 `build/validation/neural-delivery-fix-20261020/`（下称 `F/`）。
+此前隔离原型证据目录为 `build/validation/neural-delivery-diagnosis-20261020/`（下称 `R/`）。
+二者分开保留，不把原型运行冒充正式源码运行。
+**正式修复、单元回归和14轮小规模端到端验收已通过；模型非劣性目标仍未达到。**
+
+## 修复内容与影响
+
+| 文件 | 修改及目的 |
+|---|---|
+| `contrib/vndn-nn-rd/apps/vndn-router.cc`、`.h` | Router 启动时订阅既有 P2P Face 的 Interest 接收信号，在 Forwarder 同步处理后，清除已由神经回程应用接管的请求的网络 PIT in-record；合并请求与迟到 neural-route 生效时也清理。保留本地应用 in-record、服务器 out-record、原 PIT 及定时器。Stop 断开信号连接。 |
+| `src/ndnSIM/NFD/daemon/face/generic-link-service.cpp` | 分片前取完整报文 VndnTag 中的非零目标地址，以发送 endpoint 传给每个 LP 分片，避免只有首片保留目的信息。 |
+| `src/ndnSIM/model/ndn-net-device-transport.cpp` | 非 P2P 发送优先使用非零 endpoint；endpoint 为 0 时保留原有 VndnTag 回退和广播规则。P2P 分支保持原行为。 |
+
+清理条件限于 Router 正在运行、`/com/baidu` 业务、存在待处理请求和已解析神经目标、
+存在原始 Interest，以及 PIT selectors 匹配。普通回程不触发本清理。
+底层目的地址修复属于公共发送链路，可能改变四种策略中带目标地址 Data 的实际交付和 MAC 重试，
+因此必须在相同修正底层上比较算法，不能只给 Neural 使用修复。
+
+未修改 `forwarder.cpp`、`strategy.cpp`、本地传输、fragmenter、reassembler、接收 endpoint、
+模型权重或单双路径阈值；没有增加业务 Data 兜底发送。统计仍是现有网络 Face 的 L3 字节，
+不包含 LP、MAC 或无线重试开销。
+
+## 测试先行及正式构建
+
+1. 实现修改前，`export JOBS=4` 后运行
+   `python3.8 tools/validate.py --skip-build`，原五个 C++ 和五组 Python 回归通过。
+   报告为 `build/validation/20261020T153823.780501Z-b25ae4e5/report.json`；
+   这是原实现已有构建的基线，不是最终编译证明。
+2. 新增两个正式行为套件并注册到模块 `wscript` 与 `tools/validate.py`。
+   第一轮编译暴露测试夹具缺少完整类型头文件和命名空间错误，修正后重新编译通过；
+   `F/red-build.log` 中的编译错误不计作行为红灯。
+3. 在旧实现上运行新增套件，均 exit 1。Router 测试实际观察到网络 in-record 为 1，
+   预期为 0；RSU A 收到两份 Data，预期仅一份带目标标签的显式回程。
+   分片测试实际观察到所有发送 endpoint 为 0，预期保持完整包的目标地址。
+   XML 为 `F/red-vndn-router-neural-pit.xml.xml` 和
+   `F/red-vndn-fragment-destination.xml.xml`；双扩展名来自 test.py 自动追加 `.xml`。
+4. 此后应用此前验证过的四文件补丁，执行：
+
+   ```bash
+   export JOBS=4
+   ./waf build -j4 --targets=test-runner,vndn-circle-simulator,vndn-grid-simulator,vndn-spidermap-simulator
+   python3.8 tools/validate.py
+   ```
+
+   两条命令均 exit 0。完整回归报告：
+   `build/validation/20261020T154751.173146Z-c470c777/report.json`。
+   构建、七个 C++ 套件、五组 Python 共 13 步全部通过，无跳过：
+   C++ 共 38 个子用例，Python 共 80 个测试。全程未运行 configure。
+5. 验证入口自身的行为测试由 17 项基线通过，新增必跑套件和实际注册断言后
+   20 项中出现 11 个预期失败断言，再修改入口和注册，20 项全部通过。
+   证据为 `F/validate-tools-{baseline,red,green}.{json,log}`。
+
+### 新增 C++ 测试的实际覆盖
+
+- `vndn-router-neural-pit`：10 例，使用真实 P2P Face、Forwarder、默认 BestRoute2、
+  Router 应用和延迟返回的服务器；验证抑制窗口内重复 Interest、单双目标、迟到指令、
+  普通请求、无 pending、不同 selector、非业务前缀、Stop/销毁和 Nack/超时后重新请求。
+  断言保留本地 PIT、服务器 out-record 的 nonce/续期/过期信息，并核对显式带标签 Data。
+- `vndn-fragment-destination`：19 例，其中 9 例经过真实 GenericLinkService 分片及逆序重组，
+  8 例经过生产 NetDeviceTransport 到设备 Send 边界，另 2 例验证 AppLinkService 和
+  InternalForwarderTransport 的本地整包传递。包括 10KB/MTU1500、目标标签优先级、
+  无标签/零目标、广播控制 Interest、P2P、包字节与重组内容。
+  记录设备替代了无线 PHY/MAC，不把设备边界单元测试当作真实无线交付证明。
+
+## 三场景端到端验收
+
+验收预先冻结于 `F/e2e-expected-matrix.json`，14 轮，不根据修复结果选择请求或种子：
+
+- 圆圈：seed1 四策略，再加 Neural seed2、seed3；每轮 2 车、600 请求，
+  设定 100km/h，生成窗口 `[5,35)` 秒，排空至 38.5 秒。Neural 使用原圆圈真实模型。
+- 方阵和蜘蛛网：各 seed1 四策略，每轮 2 车、36 请求，设定 50km/h，
+  生成窗口 `[5,23)` 秒，排空至 26.5 秒；Neural 使用均匀概率测试控制器，
+  仅证明接口与协议行为，不代表七类训练模型效果。
+- 固定圆圈原失败请求 `/com/baidu/www/userid/2/%FE%08` 必须成功。
+  另两场景追踪请求在运行前按旧验收中首个成功请求冻结，保留旧 manifest/事件哈希。
+- 检查运行完整、请求唯一终态、实际发生切换、同种子跨策略输入与首次请求一致、
+  神经 Router 自动网络回程为 0、显式选择与出站分支一致、单双路径覆盖，
+  并保留所有成功与超时记录。
+
+14 轮仿真进程和生产采集完整性检查均 exit 0，执行记录为 `F/e2e-execution.json`。
+以下全部保留 DATA 和 TIMEOUT，分母为固定首次业务请求数：
+
+| 场景、种子 | NoForward | VTDF | RTVTDF | Neural |
+|---|---:|---:|---:|---:|
+| 圆圈 seed1，每轮600请求 | 554 | 597 | 599 | 593 |
+| 圆圈 seed2，每轮600请求 | 本次未重跑 | 本次未重跑 | 本次未重跑 | 594 |
+| 圆圈 seed3，每轮600请求 | 本次未重跑 | 本次未重跑 | 本次未重跑 | 594 |
+| 方阵 seed1，每轮36请求 | 22 | 27 | 28 | 24（测试控制器） |
+| 蜘蛛网 seed1，每轮36请求 | 34 | 30 | 33 | 10（测试控制器） |
+
+表中数值是成功请求数。圆圈三种子 Neural 合计 **1781/1800（98.9444%）**，
+仍有 19 个 TIMEOUT；不是模型分类准确率。方阵/蜘蛛网的均匀测试控制器并未预测车辆，
+其满足率不能用来判断训练模型优劣。
+圆圈 seed1 四策略的 20 份原始 CSV 与前轮联合原型逐字节相同，
+另两个种子的 Neural 五 CSV 也按事前冻结哈希核验。
+前者为运行后实现等价复核，见 `F/circle-four-strategy-prototype-equivalence.json`；
+后者属于事前矩阵断言。
+
+每轮 `formal-environment.json` 记录主二进制及 ldd 解析依赖的运行前后哈希。
+`F/final-source-model-binary-check.json` 再次确认 14 轮源码内容快照一致、
+二进制与依赖前后未变且与最终文件一致、原两个圆圈模型均未修改。
+这是文件哈希与依赖解析证据，不是运行时 `/proc` 动态加载映射。
+
+最终执行 `python3.8 F/analyze_e2e.py`，exit 0；
+`F/e2e-summary.json/.csv` 为 **14/14 有效，0 pending，0 error**。
+九组同种子跨策略比较中，输入与实际首次请求身份、纳秒时间一致。
+圆圈 seed1/2/3 分别有8/7/7次切换，方阵每轮2次，蜘蛛网每轮3次；
+分析同时分开记录直接切换、失联及跨站重连。
+五轮 Neural 的自动、未分类 Router 网络回程均为0，实际出站数等于所选显式回程数。
+共覆盖1756个单目标和103个双目标回传请求；圆圈双目标41个，
+方阵28个、蜘蛛网34个均来自均匀测试控制器。
+三个事前冻结的目标请求全部通过选站、预备 PIT、无线出口、目标入口和 DATA 终态核对。
+L3 时序存在两条兼容分支时保留两条证据，不声称唯一确认成功的无线来源。
+
+验收工具也遵循测试先行：正式运行器11测红→绿；分析器最初11测红→绿，
+补充 `packet-l3.csv` 仅有 OUT、IN 位于 `data-rx.csv` 的读取测试后12测通过。
+首次总体核对因五轮平均车速重算的末位浮点差异失败：
+例如 `7.194292865043235` 与 `7.194292865043236`。
+原汇总对车辆集合迭代的求和顺序可变，故对这两个派生速度字段进行逐位相等比较不合适。
+保留首次失败于 `F/e2e-summary-initial-failure.{json,csv}` 和对应日志，
+再新增4测、观察14个失败断言后修正比较器，最终16测通过。
+仅这两个字段接受有限浮点、`rel_tol=8*sys.float_info.epsilon`、`abs_tol=0` 的舍入误差，
+并逐项记录差值；超界、NaN/Inf/非数仍拒绝，其余计数、字节、RTT、ISR和终态必须完全一致。
+未改生产汇总代码、原始 CSV、冻结矩阵或重跑仿真来绕过失败。
+
+圆圈原失败请求已在正式构建中交付：应用 DATA 时间为 **5.984009079s**。
+`F/formal-target-pcap.json` 与 `F/formal-target-pcap-acceptance.json`
+保存 7 项检查：目标截止前 L3 IN、应用 DATA、唯一源 Data、5 个分片齐备、
+所有源帧均发往目标 MAC、重组后的内容与源 Data 完全一致。
+共观察到 10 次源无线发射（含 MAC 重试），没有增加应用 Data 份数。
+这是该固定请求的直接交付证据，不能外推为所有残余超时均已解决。
+
+## 适用边界与后续研究
+
+- 信号订阅覆盖 Router 启动时已有 P2P Face；动态新增 Face 不在本次保证内。
+- 回调位于 Forwarder 之后，不能撤回已发生的 CS-hit 直接响应。测试明确使用 CS-miss；
+  当前固定计划中的唯一业务请求不能认证任意重复请求缓存行为。
+- 不同 selector 测试只证明清理不误删不匹配 PIT；原应用 pending 按 Name 聚合，
+  本次不声称修复所有多 selector 或多 PIT 请求语义。
+- 当前未启用 LP reliability；其未来重传仍以 endpoint 0 发送，需另行验证目的地址保留。
+  未修改接收 endpoint，也未解决此前独立夹具中多源同序号交错重组的潜在问题。
+- endpoint 沿用本项目 `ns3::Address` 的 8 字节打包约定，不应传入任意整数 MAC。
+- 本次正式 Neural 三种子累计 1781/1800，仍低于此前同底层原型 RTVTDF 的 1793/1800；
+  本次实际配对重跑的 seed1 也为593/600低于RTVTDF的599/600。
+  修复具体交付缺陷不等于模型预测准确率或统计非劣性成立。
+  原型剩余超时及训练/在线输入语义差异仍应独立研究，不能通过改指标口径隐藏。

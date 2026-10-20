@@ -179,6 +179,16 @@ GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lp
 void
 GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId, bool isInterest)
 {
+  // Preserve the complete packet's wireless destination across every LP
+  // fragment. Only the first fragment retains the packet-level VndnTag.
+  EndpointId fragmentEndpoint = endpointId;
+  if (pkt.has<lp::VndnTagField>()) {
+    const uint64_t targetMac = pkt.get<lp::VndnTagField>().getTargetMac();
+    if (targetMac != 0) {
+      fragmentEndpoint = targetMac;
+    }
+  }
+
   std::vector<lp::Packet> frags;
   ssize_t mtu = this->getTransport()->getMtu();
 
@@ -229,7 +239,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId
   }
 
   for (lp::Packet& frag : frags) {
-    this->sendLpPacket(std::move(frag), endpointId);
+    this->sendLpPacket(std::move(frag), fragmentEndpoint);
   }
 }
 

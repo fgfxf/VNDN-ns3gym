@@ -374,3 +374,161 @@ python3.8 tools/experiments/run_experiment.py \
 未完成原20车蜘蛛网负载验收或论文级参数扫描/统计非劣性检验。
 下一步先定位少数失败请求的RSU无线出口至OBU入口，再评估训练/在线输入一致性；
 未经必要失败复现与授权，不擅自改底层、增加兜底或以改统计口径提高结果。
+
+## 2026-10-20：神经回程未交付定位与经过小规模测试的修复计划
+
+用户要求继续排查“已有出站记录但目标车辆未收到”，优先检查outface，
+并在提供修复计划前完成小规模测试。起始HEAD为`86ef39c`，工作区干净。
+新增[完整定位与修复计划](NEURAL_DELIVERY_FIX_PLAN_20261020.md)，更新`AGENTS.md`入口。
+本轮正式树只修改文档；未改生产源码、模型、历史数据或`ns-3_old`。
+候选源、补丁、测试、隔离构建和运行证据位于
+`build/validation/neural-delivery-diagnosis-20261020/`（下称`R/`）。
+
+### 失败证据与候选边界
+
+- 固定圆圈seed1请求`/com/baidu/www/userid/2/%FE%08`，OBU2、当时RSU1，
+  已存在无线Face257和预备PIT。抓包确认真实发送，不能归因于缺outface。
+- Router迟到重复Interest相隔14.398μs，默认BestRoute在10ms内抑制应用投递，
+  但网络in-record已经重建。服务器Data先自动无目标标签返回，
+  消耗RSU PIT；正确神经副本随后以unsolicited丢弃。
+- 首副本5片广播，目标只收到index4。隔离Router候选清理网络in-record后，
+  首片单播、尾片仍广播，目标收到0–3而缺4；所以单改Router不能作为完整修复。
+- 第二候选只在隔离副本修改`generic-link-service.cpp`和
+  `ndn-net-device-transport.cpp`，让完整包目的地址随所有分片传入发送endpoint。
+  未改forwarder、strategy、本地传输、fragmenter/reassembler或接收endpoint。
+- 联合候选中5片均单播，末片MAC重试后收到；目标于5.984009079s完成L3/应用交付，
+  抓包重组内容与源Data一致。没有应用层额外兜底或绕过无线模型。
+  正式采用将涉及Router cc/h及两个底层cpp，需确认扩展原“不改底层”的范围。
+
+### 实际执行与验收
+
+- 所有构建设置`JOBS=4`，最多4个编译进程，未configure。
+  Router按一致公开头重编10模块源＋3入口，13次编译、4次链接均exit0。
+  底层隔离库替换2对象、复用285对象，编译/链接均exit0。
+  `ldd`与哈希核对见`router-build/`、`overlay/fragment-destination/`和
+  `provenance-check.json`；56项事后复核通过，主源、原库、模型不变。
+  区分运行前后哈希与事后ldd，不冒称保存了运行时/proc映射。
+- 在同一固定请求实际失败后准备候选；隔离运行器3项、日志分析器7项、
+  抓包分析8项、矩阵汇总11项行为测试均红→绿。
+  真正的GLS分片/逆序重组测试9例：原库因尾片目的地址断言失败exit1，
+  候选同测试程序exit0，MTU及内容重组断言通过。
+- LP重组独立夹具：同源有序、乱序重复、不同报文交错控制通过；
+  两源同序号交错且endpoint均0时产生混合报文、exit1；
+  分离endpoint后正确恢复两份、exit0。未把此潜在问题当成已证实的本例根因，
+  未纳入推荐主修复。
+- `run_diagnostic.py`复用原实验运行器与闭合校验，直接运行已构建程序、开启pcap，
+  不触发waf。共16轮圆圈2车、每轮600请求、100km/h、窗口`[5,35)`、
+  排空38.5s；全部完成且终态闭合。后续13轮执行见
+  `followup-matrix-{plan,execution}.json`，所有退出码0。
+- seed1两因素对照：原版570/600，仅Router570，仅分片目的地址580，联合593。
+  Router自动网络回程分别598、0、597、0份；固定请求08仅联合版成功。
+  严格机制＋交付验收原版/单项均exit1，联合exit0；未降低断言。
+- 同一修正底层下三种子：VTDF为597/583/597，RTVTDF为599/596/598，
+  Neural为593/594/594；每项分母600。累计满足率分别98.7222%、99.6111%、
+  98.9444%。旧Neural同输入为570/382/407，共75.5000%。
+  同种子冻结输入和实际GENERATED身份/纳秒时刻逐项一致，模型SHA256仍为
+  `ab0015243af833550a3486be858aeb07d57c1b86b65d390c897e0cf9316918ca`。
+- 相同修正底层下，seed1非神经三策略有/无Router改动的5份原始CSV均逐字节相同；
+  成功数分别554/554、597/597、599/599。
+  `followup-matrix-summary.json`确认16/16新运行、9/9历史参考完整有效，
+  `verification_passed=true`；逐种子Neural不低于两种转发策略字段为`false`。
+- 最终`source-model-freeze-check.json`确认全部16轮及9轮历史参考的生产源码内容哈希、
+  Neural模型与隔离候选一致；另行记录运行后新增/修改的三个文档文件。
+  文档链接、汇总数字及`git diff --check`通过，生产源码差异为空。
+
+### 未解决项与正式计划
+
+原型提高了交付率，但Neural仍低于同底层RTVTDF，未达到“效果不差于转发策略”的目标，
+也未证明统计非劣性。联合版剩余19个超时全部保留：16个有RSU无线OUT但目标无L3 IN，
+其中15个输出站覆盖当时记录服务站；另1个出站4.96ms后才换到该站，不能直接判模型错。
+另外3个只观察到OBU Interest OUT，未见其进入RSU/Router。见
+`lp-endpoint/remaining-timeouts-three-seeds.json`。未证明全部剩余丢失的物理原因。
+
+正式落地需先把Router真实Face/PIT竞态及GLS目的地址测试纳入项目，
+再实施4源码文件修改，更新测试注册/统一验证入口，增量重编底层库、模块和三入口，
+执行三场景四策略验收。当前只运行了圆圈；另外两场景编译成功不能替代运行验证。
+保留CS-hit/动态Face、不同selectors、多PIT、Nack/生命周期，以及未来LP可靠重传
+仍使用endpoint0的适用边界。MAC重试可能增多，现有L3负载不包含该开销。
+本轮交付是已做小规模验证的计划，正式修复尚未合入。
+
+## 2026-10-21（始于10-20）：按用户确认正式修复神经回程与分片目的地址
+
+用户明确要求“执行修改”，据此前已验证计划正式修改四个源码文件：
+`contrib/vndn-nn-rd/apps/vndn-router.cc/.h`、
+`src/ndnSIM/NFD/daemon/face/generic-link-service.cpp`、
+`src/ndnSIM/model/ndn-net-device-transport.cpp`。
+此授权包含两个底层文件；不再沿用上一轮“待确认”的状态阻止实施。
+起始 HEAD 仍为 `86ef39c`，保留前一轮未提交的定位文档及入口记录。
+详见 [正式修复与验收记录](NEURAL_DELIVERY_FIX_20261020.md)。
+证据目录 `build/validation/neural-delivery-fix-20261020/` 下称 `F/`。
+
+### 行为与文件范围
+
+Router 在 Forwarder 同步收包之后清理已被神经应用接管的业务 PIT 网络 in-record，
+覆盖未进入应用的受抑制重复 Interest，以及迟到指令激活；保留本地 in-record、
+服务器 out-record 与定时器，Stop 断开连接。GLS 将完整包目标地址带到所有分片，
+NetDeviceTransport 非 P2P 发送优先采用该 endpoint，零值保留原有标签/广播回退。
+四源文件与前一轮联合原型逐字节一致，见 `F/formal-source-prototype-equivalence.json`。
+未改模型、阈值、forwarder、strategy、本地传输、重组或接收 endpoint。
+
+新增两个正式测试源 `vndn-router-neural-pit-test.cc`、`vndn-fragment-destination-test.cc`，
+更新模块 `wscript`、`tools/validate.py` 与 `tools/tests/test_validate.py`。
+另更新 `AGENTS.md`、`PROJECT.md`、`VALIDATION.md`，新建正式记录，并在旧计划顶部标记后续状态。
+F 中的运行器、分析器与冻结矩阵只用于本次验收，复用原生产采集及完整性检查；
+实验产物不写入历史数据或模型目录。
+
+### 测试先行与构建证据
+
+- 所有可能调用 waf 的操作均先 `export JOBS=4`，显式构建 `-j4`；未 configure。
+- 实现前原五个 C++、五组 Python 基线全部通过：
+  `python3.8 tools/validate.py --skip-build`，exit 0，报告
+  `build/validation/20261020T153823.780501Z-b25ae4e5/report.json`。
+- 新测试首次编译存在夹具完整类型头文件/命名空间错误，修正后编译通过。
+  这些编译错误不算有效行为红灯。随后旧实现两个新套件均 exit 1：
+  Router 实际网络 in-record 1、预期 0，实际 Data 2、预期 1；
+  分片 endpoint 实际为 0、预期保留目标地址。
+  见 `F/red-results.json`、`F/red-vndn-*.xml.xml`。
+- 应用修复后构建 test-runner 和三个 simulator，exit 0；
+  `python3.8 tools/validate.py` 的构建＋七套 C++＋五组 Python 共13步全部通过，
+  C++ 38个子用例（新增10＋19），Python 80个测试，无跳过。
+  报告 `build/validation/20261020T154751.173146Z-c470c777/report.json`。
+- 验证入口自身先17测基线通过，新20测出现11个预期失败断言，
+  注册两套新测试后20测通过。F 中保存 baseline/red/green 日志和统计。
+- 正式运行器11测红→绿；验收分析器先11测红→绿，
+  补 OUT 与 IN 分属两个 CSV 的真实读取边界测试后12测通过。
+  总体验收时发现平均速度求和顺序产生末位浮点差异，保留首次失败报告，
+  再新增4测，确认14个断言失败后修正，最终16测通过。
+  只允许两个派生平均速度字段在8倍机器epsilon的相对界内舍入误差，
+  NaN/Inf/超界仍拒绝；计数、字节、RTT、ISR及终态精确比较。未改原始数据。
+  复用分析工具原18测通过；夹具/解析错误保留日志，不计成协议缺陷。
+
+### 正式仿真与结论
+
+14轮矩阵及三个目标请求在新仿真开始前冻结于 `F/e2e-expected-matrix.json`。
+使用主构建程序与 `build/lib`，不再使用隔离 overlay；每轮启用 PCAP，
+以 ldd 解析并保存二进制和依赖库前后哈希，拒绝输入、模型或源码中途变化。
+这属于解析与哈希证据，没有声称保存了运行时 `/proc` 动态加载映射。
+运行器14轮均 exit 0；`python3.8 F/analyze_e2e.py` 最终 exit 0，
+`F/e2e-summary.json/.csv` 为14/14有效、无未完成与错误；
+九组同种子跨策略输入、实际首次请求身份及纳秒时间一致。
+圆圈seed1四策略成功数为554/597/599/593（各600请求），
+Neural seed2/3各594/600；方阵22/27/28/24，蜘蛛网34/30/33/10（各36请求）。
+后两场景 Neural 为均匀测试控制器，只验协议，不能声称真实模型质量。
+每轮均发生切换；五轮 Neural 自动/未分类 Router 网络回程均0，
+实际出站与显式选择一致，总计覆盖1756个单目标、103个双目标回传请求。
+三场景事前冻结的目标请求及其 PIT/L3/应用链全部通过。
+
+原失败请求08在正式构建中于5.984009079s收到DATA；PCAP中5片均完整到达，
+10次源发射含MAC重试均发往目标车辆，重组内容与源Data一致。
+`F/formal-target-pcap-acceptance.json` 的7项检查通过。
+圆圈seed1四策略共20份原CSV与前轮联合原型相同，Neural seed2/3另各5份也相同。
+`F/final-source-model-binary-check.json` 确认14轮源码快照、二进制及解析依赖稳定，
+原两个圆圈模型均未改动。最终文档链接与差异检查通过。
+
+本次正式 Neural 累计1781/1800（98.9444%），保留19个超时；
+圆圈seed1仍低于同次RTVTDF的599/600，三种子也低于此前同底层RTVTDF原型1793/1800。
+本次修复验收通过，但“神经策略不差于转发策略”未达到，不能标成科学非劣性成立。
+
+当前修复的边界保留：CS-hit、动态 Face、同名多 selector 的完整应用语义、
+未来 LP 可靠重传及多源接收重组问题。L3 采集口径未扩大到 LP/MAC。
+通过修复验收不等于已经达到神经模型预测准确率或业务满足率的统计非劣性。
