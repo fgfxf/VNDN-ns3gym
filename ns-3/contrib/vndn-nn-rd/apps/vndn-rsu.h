@@ -224,7 +224,8 @@ private:
   OnNeuralReturnData (const ndn::Data &data);
 
   void
-  SendRelayData (const ndn::Name &name, const uint8_t *content, size_t contentSize);
+  SendRelayData (const ndn::Name &name, const uint8_t *content, size_t contentSize,
+                 const std::string &businessName = "", int64_t targetNode = -1);
 
   /** 将神经网络选择的 Data 回程 RSU 通知 Router。 */
   void

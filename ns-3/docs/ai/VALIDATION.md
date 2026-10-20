@@ -56,16 +56,18 @@ python3.8 tools/validate.py
 
 1. 检查测试已启用，不自行重新 configure。
 2. `./waf build -j 4 --targets=test-runner`，仅构建测试运行器及依赖。
-3. `vndn-rsu-forwarding-policy` 和 `vndn-neural-return-selection` 两个 C++ 套件。
+3. `vndn-rsu-forwarding-policy`、`vndn-neural-return-selection`、`vndn-experiment-config`、
+   `vndn-experiment-recorder`、`vndn-l3-experiment-tracer` 五个 C++ 套件。
 4. 分别在独立 Python 进程运行 `ai-training/circle/tests`、`ai-training/grid/tests`、`ai-training/spidermap/tests`。
 5. `ai-training/tests/test_tkan_inference.py` 的模型加载与推理兼容性测试。
+6. `tools/experiments/tests/` 的输入生成、串行运行器、请求闭合及负载汇总测试。
 
 新训练测试包含临时合成七类数据的一轮 CPU 训练及模型保存/重载，产物随临时目录清理；不采集 SUMO 数据，不训练正式实验模型。
 独立进程避免三个同名 `train_tkan_lstm.py` 的导入缓存相互污染。
 推理测试放在 `ai-training/tests/`，避免在 `scratch/` 新建纯 Python 子目录而被 waf 自动识别为 C++ 程序。
 
 标准 ns-3 test-runner 链接所有启用模块的测试库，首次构建会编译部分上游测试。
-实际执行范围仍只有两个研究套件；不意味着所有 ns-3 测试都已运行。
+实际执行范围仍只有上述五个研究套件；不意味着所有 ns-3 测试都已运行。
 
 报告保存在 `build/validation/<唯一运行目录>/report.json`，附每步日志、C++ XML 和 Python 测试统计。
 只有选中的套件实际执行并通过、Python 测试数大于零且未跳过时才成功。
@@ -108,6 +110,14 @@ python3.8 -m unittest discover \
 所以仅退出码 0 不足以证明套件通过；正式记录优先使用统一入口及其断言结果。
 
 ## 三场景验收与复现实验
+
+新的固定请求量与负载采集模式按 [实验采集使用说明](EXPERIMENT_COLLECTION.md) 执行；
+该入口管理本轮 SUMO/Gym 进程、写入 manifest、核对请求计划与终态并检查数据完整性。
+每轮必须同时通过进程完成和汇总校验；退出码 0 但数据不闭合不算通过。
+测试控制器只检验接口及双路径行为，产物带 `validation_only`，不能作为训练模型效果。
+采集窗口为 `[t0,t2)`，发包窗口为 `[t0,t1)`；应用在 `t2` 停止，
+仿真在 `t2+1 ns` 停止以处理结束回调。实际轨迹必须覆盖测量与排空；提前退场会拒绝汇总。
+请求成功依赖已有 Face 实际交付回调；本次没有改变同一纳秒 Data/timeout 的底层调度顺序。
 
 共用转发、NFD 控制/PIT 或跨场景逻辑改动，除单元回归外还需针对圆圈、方阵、蜘蛛网验收。
 先建立能触发目标行为的复现与断言，再改实现。仅启动成功或运行几秒不能证明发生过切换。

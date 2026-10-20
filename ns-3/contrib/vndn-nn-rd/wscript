@@ -26,6 +26,9 @@ def build(bld):
     module.export_includes = '../ndn4ivc/helper/rapidxml-1.13'
     moduleName = "vndn-nn-rd"
     headers = bld(features='ns3header')
+    headers.name = 'vndn-nn-rd-headers'
+    # Keep exported headers in the dependency graph of targeted test builds.
+    module.use.append(headers.name)
     headers.module = moduleName
     headers.source = []
     # Directories whose files are auto-discovered. Files are appended to the
@@ -49,6 +52,9 @@ def build(bld):
     moduleTest = bld.create_ns3_module_test_library(moduleName)
     moduleTest.source = [
         'test/vndn-rsu-forwarding-policy-test.cc',
+        'test/vndn-l3-experiment-tracer-test.cc',
+        'test/vndn-experiment-config-test.cc',
+        'test/vndn-experiment-recorder-test.cc',
     ]
 
     if bld.env.ENABLE_EXAMPLES:

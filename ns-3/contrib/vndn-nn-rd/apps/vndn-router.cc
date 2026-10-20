@@ -10,6 +10,7 @@
 #include "ns3/ndnSIM/NFD/daemon/table/fib.hpp"
 #include "ns3/ndnSIM/NFD/daemon/table/pit.hpp"
 #include "ns3/assert.h"
+#include "ns3/vndn-experiment-recorder.h"
 
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/lp/tags.hpp>
@@ -213,6 +214,7 @@ VndnRouter::OnServerData (const ndn::Interest &interest, const ndn::Data &data)
   const bool isNeuralReturn =
       !requestedReturnRsuIds.empty ();
   m_pendingRequests.erase (pending);
+  size_t attemptedReturnBranches = 0;
 
   if (isNeuralReturn && routeTag != nullptr)
     {
@@ -241,6 +243,12 @@ VndnRouter::OnServerData (const ndn::Interest &interest, const ndn::Data &data)
           response->wireEncode ();
           try
             {
+              if (attemptedReturnBranches++ > 0)
+                if (auto *recorder = VndnExperimentRecorder::GetActive ())
+                  recorder->RecordDataAttempt (ns3::Simulator::Now ().GetNanoSeconds (),
+                                                data.getName ().toUri (),
+                                                m_thisNode->GetId (), targetRsuId,
+                                                "PREDICTIVE_EXTRA");
               m_face.put (*response);
               NS_LOG_INFO ("Router 按神经网络 PIT 回传服务器数据: "
                            << data.getName () << " targetRsu=" << targetRsuId
@@ -270,6 +278,13 @@ VndnRouter::OnServerData (const ndn::Interest &interest, const ndn::Data &data)
       response->wireEncode ();
       try
         {
+          if (attemptedReturnBranches++ > 0)
+            if (auto *recorder = VndnExperimentRecorder::GetActive ())
+              recorder->RecordDataAttempt (ns3::Simulator::Now ().GetNanoSeconds (),
+                                            data.getName ().toUri (),
+                                            m_thisNode->GetId (), -1,
+                                            isNeuralReturn ? "PREDICTIVE_EXTRA" :
+                                                             "REPEATED_SUBMIT");
           m_face.put (*response);
           NS_LOG_INFO ("Router 回传服务器数据: " << data.getName ()
                        << " returnFaceId=" << faceId

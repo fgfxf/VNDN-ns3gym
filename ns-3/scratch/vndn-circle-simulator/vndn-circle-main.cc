@@ -22,6 +22,9 @@
 #include <sys/stat.h>
 
 #include "ns3/vndn-utils-helper.h"
+#include "ns3/vndn-experiment-config.h"
+#include "ns3/vndn-experiment-recorder.h"
+#include "ns3/vndn-l3-experiment-tracer.h"
 #include "ns3/vndn-pcap-writer.h"
 #include "ns3/point-to-point-module.h"  // pcapwrite
 #include "ns3/vndn-rsu-app.h"
@@ -57,7 +60,7 @@ int main(int argc,char *argv[]){
    
 
 
-    const uint32_t nVehicles = VndnUtilsHelper::GetVehicleCount(VndnUtilsHelper::ndn4ivc_traces_folder,scenario_name,scenario_file);
+    uint32_t nVehicles = 0;
     uint32_t NdnInterval = 1;//ms
     uint32_t simTime = 80;//s
     uint32_t nRSUs = 2;  //路边单元数量
@@ -80,12 +83,16 @@ int main(int argc,char *argv[]){
     double startX = 300.0;//start node positon 刚开始没有使用的节点的位置
     double startY = 300.0;
     uint32_t usedNodeCounter = 0;//移动节点池   使用过的节点计数
-    std::cout << "# nodes (vehicles) detected in SUMO scenario: " << nVehicles << std::endl;
-    std::cout << "# Road Side Units (RSUs): " << nRSUs << std::endl;
+    std::string experimentConfigFile;
+    std::unique_ptr<vanet::ExperimentConfig> experiment;
+    std::string sumoConfigPath = VndnUtilsHelper::ndn4ivc_traces_folder + "/" +
+        scenario_name + "/" + scenario_file + ".sumo.cfg";
 
 
     //cmd
     ns3::CommandLine cmd;
+    cmd.AddValue ("experiment-config", "Explicit controlled experiment JSON",
+                  experimentConfigFile);
     cmd.AddValue ("i", "Interest interval (milliseconds)", NdnInterval);
     cmd.AddValue ("s", "Simulation time (seconds)", simTime);
     cmd.AddValue ("pcap", "Enable PCAP", enPcap);
@@ -116,11 +123,53 @@ int main(int argc,char *argv[]){
       }
     rsuForwardStrategy =
         static_cast<vanet::RsuForwardStrategy> (rsuForwardStrategyValue);
+    if (!experimentConfigFile.empty ())
+      {
+        try
+          {
+            experiment.reset (new vanet::ExperimentConfig (
+                vanet::LoadExperimentConfig (experimentConfigFile, "circle")));
+            nVehicles = static_cast<uint32_t> (experiment->vehicleIds.size ());
+            sumoConfigPath = vanet::QuoteSumoConfigPath (experiment->sumoConfigPath);
+            sumoSeed = static_cast<int> (experiment->sumoSeed);
+            srandSeed = experiment->srandSeed;
+            ns3::RngSeedManager::SetSeed (experiment->rngSeed);
+            ns3::RngSeedManager::SetRun (experiment->rngRun);
+            handoverFrequencyBoost = false;
+            vanet::SaveEffectiveExperimentConfig (*experiment, rsuForwardStrategyValue);
+            outputDir = experiment->outputDirectory + "/";
+            l3RateTracerFile = outputDir + "l3-rate-tracer.txt";
+            pcapFile = outputDir + "ndn-trace";
+            pcapWriterFile = outputDir + "ndn-trace.pcap";
+            csTracerFile = outputDir + "cs-tracer.txt";
+            netAnimFile = outputDir + "netanim-animation.xml";
+            aiTrainingTagDir = outputDir + "ai-training/";
+            aiTrainingTagFile = aiTrainingTagDir + "training-tag.csv";
+          }
+        catch (const std::exception &error)
+          {
+            std::cerr << "Invalid experiment configuration: " << error.what () << std::endl;
+            return 2;
+          }
+      }
+    else
+      nVehicles = VndnUtilsHelper::GetVehicleCount (
+          VndnUtilsHelper::ndn4ivc_traces_folder, scenario_name, scenario_file);
+    if (nVehicles == 0)
+      {
+        std::cerr << "No vehicle found for scenario " << scenario_name << std::endl;
+        return 2;
+      }
+    const ns3::Time simulationStopTime =
+        experiment ? ns3::NanoSeconds (experiment->drainEndNs + 1) : ns3::Seconds (simTime);
+    // Experiment apps stop at exactly t2, before the scheduler stops at t2 + 1 ns.
+    std::cout << "# nodes (vehicles) detected in SUMO scenario: " << nVehicles << std::endl;
+    std::cout << "# Road Side Units (RSUs): " << nRSUs << std::endl;
 
     // 在仿真中首次使用 rand() 之前应用用户设置的 C 随机种子。
     srand (srandSeed);
 
-    if (enLog || enDataSave || enPcap)
+    if (enLog || enDataSave || enPcap || experiment)
       {
         if (enLog)
           {
@@ -140,13 +189,13 @@ int main(int argc,char *argv[]){
         {
           // 递归创建输出目录
           std::string cmd = "mkdir -p " + outputDir;
-          if (system (cmd.c_str ()) != 0)
+          if (!experiment && system (cmd.c_str ()) != 0)
             {
               std::cerr << "Warning: failed to create output directory: " << outputDir << std::endl;
             }
           // 创建AI训练标签子目录
           cmd = "mkdir -p " + aiTrainingTagDir;
-          if (system (cmd.c_str ()) != 0)
+          if (!experiment && system (cmd.c_str ()) != 0)
             {
               std::cerr << "Warning: failed to create AI training directory: " << aiTrainingTagDir
                         << std::endl;
@@ -176,6 +225,8 @@ int main(int argc,char *argv[]){
               {"OpenGymPort", std::to_string (openGymPort)},
               {"SumoSeed", std::to_string (sumoSeed)},
               {"SrandSeed", std::to_string (srandSeed)}};
+          if (experiment)
+            simulationParameters.push_back ({"RequestMode", "ExplicitPlan"});
           if (!VndnUtilsHelper::SaveSimulationConfig (outputDir, simulationParameters))
             {
               std::cerr << "Warning: failed to create simulation config file: "
@@ -183,6 +234,24 @@ int main(int argc,char *argv[]){
             }
         }
         std::cout << "Log and data Output directory: " << outputDir << std::endl;
+      }
+
+    std::unique_ptr<vanet::VndnExperimentRecorder> experimentRecorder;
+    if (experiment)
+      {
+        vanet::VndnExperimentRecorder::Config recording;
+        recording.outputDirectory = experiment->outputDirectory;
+        recording.startNs = experiment->measurementStartNs;
+        recording.endNs = experiment->measurementEndNs;
+        recording.drainEndNs = experiment->drainEndNs;
+        for (const auto &vehicle : experiment->requestPlan)
+          {
+            auto &requests = recording.requestPlan[vehicle.first];
+            for (const auto &request : vehicle.second)
+              requests.push_back ({request.sequence, request.sendTimeNs});
+          }
+        experimentRecorder.reset (new vanet::VndnExperimentRecorder (recording));
+        vanet::VndnExperimentRecorder::SetActive (experimentRecorder.get ());
       }
 
     // 节点容器
@@ -243,7 +312,7 @@ int main(int argc,char *argv[]){
     mobility.Install(routerNodes);
     //sumo traci安装
     ns3::Ptr<ns3::TraciClient> sumoClient = ns3::CreateObject<ns3::TraciClient>();
-    sumoClient->SetAttribute("SumoConfigPath",ns3::StringValue(VndnUtilsHelper::ndn4ivc_traces_folder+"/"+scenario_name+"/" +scenario_file + ".sumo.cfg" ));
+    sumoClient->SetAttribute("SumoConfigPath",ns3::StringValue(sumoConfigPath));
     sumoClient->SetAttribute("SumoBinaryPath",ns3::StringValue(""));
     sumoClient->SetAttribute("SynchInterval",ns3::TimeValue(ns3::MilliSeconds(NdnInterval)));////同步
     sumoClient->SetAttribute("StartTime",ns3::TimeValue(ns3::Seconds(0.0)));
@@ -286,7 +355,7 @@ int main(int argc,char *argv[]){
         newNode->AddApplication(ndnApp);
         // 在 Simulator::Stop 之前停止应用，既能落盘最终统计，也避免在 Run()
         // 返回后取消已从调度器取出的事件。
-        const ns3::Time stopDelay = ns3::Seconds (simTime) -
+        const ns3::Time stopDelay = simulationStopTime -
                                     ns3::Simulator::Now () -
                                     ns3::NanoSeconds (1);
         if (stopDelay.IsPositive ())
@@ -351,7 +420,7 @@ int main(int argc,char *argv[]){
     routerApp.Start(ns3::Seconds(0.0));
 
     const ns3::Time applicationStopTime =
-        ns3::Seconds (simTime) - ns3::NanoSeconds (1);
+        simulationStopTime - ns3::NanoSeconds (1);
     // ndnSIM AppHelper 会立即执行 RSU 的 Initialize，因此事后修改 StopTime
     // 不会重排停止事件；显式调度才能保证核心实例和 ns3-gym 正常关闭。
     for (uint32_t i = 0; i < itsRsuNodes.GetN (); ++i)
@@ -374,6 +443,10 @@ int main(int argc,char *argv[]){
     ns3::Config::Set("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelNumber",ns3::UintegerValue(SCH1));
     sumoClient->SumoSetup(setupNewNode,shutdownSumoNode);
     ns3::Simulator::Schedule(ns3::Seconds(1.0),&VndnUtilsHelper::checkDisableNodes);//延迟移除被sumo移除的节点
+    std::unique_ptr<vanet::VndnL3ExperimentTracer> experimentL3;
+    if (experiment)
+      experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
+          experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
 
     ///////////追踪，获取仿真数据
     std::unique_ptr<ns3::AnimationInterface> animation;
@@ -392,8 +465,18 @@ int main(int argc,char *argv[]){
             ns3::MakeCallback (&ns3::ndn::VndnPcapWriter::TracePacket, pcapWriter.get ()));
       }
 
-    ns3::Simulator::Stop (ns3::Seconds (simTime));
+    ns3::Simulator::Stop (simulationStopTime);
     ns3::Simulator::Run();//正式运行
+    bool experimentComplete = true;
+    if (experiment)
+      {
+        experimentL3->Close ();
+        experimentComplete = experimentRecorder->Finalize (
+            ns3::Simulator::Now ().GetNanoSeconds ());
+        vanet::SaveExperimentCompletion (
+            *experiment, experimentComplete, ns3::Simulator::Now ().GetNanoSeconds ());
+        vanet::VndnExperimentRecorder::SetActive (nullptr);
+      }
     ns3::Simulator::Destroy();
-    return 0;
+    return experimentComplete ? 0 : 3;
 }

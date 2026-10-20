@@ -69,7 +69,22 @@
 
 导师新增的 Interest 数量、车速、车辆数量三组扫描及五指标出图设计，见
 [实验对比与出图方案](EXPERIMENT_COMPARISON_PLAN.md)。用户确认二次转发包含所有额外业务 Data 副本，
-控制负载覆盖本项目新增控制协议，网络/控制主图采用累计发送 Mbit；文档列明分类、统计与采集缺口，尚未实施实验。
+控制负载覆盖本项目新增控制协议，网络/控制主图采用累计发送 Mbit；文档保留原始完整设计及与当前采集范围的差别，正式对比实验尚未执行。
+
+后续用户批准了**不修改底层的采集实现**，操作与当前统计口径见
+[实验采集使用说明](EXPERIMENT_COLLECTION.md)。三个场景新增可选 `--experiment-config`；
+独立 SUMO 输入及显式请求计划控制车辆数、速度设置和首次业务请求总数。应用记录每个请求的生成和唯一终态，
+测量结束后继续排空。新入口不依赖旧 `--obu-frequency` 的随机发包间隔。
+
+`tools/experiments/` 提供输入生成、串行四算法运行、完整性检查和逐轮汇总，产物与旧训练 CSV 分开。
+采集器订阅现有 L3 TraceSource，只累计网络 Face 的出站 Interest/Data `wireEncode()` 字节；
+Nack 单列次数。控制子集包含 hello、p2p-handshake、search/find、neural-route/neural-pit；
+封装业务 Data 的 forward 计入网络负载，不能整包算纯控制负载。
+额外 Data 指标是应用可观察的预测额外路径、补救转送和同一无线方向重复提交，
+不涵盖所有隐式 NFD 副本，也不证明设备实际接受或发送成功。论文必须保留这些限定。
+
+本次采集工作不修改 `src/` 的传输、转发、策略或重组代码，也不改变既有模型权重。
+未指定实验配置时保留旧运行方式；正式出图、独立重复和效应统计仍是后续工作。
 
 | 关注点 | 文件 |
 |---|---|
@@ -88,6 +103,8 @@
 - [C++ 测试](../../contrib/vndn-nn-rd/test/vndn-rsu-forwarding-policy-test.cc) 注册 `vndn-rsu-forwarding-policy` 和 `vndn-neural-return-selection` 两个套件，覆盖最近 RSU、空候选、单双路径选择和候选/概率长度不匹配等行为。
 - [Python 测试](../../contrib/vndn-nn-rd/ai-training/circle/tests/test_circle_tkan.py) 覆盖窗口顺序与运行边界、模型输出形状及反向传播。
 - 新场景训练测试覆盖数据筛选、无效断点、七类窗口、checkpoint 和临时七类数据的一轮 CPU 训练；[推理测试](../../contrib/vndn-nn-rd/ai-training/tests/test_tkan_inference.py) 验证场景/标签兼容性及候选概率映射。各目录独立进程运行，避免同名训练模块相互干扰。
+- 新增 `vndn-experiment-config`、`vndn-experiment-recorder`、`vndn-l3-experiment-tracer` 三个 C++ 套件，
+  及 `tools/experiments/tests/` 的输入、运行和汇总测试；统一回归入口执行上述测试。
 - 这些单元测试的存在不证明三场景端到端回程、PIT 生命周期、模型泛化或切换收益已验证；实际执行结果应进入变更记录。
 - 本文初始化依据是本次可见对话、当前源码及本地 Git 历史；没有读取或声称分析全部历史聊天。
 - 近期 Git 记录提供演进线索：`858cbda` 修复 RTVTDF，`f5f92b5` 添加训练代码，`0a2973d` 添加神经网络决策，`74145ce` 修复神经网络问题，`e1d0bd6` 添加更多场景。提交标题不能替代测试和实验结果。

@@ -27,6 +27,9 @@
 #include "ns3/vndn-rsu-app.h"
 #include "ns3/vndn-rsu-strategy.h"
 #include "ns3/vndn-utils-helper.h"
+#include "ns3/vndn-experiment-config.h"
+#include "ns3/vndn-experiment-recorder.h"
+#include "ns3/vndn-l3-experiment-tracer.h"
 #include "ns3/wifi-adhoc-helper.h"
 #include "ns3/wifi-setup-helper.h"
 
@@ -116,15 +119,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
       return 2;
     }
 
-  const uint32_t nVehicles =
-      VndnUtilsHelper::GetVehicleCount (VndnUtilsHelper::ndn4ivc_traces_folder,
-                                        scenario.scenarioName,
-                                        scenario.routeFileName);
-  if (nVehicles == 0)
-    {
-      std::cerr << "No vehicle found for scenario " << scenario.scenarioName << std::endl;
-      return 2;
-    }
+  uint32_t nVehicles = 0;
   const uint32_t nRsus = static_cast<uint32_t> (rsuLocations.size ());
 
   uint32_t ndnIntervalMs = 1;
@@ -146,8 +141,15 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   bool handoverFrequencyBoost = false;
   double obuFrequency = 40.0;
   double handoverFrequencyMultiplier = 4.0;
+  std::string experimentConfigFile;
+  std::unique_ptr<vanet::ExperimentConfig> experiment;
+  std::string sumoConfigPath =
+      VndnUtilsHelper::ndn4ivc_traces_folder + "/" + scenario.scenarioName + "/" +
+      scenario.sumoConfigFileName;
 
   CommandLine commandLine;
+  commandLine.AddValue ("experiment-config", "Explicit controlled experiment JSON",
+                        experimentConfigFile);
   commandLine.AddValue ("i", "Interest interval (milliseconds)", ndnIntervalMs);
   commandLine.AddValue ("s", "Simulation time (seconds)", simulationTime);
   commandLine.AddValue ("pcap", "Enable PCAP", enablePcap);
@@ -180,6 +182,40 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
     }
   rsuForwardStrategy =
       static_cast<vanet::RsuForwardStrategy> (rsuForwardStrategyValue);
+  if (!experimentConfigFile.empty ())
+    {
+      try
+        {
+          const std::string experimentScenario =
+              scenario.scenarioName == "grid-vanet-test" ? "grid" : "spidermap";
+          experiment.reset (new vanet::ExperimentConfig (
+              vanet::LoadExperimentConfig (experimentConfigFile, experimentScenario)));
+          nVehicles = static_cast<uint32_t> (experiment->vehicleIds.size ());
+          sumoConfigPath = vanet::QuoteSumoConfigPath (experiment->sumoConfigPath);
+          sumoSeed = static_cast<int> (experiment->sumoSeed);
+          srandSeed = experiment->srandSeed;
+          RngSeedManager::SetSeed (experiment->rngSeed);
+          RngSeedManager::SetRun (experiment->rngRun);
+          handoverFrequencyBoost = false;
+          vanet::SaveEffectiveExperimentConfig (*experiment, rsuForwardStrategyValue);
+        }
+      catch (const std::exception &error)
+        {
+          std::cerr << "Invalid experiment configuration: " << error.what () << std::endl;
+          return 2;
+        }
+    }
+  else
+    nVehicles = VndnUtilsHelper::GetVehicleCount (
+        VndnUtilsHelper::ndn4ivc_traces_folder, scenario.scenarioName, scenario.routeFileName);
+  if (nVehicles == 0)
+    {
+      std::cerr << "No vehicle found for scenario " << scenario.scenarioName << std::endl;
+      return 2;
+    }
+  const Time simulationStopTime =
+      experiment ? NanoSeconds (experiment->drainEndNs + 1) : Seconds (simulationTime);
+  // In experiment mode apps stop at exactly t2; stop the scheduler one ns later.
   // 用户给出的 srand 种子必须在仿真中首次实际使用 rand() 之前生效。
   srand (srandSeed);
 
@@ -190,8 +226,9 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   dateDirectory << std::put_time (localNow, "%Y%m%d");
   timeDirectory << std::put_time (localNow, "%H-%M-%S");
   const std::string outputDirectory =
-      "./data/" + scenario.scenarioName + "/" + dateDirectory.str () + "/" +
-      timeDirectory.str () + "/";
+      experiment ? experiment->outputDirectory + "/"
+                 : "./data/" + scenario.scenarioName + "/" + dateDirectory.str () + "/" +
+                       timeDirectory.str () + "/";
   const std::string aiTrainingDirectory = outputDirectory + "ai-training/";
   const std::string aiTrainingFile = aiTrainingDirectory + "training-tag.csv";
   const std::string l3RateTracerFile = outputDirectory + "l3-rate-tracer.txt";
@@ -211,9 +248,9 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
         }
     }
 
-  if (enableLog || enableDataSave || enablePcap)
+  if (enableLog || enableDataSave || enablePcap || experiment)
     {
-      if (std::system (("mkdir -p " + aiTrainingDirectory).c_str ()) != 0)
+      if (!experiment && std::system (("mkdir -p " + aiTrainingDirectory).c_str ()) != 0)
         std::cerr << "Warning: cannot create " << aiTrainingDirectory << std::endl;
 
       const char *cacheStrategyName =
@@ -223,7 +260,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
                                                                 : "AntiPingPong";
       std::ostringstream obuFrequencyText;
       obuFrequencyText << obuFrequency;
-      const std::vector<std::pair<std::string, std::string>> parameters = {
+      std::vector<std::pair<std::string, std::string>> parameters = {
           {"CacheStrategy", cacheStrategyName},
           {"HandoverStrategy", handoverStrategyName},
           {"obuFrequency", obuFrequencyText.str ()},
@@ -231,10 +268,30 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
           {"OpenGymPort", std::to_string (openGymPort)},
           {"SumoSeed", std::to_string (sumoSeed)},
           {"SrandSeed", std::to_string (srandSeed)}};
+      if (experiment)
+        parameters.push_back ({"RequestMode", "ExplicitPlan"});
       if (!VndnUtilsHelper::SaveSimulationConfig (outputDirectory, parameters))
         std::cerr << "Warning: cannot save " << outputDirectory
                   << "simulation-config.txt" << std::endl;
       std::cout << "Log and data output directory: " << outputDirectory << std::endl;
+    }
+
+  std::unique_ptr<vanet::VndnExperimentRecorder> experimentRecorder;
+  if (experiment)
+    {
+      vanet::VndnExperimentRecorder::Config recording;
+      recording.outputDirectory = experiment->outputDirectory;
+      recording.startNs = experiment->measurementStartNs;
+      recording.endNs = experiment->measurementEndNs;
+      recording.drainEndNs = experiment->drainEndNs;
+      for (const auto &vehicle : experiment->requestPlan)
+        {
+          auto &requests = recording.requestPlan[vehicle.first];
+          for (const auto &request : vehicle.second)
+            requests.push_back ({request.sequence, request.sendTimeNs});
+        }
+      experimentRecorder.reset (new vanet::VndnExperimentRecorder (recording));
+      vanet::VndnExperimentRecorder::SetActive (experimentRecorder.get ());
     }
 
   std::cout << "# nodes (vehicles) detected in SUMO scenario: " << nVehicles
@@ -286,9 +343,6 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   mobility.Install (serverNodes);
 
   Ptr<TraciClient> sumoClient = CreateObject<TraciClient> ();
-  const std::string sumoConfigPath =
-      VndnUtilsHelper::ndn4ivc_traces_folder + "/" + scenario.scenarioName + "/" +
-      scenario.sumoConfigFileName;
   sumoClient->SetAttribute ("SumoConfigPath", StringValue (sumoConfigPath));
   sumoClient->SetAttribute ("SumoBinaryPath", StringValue (""));
   sumoClient->SetAttribute ("SynchInterval", TimeValue (MilliSeconds (ndnIntervalMs)));
@@ -320,7 +374,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
     node->AddApplication (obu);
 
     const Time stopDelay =
-        Seconds (simulationTime) - Simulator::Now () - NanoSeconds (1);
+        simulationStopTime - Simulator::Now () - NanoSeconds (1);
     if (stopDelay.IsPositive ())
       Simulator::ScheduleWithContext (node->GetId (), stopDelay,
                                       &VndnObuApp::StopApplication, obu);
@@ -369,7 +423,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   ApplicationContainer routerApplication = routerHelper.Install (routerNodes.Get (0));
   routerApplication.Start (Seconds (0.0));
 
-  const Time applicationStopTime = Seconds (simulationTime) - NanoSeconds (1);
+  const Time applicationStopTime = simulationStopTime - NanoSeconds (1);
   for (uint32_t index = 0; index < rsuApplications.GetN (); ++index)
     {
       Ptr<VndnRsuApp> app = DynamicCast<VndnRsuApp> (rsuApplications.Get (index));
@@ -387,6 +441,10 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
                UintegerValue (SCH1));
   sumoClient->SumoSetup (setupNewNode, shutdownSumoNode);
   VndnUtilsHelper::ScheduleDisableNodesCheck ();
+  std::unique_ptr<vanet::VndnL3ExperimentTracer> experimentL3;
+  if (experiment)
+    experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
+        experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
 
   std::unique_ptr<AnimationInterface> animation;
   std::unique_ptr<VndnPcapWriter> pcapWriter;
@@ -404,10 +462,19 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
           MakeCallback (&VndnPcapWriter::TracePacket, pcapWriter.get ()));
     }
 
-  Simulator::Stop (Seconds (simulationTime));
+  Simulator::Stop (simulationStopTime);
   Simulator::Run ();
+  bool experimentComplete = true;
+  if (experiment)
+    {
+      experimentL3->Close ();
+      experimentComplete = experimentRecorder->Finalize (Simulator::Now ().GetNanoSeconds ());
+      vanet::SaveExperimentCompletion (
+          *experiment, experimentComplete, Simulator::Now ().GetNanoSeconds ());
+      vanet::VndnExperimentRecorder::SetActive (nullptr);
+    }
   Simulator::Destroy ();
-  return 0;
+  return experimentComplete ? 0 : 3;
 }
 
 } // namespace ndn

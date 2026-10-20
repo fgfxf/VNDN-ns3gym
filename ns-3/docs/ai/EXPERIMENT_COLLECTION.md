@@ -1,0 +1,221 @@
+# 新实验采集、运行与汇总使用指南
+
+日期：2026-10-20。本文说明本轮实现的接口与数据契约；实际测试、构建和仿真结果见 [CHANGELOG.md](CHANGELOG.md)。研究设计见 [EXPERIMENT_COMPARISON_PLAN.md](EXPERIMENT_COMPARISON_PLAN.md)，项目定位见 [PROJECT.md](PROJECT.md)。
+
+## 1. 当前采集范围
+
+用户确认采用不修改 `src/ndnSIM`、NFD 底层源码的实现范围，通过研究模块、场景入口及已有 trace 接口补充采集。当前结果必须按以下观测层解释：
+
+| 结果 | 实际定义 | 边界 |
+|---|---|---|
+| ISR | 测量窗内首次生成的业务请求中，在发送后 3 秒内首次成功的比例 | 完整生成分母；超时、Nack、已知停止不删除 |
+| 平均成功 RTT | 首次有效 Data 到达时间减发送时间；只平均成功请求 | 零成功为 JSON `null` / CSV 空值，不能填 0 或 3000 ms |
+| 网络负载 | 全部真实网络 face 的 L3 `OutInterests`、`OutData` 编码字节和 | **L3 出站量**；不证明设备接受、分片全部提交成功或目标收到 |
+| 控制负载 | 同一 L3 观测点按 Name/功能分类后的自定义纯控制报文编码字节和 | 不含 LP 标签/分片头、MAC/PHY 开销和重试 |
+| 额外 Data 机制量 | 应用层额外分支、补救再投递、重复提交的 `APP_SUBMIT` 尝试数 | 是**应用提交尝试**，不冒充全部设备已接受副本，也不证明自动 NFD/CS 额外副本均可归因 |
+
+网络与控制图使用 `Mbit = bytes × 8 / 10⁶`，附 `bytes/generated Interest`。原生 Nack 仅独立计包数，字节值为 0，不拿它内嵌 Interest 的大小冒充完整 Nack 长度。
+
+因此论文结果宜组织为 **12 张主要性能组合图**（ISR、成功 RTT、L3 网络量、L3 控制量分别对三个横轴）及 **3 张应用提交机制组合图**。每张图含圆圈、方阵、蜘蛛网三个面板，保持四算法一致样式，总计仍为 45 个面板。本文工具输出逐轮指标，不生成正式统计区间或论文图。
+
+已有 `L3RateTracer` 文本缺少 Name，但当前 `L3Protocol` 的出站 trace 提供完整 Interest/Data 及 Face；新增 helper 直接挂接接口进行分类。L3 自动 PIT/CS 出站发送也可出现在字节日志中。该机制不要求修改底层文件，但它不会提供原方案中 `NetDevice::Send` 的返回值。
+
+## 2. 保持旧运行与训练数据隔离
+
+实验模式仅通过新增的 `--experiment-config=/absolute/path/config.json` 启用。既有常规运行命令、旧训练 CSV/stats 格式和正式模型接口继续由各自模块维护。
+
+新输入与结果使用独立目录：
+
+```text
+data/experiments/
+├── inputs/<自定义输入标识>/
+│   ├── experiment-template.json
+│   ├── input-summary.json
+│   ├── network.net.xml
+│   ├── routes.rou.xml
+│   ├── simulation.sumocfg
+│   └── request-plan.json
+└── runs/<UTC时间戳-随机标识>/
+    ├── experiment.json
+    ├── manifest.json
+    ├── simulation.log
+    ├── controller.log                 # 仅策略 3
+    ├── run-metrics.json               # 仅完整验证成功后生成
+    ├── run-metrics.csv
+    └── raw/
+        ├── effective-experiment-config.json
+        ├── simulation-result.json
+        ├── recorder-complete.json
+        ├── request-events.csv
+        ├── mobility-events.csv
+        ├── data-attempts.csv
+        ├── data-rx.csv                 # 辅助收包诊断，存在时纳入哈希
+        └── packet-l3.csv
+```
+
+目录时间戳采用 UTC。输入生成器拒绝覆盖已有目录；runner 每轮建立新目录，同一 block 重跑也保留原记录。runner 禁止输出到旧三场景训练数据、`data/models` 或 `ns-3_old` 下。实验运行显式关闭旧 `save-data` 输出，不能把实验日志或验证控制器产物混入正式训练采样。
+
+## 3. 生成冻结输入
+
+下面是验证接口的短输入例子，不是论文正式参数或性能结果。命令在 `ns-3/` 执行：
+
+```bash
+export JOBS=4
+python3.8 tools/experiments/generate_inputs.py \
+  --scenario circle \
+  --output-dir data/experiments/inputs/validation-circle-seed1 \
+  --vehicles 2 \
+  --speed-kmh 30 \
+  --requests 20 \
+  --measurement-start 5 \
+  --measurement-duration 5 \
+  --drain-seconds 3.5 \
+  --seed 1
+```
+
+`--scenario` 可为 `circle`、`grid`、`spidermap`。生成器：
+
+- 从对应旧有场景资源复制路网，生成合法闭合且足够长的循环路线；保留原路网几何和场景中的 RSU 布置。
+- 使用显式 `<vehicle>`，稳定 SUMO ID 为 `exp-00000` 等；按起始边分散车辆，关闭超时 teleport。
+- 设置车辆 `maxSpeed = speed-kmh/3.6`、`speedFactor=1`、`speedDev=0`；道路限速、跟驰与路口仍可能使实际速度降低。
+- 生成恰好 K 条请求，每车相差最多一条，发送时刻以整数纳秒表示，全部位于测量窗；使用冻结随机相位分散请求。
+- 将 ns-3 主 seed 设为 1，`rng_run`、SUMO seed 和 C `srand` seed 使用 `--seed`。保存源路网/路线哈希、车辆与路线摘要。
+
+生成成功只说明输入格式与构造检查通过。车辆是否及时入场、实际速度、路段拥堵、基站到访及交接覆盖仍须真实运行检查。旋转和延长原路线不等于覆盖全部七基站。
+
+精确 K 模式使用发送计划，不将既有 `--obu-frequency` 的名义频率当作实发数量。车辆数扫描按既定每车请求强度设置相应 K；固定全网 K 的车辆数消融需单独建立输入块。
+兼容输出 `simulation-config.txt` 中的 `RequestMode=ExplicitPlan` 标识此模式；
+其中旧 `obuFrequency` 字段不决定实际发包时刻，实际设置以 `effective-experiment-config.json` 及请求计划为准。
+
+## 4. 串行运行一组算法
+
+先按 [VALIDATION.md](VALIDATION.md) 确认环境及相关构建。运行器只使用增量 waf，不执行 configure；所有可能间接构建的操作都必须保持 `JOBS=4`。
+
+先验证三个非神经算法：
+
+```bash
+export JOBS=4
+python3.8 tools/experiments/run_experiment.py \
+  --config data/experiments/inputs/validation-circle-seed1/experiment-template.json \
+  --strategies 0,1,2 \
+  --block-id validation-circle-seed1 \
+  --output-root data/experiments/runs \
+  --timeout 300
+```
+
+策略编号为 `0=NoForward`、`1=VTDF`、`2=RealTimeVTDF`、`3=NeuralNetwork`。也可用 `--strategy 0` 只运行一轮。`--strategies` 内的策略按所给顺序串行执行；某轮失败即停止该命令后续策略，退出码非零。
+
+使用真实模型时，显式指定匹配场景的可信 checkpoint：
+
+```bash
+export JOBS=4
+python3.8 tools/experiments/run_experiment.py \
+  --config data/experiments/inputs/validation-circle-seed1/experiment-template.json \
+  --strategies 0,1,2,3 \
+  --model-file /absolute/path/to/circle-model.pt \
+  --block-id circle-seed1 \
+  --output-root data/experiments/runs \
+  --timeout 600
+```
+
+`--model-file` 的示例路径必须换成实际文件。控制器仍执行现有场景、标签、特征和归一化检查；本工具不训练模型。圆圈模型不能替代方阵/蜘蛛网模型。
+
+在缺少正式模型、仅验证数据链时，可显式使用：
+
+```bash
+export JOBS=4
+python3.8 tools/experiments/run_experiment.py \
+  --config data/experiments/inputs/validation-circle-seed1/experiment-template.json \
+  --strategies 0,1,2,3 \
+  --test-controller \
+  --block-id validation-circle-seed1 \
+  --output-root data/experiments/runs \
+  --timeout 300
+```
+
+验证控制器向候选 RSU 返回均匀概率，仅用于 Gym 接口、预测分支和日志验证。使用它的整个比较块标记 `validation_only=true`，**不能作为 TKAN-LSTM 的正式效果或模型泛化实验**。`--test-controller` 与 `--model-file` 互斥。
+
+runner 每轮单独启动控制器，等待本轮 Gym done 和正常退出；不会用一个已结束的控制器服务下一轮。所有子进程继承 `JOBS=4`，waf 使用 `-j 4`。项目级文件锁阻止多个 runner 同时占用共享端口；不要在另一窗口绕过锁同时手动启动仿真。当前 SUMO 端口仍由场景配置使用，`--gym-port` 只选择 Gym 端口。
+
+一次命令固定同一输入和种子元组。重新使用相同输入、换一个 block 名称，并不构成新的独立随机重复；正式重复应在预先冻结的种子表下生成新的输入块。
+
+## 5. 什么条件才能标为 complete
+
+运行完成要求同时成立：
+
+1. 仿真退出码为 0；策略 3 的控制器也须正常退出并记录 Gym done。异常、超时或用户中断时，只收敛本轮新建的进程组，保留日志及失败 manifest。
+2. C++ `simulation-result.json` 明确成功，场景/run ID 对应本轮。应用在 `t₂` 停止；Simulator 在 `t₂+1 ns` 停止，避免事件先后顺序造成尾部遗漏，凭证中的结束时间必须匹配。
+3. `effective-experiment-config.json` 与 runner 配置中的场景、策略、输入路径、种子、窗口、车辆及预算一致。
+4. 每条实际生成请求与冻结计划的车辆、序号和时间一致，且有且仅有一个互斥终态；生成数与 recorder 完成计数闭合。
+5. 每辆计划车辆在 `t₀` 前入场，`t₂` 前没有退出，真实 SAMPLE 覆盖测量和收尾。提前离场属于本设计的运行失败，原始记录仍保留；协议 timeout/低 ISR 本身不是删除整轮的理由。
+6. 分类、字节长度与 APP_SUBMIT 记录有效，未知类别或不闭合不能静默丢弃。合法的全零网络量、控制量或额外尝试量不因数值为零而被拒绝。
+7. 输入和相关源码哈希在运行前后稳定，正式模型与 block 开始时的哈希一致。
+
+只有上述检查通过才产生 `run-metrics.json/csv` 并写 `manifest.status=complete`。manifest 同时保存配置、输入、模型、源码内容/版本/差异摘要、子进程命令与退出码以及原始产物哈希；记录运行后仿真二进制、相关研究共享库和构建缓存哈希。二进制哈希是**运行后产物证据**，不声称复原了底层每次发送或宿主机全部动态依赖。
+
+输入哈希不仅覆盖模板列出的文件，还会检查 SUMO 实际引用的网络、路线等文件已在 `input_files` 中，防止遗漏网络文件。源码快照还覆盖 `contrib/vndn-nn-rd/traces/` 中的 `.xml`、`.sumocfg`、`.cfg` 配置依赖，包括方阵、蜘蛛网实际读取的 `settings.xml` RSU 坐标。保留整个生成输入目录、相关 trace 配置及模型，才能依据 manifest 进行后续复现。
+
+## 6. 数据字段及计算规则
+
+所有 CSV 有表头，时间使用整数纳秒，长度使用整数 bytes。唯一请求键为 `vehicle_id:sequence`，完整 Name 另存；run 由目录及 manifest 隔离。
+
+| 文件 | 核心内容 |
+|---|---|
+| `request-events.csv` | 时间、event、request_id、Name、稳定车辆 ID、ns-3 node、sequence、send/deadline、RSU |
+| `mobility-events.csv` | ENTER/SAMPLE/ASSOCIATION/EXIT、车辆/node、位置、实际速度、当前/之前 RSU |
+| `data-attempts.csv` | attempt_id、parent、业务 Name、source/target、reason、`APP_SUBMIT` |
+| `packet-l3.csv` | 出口时间、node/face、OUT、INTEREST/DATA/NACK、Name、语义类、编码长度、内嵌 Data 长度 |
+
+请求终态为 DATA、TIMEOUT、NACK、STOPPED；DUPLICATE_DATA、LATE_DATA、POST_TERMINAL_DATA 仅为诊断，不增加满足数或改变既有终态。POST_TERMINAL_DATA 指 NACK/STOPPED 之后、截止期以内又观察到的 Data，也包含 TIMEOUT 回调先执行、随后在同一 deadline 时刻收到 Data 的情况。DATA 截止期包含等号，超时不能早于 deadline；同一时刻以先执行的终态回调为准，不回溯改写成功数。
+
+汇总同时核对 recorder 的 `planned/generated/terminal`、精确结束时间及 `extra_attempts` 与完整原始记录一致。额外提交的完成凭证计数包括 CSV 中所有行，图表指标再按 `[t₀,t₂)` 选择；缺行不能被解释为低开销。
+
+观测区间为：
+
+- 请求生成与速度/交接统计：`[t₀,t₁)`。
+- 网络、控制及额外应用提交尝试：`[t₀,t₂)`，`t₂=t₁+drain_seconds`，至少保留 3 秒截止期。
+- `t₂` 真实 SAMPLE/EXIT 用于在线持续性和积分边界核验，不将它当作测量窗新增业务。
+
+控制类别为 hello 双向、P2P handshake、search、find、neural_route、neural_pit。携带原业务 Data 的 `relay_data` 整包计网络量，不把整包计纯控制；另报告内嵌业务长度及外层减内层的封装长度。业务副本是流量的附加属性，不再加一遍字节。
+
+应用额外尝试原因：
+
+- `PREDICTIVE_EXTRA`：预测返回多个候选所增加的应用提交分支。
+- `REACTIVE_RELAY`：收到业务 Data 后的跨站补救提交。
+- `REPEATED_SUBMIT`：应用层重复提交。
+
+普通中继、封装/解封装和首次无线交付不再次记为新应用尝试。`parent_attempt_id` 为 `-` 或空值表示没有可证明的父关系，不能虚构因果链；`target_node=-1` 表示只知道出口 face、没有可靠目标 node 映射，单列 `unknown_target_app_attempts`。这些字段不应被误读为已观察到完整网络副本传播。
+
+汇总输出含：
+
+- `generated/satisfied/terminal_counts`、`sum_success_rtt_ns`、`mean_success_rtt_ms`、ISR。
+- 应用额外尝试总数/原因分项/每请求值。
+- L3 网络/控制 bytes 与 Mbit、类别分解、relay 内外层分解、单列 `out_nack_count`。
+- 每生成请求网络/控制字节；每成功请求网络字节在零成功时为 null。
+- 车辆时间加权速度及 P05/P50/P95、停车时间比例、最大样本间隔、交接数。
+
+速度统计按相邻 SAMPLE 的左端值在测量窗内积分，报告方法及最大采样间隔；分位数以车辆时间为权重。停车阈值显式为 0.1 m/s。交接由服务 RSU 变化事件识别，不从 RTT 离群点推断。这些是单轮描述统计，不是跨重复的置信区间。
+
+## 7. 复核一轮结果
+
+```bash
+python3.8 tools/experiments/summarize.py \
+  /absolute/path/to/experiment-run
+```
+
+独立汇总要求 manifest 为 complete、过程退出码成功，并重新核验本轮配置及所有已登记产物的 SHA256；文件被修改或缺失时返回非零。程序只将 JSON 打印到标准输出，不覆盖已归档指标。
+
+同一指标文件可用于后续 12 张性能图与 3 张机制图。跨 run 的成功 RTT 仍需用成功时延总和/成功数重新求比值，不能将每轮平均值直接等权混算；配对 bootstrap 和零成功规则沿用研究设计文档。当前 runner 不自动开展正式重复、统计检验或筛选“表现最好”的 run。
+
+## 8. 回归入口与证据边界
+
+工具行为测试可独立运行，不启动 SUMO、waf 或正式训练：
+
+```bash
+python3.8 -m unittest discover \
+  -s tools/experiments/tests -p 'test_*.py' -v
+```
+
+测试使用临时输入、日志和子进程替身，覆盖预算、终态、指标、分类、进程失败、超时、输出保护及凭证。它们不能替代真实三场景运行；C++ 与跨场景集成验收按 [VALIDATION.md](VALIDATION.md) 执行，最终状态写入变更记录。
+
+正式实验前还需核对模型来源、路线/交接覆盖、实际速度、采样与正式种子隔离，以及输入水平与预算是否适合研究问题。短仿真、均匀概率验证控制器和源码检查均不能证明算法性能优势。

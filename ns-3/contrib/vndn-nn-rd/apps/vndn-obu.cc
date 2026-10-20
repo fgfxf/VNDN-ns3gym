@@ -24,6 +24,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <map>
+#include <stdexcept>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.VndnObu");
 
@@ -177,8 +178,11 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
           // 过期基站恰好是当前驻留基站，则清除驻留
           if (iter->first == m_currentBsNodeId)
             {
+              const int64_t previousRsu = m_currentBsNodeId;
               m_currentBsNodeId = -1;
               m_currentBsRxPowerDbm = -999.0;
+              if (m_experimentMode)
+                CaptureMobility ("ASSOCIATION", previousRsu);
             }
           iter = m_neighborBs.erase (iter);
         }
@@ -232,9 +236,12 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
         {
           NS_LOG_DEBUG ("OBU 基站切换: " << m_currentBsNodeId << " -> " << senderNodeId
                         << " 信号 " << m_currentBsRxPowerDbm << " -> " << rxPowerDbm << "dBm");
+          const int64_t previousRsu = m_currentBsNodeId;
           m_currentBsNodeId = senderNodeId;
           m_currentBsRxPowerDbm = rxPowerDbm;
           m_lastHandoverMs = currentTimeMs;
+          if (m_experimentMode)
+            CaptureMobility ("ASSOCIATION", previousRsu);
         }
       else
         {
@@ -379,8 +386,22 @@ VndnObu::OnNack (const ndn::Interest &interest, const ndn::lp::Nack &nack)
 void
 VndnObu::ScheduleNextPacket ()
 {
-  if (!m_active)
+  if (!m_active || !m_generateRequests)
     return;
+  if (m_experimentMode)
+    {
+      if (m_nextExperimentRequest == m_experimentRequests.size ())
+        return;
+      const auto &request = m_experimentRequests.at (m_nextExperimentRequest++);
+      const uint64_t nowNs = ns3::Simulator::Now ().GetNanoSeconds ();
+      if (request.sendTimeNs < nowNs)
+        throw std::runtime_error ("Vehicle entered after a planned business request: " +
+                                  m_experimentVehicleId);
+      m_requestScheduler = ns3::Simulator::Schedule (
+          ns3::NanoSeconds (request.sendTimeNs - nowNs),
+          &VndnObu::SendPlannedPacket, this, request.sequence);
+      return;
+    }
   m_effectiveFrequency = m_frequency;
   if (m_handoverFrequencyBoost && m_neighborBs.size () >= 2)
     m_effectiveFrequency *= m_handoverFrequencyMultiplier;
@@ -394,12 +415,18 @@ VndnObu::ScheduleNextPacket ()
 void
 VndnObu::SendPacket ()
 {
+  SendPlannedPacket (m_seq + 1);
+}
+
+void
+VndnObu::SendPlannedPacket (uint64_t sequence)
+{
   m_requestScheduler.Cancel ();
-  if (!m_active)
+  if (!m_active || !m_generateRequests)
     return;
 
   // 构造兴趣包：前缀 /com/baidu + 递增序号，模拟用户请求不同内容
-  m_seq++;
+  m_seq = sequence;
   std::string userWatch = "/com/baidu/www/userid/" + std::to_string (m_thisNode->GetId ());
   std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> (userWatch);
   name->appendSequenceNumber (m_seq);
@@ -424,7 +451,7 @@ VndnObu::SendPacket ()
                                                        targetMac);
   interest->setTag (vndnTag);
 
-  if (m_enableDataSave && !m_saveFile.empty ())
+  if ((m_enableDataSave && !m_saveFile.empty ()) || m_experimentMode)
     {
       RequestRecord record;
       record.sequence = m_seq;
@@ -446,6 +473,15 @@ VndnObu::SendPacket ()
         }
       m_requestRecords[*name] = record;
     }
+  if (m_experimentMode)
+    {
+      auto *recorder = VndnExperimentRecorder::GetActive ();
+      if (recorder == nullptr ||
+          !recorder->RecordGenerated (ns3::Simulator::Now ().GetNanoSeconds (),
+                                      name->toUri (), m_experimentVehicleId,
+                                      m_thisNode->GetId (), m_seq, m_currentBsNodeId))
+        throw std::runtime_error ("Experiment request is duplicated or outside its measurement window");
+    }
   NS_LOG_INFO ("OBU 发送兴趣包: " << *name
                << " 驻留基站=" << m_currentBsNodeId
                << " 邻居基站数=" << m_neighborBs.size ()
@@ -465,6 +501,29 @@ VndnObu::Start ()
 {
   m_face.processEvents ();
   m_active = true;
+  m_generateRequests = true;
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  m_experimentMode = recorder != nullptr;
+  if (m_experimentMode)
+    {
+      if (m_traci == nullptr)
+        throw std::runtime_error ("Experiment OBU requires a SUMO vehicle identity");
+      m_experimentVehicleId = m_traci->GetVehicleId (m_thisNode);
+      if (m_experimentVehicleId.empty ())
+        throw std::runtime_error ("Experiment OBU has no SUMO vehicle identity");
+      m_experimentRequests = recorder->GetPlan (m_experimentVehicleId);
+      const uint64_t nowNs = ns3::Simulator::Now ().GetNanoSeconds ();
+      if (nowNs >= recorder->GetConfig ().endNs)
+        throw std::runtime_error ("Experiment vehicle entered after the measurement window");
+      m_generationStopEvent = ns3::Simulator::Schedule (
+          ns3::NanoSeconds (recorder->GetConfig ().endNs - nowNs),
+          &VndnObu::StopNewRequests, this);
+      CaptureMobility ("ENTER", -1);
+      const uint64_t firstSampleNs = std::max (nowNs, recorder->GetConfig ().startNs);
+      m_mobilityEvent = ns3::Simulator::Schedule (
+          ns3::NanoSeconds (firstSampleNs - nowNs),
+          &VndnObu::SampleMobility, this);
+    }
   NS_LOG_DEBUG ("OBU 启动...");
   // 启动周期性请求发送
   ScheduleNextPacket ();
@@ -473,8 +532,29 @@ VndnObu::Start ()
 void
 VndnObu::Stop ()
 {
+  if (!m_active)
+    return;
   NS_LOG_DEBUG ("OBU 关闭...");
-  m_requestScheduler.Cancel ();
+  StopNewRequests ();
+  m_generationStopEvent.Cancel ();
+  m_mobilityEvent.Cancel ();
+  if (m_experimentMode)
+    {
+      auto *recorder = VndnExperimentRecorder::GetActive ();
+      if (recorder != nullptr)
+        {
+          const uint64_t nowNs = ns3::Simulator::Now ().GetNanoSeconds ();
+          // Normal stop occurs exactly at t2 while TraCI is still connected.
+          // An early SUMO removal may no longer be queryable: retain its last
+          // observed state, and let the EXIT timestamp expose incomplete presence.
+          if (nowNs >= recorder->GetConfig ().drainEndNs)
+            CaptureMobility ("SAMPLE", m_currentBsNodeId);
+          recorder->RecordMobility (nowNs, "EXIT", m_experimentVehicleId,
+                                     m_thisNode->GetId (), m_lastExperimentX,
+                                     m_lastExperimentY, m_lastExperimentSpeed,
+                                     m_currentBsNodeId, m_currentBsNodeId);
+        }
+    }
   m_face.shutdown ();
   m_active = false;
   while (!m_requestRecords.empty ())
@@ -482,7 +562,7 @@ VndnObu::Stop ()
       ndn::Interest interest (m_requestRecords.begin ()->first);
       SaveRequestResult (interest, "STOPPED");
     }
-  if (m_enableDataSave && !m_saveFile.empty () && m_seq > 0)
+  if (m_enableDataSave && !m_saveFile.empty () && (m_seq > 0 || m_experimentMode))
     {
       std::ofstream stats (GetPerVehicleSaveFile ("-stats.txt"),
                            std::ios::out | std::ios::trunc);
@@ -497,6 +577,44 @@ VndnObu::Stop ()
                        << GetPerVehicleSaveFile ("-stats.txt"));
         }
     }
+}
+
+void
+VndnObu::StopNewRequests ()
+{
+  m_generateRequests = false;
+  m_requestScheduler.Cancel ();
+}
+
+void
+VndnObu::CaptureMobility (const std::string &event, int64_t previousRsuId)
+{
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (!m_experimentMode || recorder == nullptr)
+    return;
+  const auto position = m_traci->TraCIAPI::vehicle.getPosition3D (m_experimentVehicleId);
+  m_lastExperimentX = position.x;
+  m_lastExperimentY = position.y;
+  m_lastExperimentSpeed = m_traci->TraCIAPI::vehicle.getSpeed (m_experimentVehicleId);
+  recorder->RecordMobility (ns3::Simulator::Now ().GetNanoSeconds (), event,
+                             m_experimentVehicleId, m_thisNode->GetId (),
+                             m_lastExperimentX, m_lastExperimentY, m_lastExperimentSpeed,
+                             m_currentBsNodeId, previousRsuId);
+}
+
+void
+VndnObu::SampleMobility ()
+{
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (!m_active || recorder == nullptr)
+    return;
+  CaptureMobility ("SAMPLE", m_currentBsNodeId);
+  const uint64_t nowNs = ns3::Simulator::Now ().GetNanoSeconds ();
+  const uint64_t interval = recorder->GetConfig ().mobilitySampleNs;
+  if (nowNs < recorder->GetConfig ().drainEndNs &&
+      interval < recorder->GetConfig ().drainEndNs - nowNs)
+    m_mobilityEvent = ns3::Simulator::Schedule (
+        ns3::NanoSeconds (interval), &VndnObu::SampleMobility, this);
 }
 
 void
@@ -551,6 +669,10 @@ VndnObu::setDataSave (bool enabled, const std::string &file)
 void
 VndnObu::SaveRequestResult (const ndn::Interest &interest, const std::string &status)
 {
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (m_experimentMode && recorder != nullptr)
+    recorder->RecordTerminal (ns3::Simulator::Now ().GetNanoSeconds (),
+                               interest.getName ().toUri (), status, m_currentBsNodeId);
   auto it = m_requestRecords.find (interest.getName ());
   if (it == m_requestRecords.end ())
     return;
@@ -558,7 +680,8 @@ VndnObu::SaveRequestResult (const ndn::Interest &interest, const std::string &st
   uint64_t resultTimeMs = ns3::Simulator::Now ().GetMilliSeconds ();
   const RequestRecord &r = it->second;
   // 与旧版一致：训练标签只保存有明确结果的 DATA/TIMEOUT 请求。
-  if (status == "DATA" || status == "TIMEOUT")
+  if (m_enableDataSave && !m_saveFile.empty () &&
+      (status == "DATA" || status == "TIMEOUT"))
     {
       std::ofstream training (GetPerVehicleSaveFile (".csv"),
                               std::ios::out | std::ios::app);

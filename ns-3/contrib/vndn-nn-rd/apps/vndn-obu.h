@@ -24,6 +24,7 @@
 #include <ndn-cxx/util/scheduler.hpp>
 
 #include "ns3/vndn-handover-strategy.h"
+#include "ns3/vndn-experiment-recorder.h"
 
 #include "../src/json/single_include/nlohmann/json.hpp"
 
@@ -77,6 +78,9 @@ public:
    */
   void
   Stop ();
+
+  /** Stop new business Interests while retaining the face and outstanding requests. */
+  void StopNewRequests ();
 
   /**
    * \brief 设置基站驻留切换策略。
@@ -190,9 +194,13 @@ private:
   void
   SendPacket ();
 
+  void SendPlannedPacket (uint64_t sequence);
+  void SampleMobility ();
+  void CaptureMobility (const std::string &event, int64_t previousRsuId);
+
   struct RequestRecord
   {
-    uint32_t sequence = 0;
+    uint64_t sequence = 0;
     uint64_t sendTimeMs = 0;
     double x = 0.0;
     double y = 0.0;
@@ -227,7 +235,17 @@ private:
   bool m_handoverFrequencyBoost = false;     ///< 是否在多基站交接区域提高频率
   double m_handoverFrequencyMultiplier = 4.0; ///< 交接区域频率倍率
   ns3::EventId m_requestScheduler;           ///< 请求发送定时器
-  uint32_t m_seq = 0;                        ///< 顺序递增的兴趣包序号
+  uint64_t m_seq = 0;                        ///< Legacy counter or explicit experiment sequence
+  bool m_generateRequests = false;
+  bool m_experimentMode = false;
+  std::string m_experimentVehicleId;
+  std::vector<VndnExperimentRecorder::PlannedRequest> m_experimentRequests;
+  size_t m_nextExperimentRequest = 0;
+  ns3::EventId m_generationStopEvent;
+  ns3::EventId m_mobilityEvent;
+  double m_lastExperimentX = 0.0;
+  double m_lastExperimentY = 0.0;
+  double m_lastExperimentSpeed = 0.0;
   bool m_enableDataSave = false;              ///< 是否保存逐请求仿真数据
   std::string m_saveFile;                     ///< 逐请求 CSV 文件路径
   std::map<ndn::Name, RequestRecord> m_requestRecords; ///< 尚未结束的请求

@@ -66,6 +66,7 @@ class ValidationGateTest(unittest.TestCase):
             "grid-python": ("contrib/vndn-nn-rd/ai-training/grid/tests", "test_sample.py"),
             "spidermap-python": ("contrib/vndn-nn-rd/ai-training/spidermap/tests", "test_sample.py"),
             "inference-python": ("contrib/vndn-nn-rd/ai-training/tests", "test_tkan_inference.py"),
+            "experiments-python": ("tools/experiments/tests", "test_sample.py"),
         }
         for name in self.python_suites:
             self.write_python_fixture(name)
@@ -116,7 +117,7 @@ class ValidationGateTest(unittest.TestCase):
                 os.environ["JOBS"] = old_jobs
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
-        self.assertEqual(len(report["steps"]), 7)
+        self.assertEqual(len(report["steps"]), 11)
         call = json.loads((self.root / "build-call.json").read_text())
         self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
         for step in report["steps"]:
@@ -125,6 +126,15 @@ class ValidationGateTest(unittest.TestCase):
             self.assertEqual(step["cwd"], str(self.root))
             self.assertGreaterEqual(step["duration_seconds"], 0)
             self.assertTrue(Path(step["log"]).is_file())
+
+    def test_experiment_suites_are_mandatory_parts_of_the_gate(self):
+        code, report = self.invoke()
+        self.assertEqual(code, 0)
+        names = {step["name"] for step in report["steps"]}
+        self.assertTrue({
+            "vndn-experiment-config", "vndn-experiment-recorder",
+            "vndn-l3-experiment-tracer", "experiments-python",
+        }.issubset(names), "The old unit gate does not exercise the new measurement contract")
 
     def test_missing_or_disabled_configuration_fails_without_building(self):
         cache = self.root / "build/c4che/_cache.py"
@@ -256,11 +266,11 @@ class ValidationGateTest(unittest.TestCase):
             "raise RuntimeError('unrelated Python test must not run')\n", encoding="utf-8")
         code, report = self.invoke("--skip-build")
         self.assertEqual(code, 0)
-        steps = report["steps"][2:]
+        steps = [step for step in report["steps"] if step["name"] in self.python_suites]
         self.assertEqual([step["name"] for step in steps], list(self.python_suites))
         calls = [json.loads(line) for line in (self.root / "python-calls.jsonl").read_text().splitlines()]
         self.assertEqual([call["name"] for call in calls], list(self.python_suites))
-        self.assertEqual(len({call["pid"] for call in calls}), 4)
+        self.assertEqual(len({call["pid"] for call in calls}), len(self.python_suites))
         for step in steps:
             self.assertEqual(step["evidence"]["tests_run"], 1)
             self.assertEqual(step["evidence"]["skipped"], 0)
@@ -305,7 +315,7 @@ class ValidationGateTest(unittest.TestCase):
             try:
                 if "State:\tZ" in status_file.read_text():
                     break  # Exited; the container's init may not have reaped it yet.
-            except FileNotFoundError:
+            except (FileNotFoundError, ProcessLookupError):
                 break
             time.sleep(0.01)
         else:

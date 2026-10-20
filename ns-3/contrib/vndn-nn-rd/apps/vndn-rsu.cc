@@ -30,6 +30,7 @@
 #include "ns3/opengym-module.h"
 #include "ns3/simulator.h"
 #include "ns3/vndn-rsu-forwarding-policy.h"
+#include "ns3/vndn-experiment-recorder.h"
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include "../model/vndn-tag.hpp"
@@ -865,6 +866,10 @@ VndnRsu::SendDataToVehicle (const ndn::Data &data, uint32_t obuNodeId,
   response->setTag (std::make_shared<vanet::lp::VndnTag> (
       m_thisNode->GetId (), m_wirelessMac, targetMac));
   response->wireEncode ();
+  if (auto *recorder = VndnExperimentRecorder::GetActive ())
+    recorder->RecordWirelessSubmission (ns3::Simulator::Now ().GetNanoSeconds (),
+                                         data.getName ().toUri (),
+                                         m_thisNode->GetId (), obuNodeId);
   m_face.put (*response);
   NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 向 OBU " << obuNodeId
                        << " 回传 Data: " << data.getName ());
@@ -872,7 +877,8 @@ VndnRsu::SendDataToVehicle (const ndn::Data &data, uint32_t obuNodeId,
 
 void
 VndnRsu::SendRelayData (const ndn::Name &name, const uint8_t *content,
-                        size_t contentSize)
+                        size_t contentSize, const std::string &businessName,
+                        int64_t targetNode)
 {
   const uint64_t routerFace = ResolveRouterFace ();
   if (routerFace == 0)
@@ -886,6 +892,11 @@ VndnRsu::SendRelayData (const ndn::Name &name, const uint8_t *content,
   signature.setValue (ndn::makeNonNegativeIntegerBlock (ndn::tlv::SignatureValue, 0));
   relay->setSignature (signature);
   relay->wireEncode ();
+  if (!businessName.empty ())
+    if (auto *recorder = VndnExperimentRecorder::GetActive ())
+      recorder->RecordDataAttempt (ns3::Simulator::Now ().GetNanoSeconds (),
+                                    businessName, m_thisNode->GetId (), targetNode,
+                                    "REACTIVE_RELAY");
   m_face.put (*relay);
 }
 
@@ -941,7 +952,8 @@ VndnRsu::ForwardDataToRsu (uint32_t targetRsuId, uint32_t obuNodeId,
       .appendNumber (obuNodeId)
       .appendNumber (++m_relaySequence);
   const ndn::Block &wire = data.wireEncode ();
-  SendRelayData (name, wire.wire (), wire.size ());
+  SendRelayData (name, wire.wire (), wire.size (), data.getName ().toUri (),
+                 targetRsuId);
   NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 经 Router 向 RSU " << targetRsuId
                        << " 补救 Data: " << data.getName () << " OBU=" << obuNodeId);
 }

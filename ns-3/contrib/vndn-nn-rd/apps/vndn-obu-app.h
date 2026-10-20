@@ -108,6 +108,13 @@ public:
       }
   }
 
+  void
+  StopNewRequests ()
+  {
+    if (m_instance)
+      m_instance->StopNewRequests ();
+  }
+
 private:
   std::unique_ptr<vanet::VndnObu> m_instance; ///< OBU 核心逻辑实例
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针

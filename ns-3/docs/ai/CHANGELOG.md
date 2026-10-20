@@ -187,3 +187,123 @@
 - 最终四份文档的链接/空白和 `git diff --check` 检查通过。纯文档修改按AGENTS不编写行为测试，未执行waf、configure、正式采样、训练或结果出图。
 
 后续实施须先补采集与计数验收，再独立预实验并冻结配置，最后正式配对比较；本次不声称五指标已可由现有输出严格计算。
+
+## 2026-10-20：实现不改底层的实验采集与逐轮汇总
+
+### 批准范围与实现
+
+- 用户在影响范围审查后批准开始修改，采用不改底层的范围。起始 HEAD 为 `b6bff22`，工作区干净。
+  没有修改 `src/`、旧项目、既有训练器、历史数据或模型；全程复用配置，所有 waf/间接构建均 `JOBS=4`、显式 `-j 4`，没有运行 configure。
+- 新增 `helper/vndn-experiment-config.{h,cc}` 与三场景 `--experiment-config`：
+  校验实际 SUMO 路线、稳定车辆 ID、唯一请求序号、纳秒计划、种子、测量/排空窗口；
+  拒绝复用非空输出目录，保存有效配置及仿真完成凭证。
+- 新增 `helper/vndn-experiment-recorder.{h,cc}`，OBU 在 `[t0,t1)` 按计划生成，
+  到 t1 停发但保留接收至 t2；记录 GENERATED、唯一 DATA/TIMEOUT/NACK/STOPPED 及诊断事件。
+  迟到 Data 若尚无终态，先在 deadline 补记 TIMEOUT，再记录 LATE_DATA；失败终态后的 Data 不伪装成重复成功。
+  TraCI 提供实际速度/位置、关联变化和 t0/t2 样本。应用 t2 关闭，Simulator t2+1ns 结束。
+- RSU/Router 增加应用额外 Data 提交观察：预测增加的返回分支、补救转送、同一无线方向重复提交。
+  未知父关系记 `-`，无法可靠映射的目标 node 记 -1；不改路由决策、报文内容或底层发送行为。
+- 新增 `helper/vndn-l3-experiment-tracer.{h,cc}`：订阅现有 L3 出站回调并筛选 NetDeviceTransport face，
+  在 `[t0,t2)` 按语义累计 Interest/Data 编码长度，另记 Nack 次数及网络入 Data 诊断。
+  hello、P2P握手、search/find、neural-route/neural-pit 为控制子集；
+  携带完整 Data 的 relay 封装计网络总量，内外层长度只作分解，不重复加总。
+- 新增 `tools/experiments/`：独立显式车辆/长路线及精确 K 生成器、串行策略运行器、测试控制器、严格逐轮汇总。
+  保留失败证据，管理本轮 Gym/SUMO 进程，冻结输入/模型/源码和 traces 配置（含 RSU settings.xml）；
+  保存运行后二进制及相关库/构建缓存、日志与产物哈希。完整性检查失败时不标 complete。
+  生成器考虑 `departPos=free` 可能跳过首条道路，按最坏剩余路线长度补足余量。
+- 模块 wscript 注册三个新测试套件，并使模块构建依赖新头文件导出，支持不 configure 的定向增量构建。
+  `tools/validate.py` 纳入新 C++/Python 套件；验收工具的 `/proc` 测试夹具容忍读取时进程恰好退出的竞态。
+- 新增 [EXPERIMENT_COLLECTION.md](EXPERIMENT_COLLECTION.md)，同步项目入口、PROJECT、VALIDATION 与原出图方案。
+  明确当前支持 12 张主要图与 3 张应用提交机制图，工具本身不运行正式扫描或绘图。
+
+### 测试先行证据
+
+统一日志目录为 `build/validation/experiment-implementation/`（下文简写 `E/`）。
+
+1. 修改前 `export JOBS=4; python3.8 tools/validate.py` → exit 0：
+   原两个 C++ 套件、44 项 Python 测试通过；
+   `build/validation/20261020T132627.645857Z-4b46025e/report.json` 保存基线。
+   验收工具原 16 项测试通过，见 `E/validator-baseline.log`。
+2. 新 C++ 测试先编译可运行的接口桩，再执行
+   `python3.8 test.py --nowaf --suite=<套件> --xml=<证据前缀>` → exit 1：
+   recorder 没有生成/终态记录，config 未加载车辆/窗口/种子，L3 分类和编码长度缺失。
+   证据为 `E/vndn-experiment-{recorder,config}-red.xml`、`E/vndn-l3-experiment-tracer-red.xml`。
+   早期头文件导出和旧 ns-3 Schedule 接口的编译问题不计作行为红灯。
+3. 后续边界先红后绿：
+   `E/config-seed-red.xml` 记录非空输出目录未拒绝、超出 MRG32k3a 合法 seed；
+   `E/recorder-additional-red.xml` 记录迟到 Data 无终态；
+   `E/recorder-csv-red.xml` 记录失败后 Data 错误分类及缺失父标记。
+   修复后对应 `config-green.xml`、`recorder-green.xml` 通过。
+4. L3 测试在两个真实节点的网络 face 上发送 10 KB Data，检验半开窗口、最后不足周期的落盘、
+   逻辑 L3 计量不按分片倍增及原编码字节不变；`E/l3-green-1.xml` 通过。
+5. Python 生成、运行和汇总最初以行为桩验证预期失败后实现，早期细节保留于工具调用记录。
+   后续 `E/generator-depart-position-red.log` 明确捕获临界路线扣除首路段后过短；
+   `generator-depart-position-green.log` 的 5 项生成器测试通过。
+   `E/tool-integrity-red.log` 明确捕获 trace 配置变化漏检、完成计数/额外行截断漏检、
+   deadline 同时刻 TIMEOUT 后 Data 诊断不兼容；修复后 `tool-integrity-green.log` 的 36 项测试通过。
+6. 验收入口的新覆盖断言先失败，见 `E/validator-red.log`；修复后 17 项通过。
+   一次并行 test.py 调用发生临时目录碰撞，随后改为串行重跑；碰撞不计入功能红灯或成功证据。
+
+### 修改后统一回归
+
+- `export JOBS=4; ./waf build -j 4 --targets=test-runner,vndn-circle-simulator,vndn-grid-simulator,vndn-spidermap-simulator`
+  → exit 0，`E/integration-build.log`。
+- `export JOBS=4; python3.8 tools/validate.py` → exit 0，
+  **5 个 C++ 套件（9 个 case）、80 项 Python 测试全部通过，无跳过**。
+  最终报告：`build/validation/20261020T135934.047802Z-a1c7fbef/report.json`。
+  Python 为圆圈2、方阵16、蜘蛛网16、推理10、实验工具36。
+- `python3.8 -m unittest discover -s tools/tests -p test_validate.py -v`
+  → exit 0，17 项通过，`E/validator-final.log`。
+- 最终 `git diff --check`、6份文档的63个本地链接及空白检查通过；
+  `src/`、旧项目、训练器和数据目录的已跟踪文件无差异，未遗留本次仿真/SUMO进程。
+
+### 三场景真实采集验收
+
+输入保存在 `E/inputs/{circle,grid,spidermap}/`。每场景两车、36 请求、
+测量 `[5,23)` 秒、排空至 26.5 秒；圆圈设置100 km/h、另两场景50 km/h。
+种子元组为 rng_seed=1、rng_run=1、sumo_seed=1、srand_seed=1。
+由生成器创建输入后，验收专用请求计划将序号改为 `17,23,…,119`，
+检验真实 OBU 是否原样执行非连续序号；此修改发生在 runner 冻结/哈希之前，未修改原 traces。
+
+每场景执行以下命令（`SCENE` 分别取三个场景）：
+
+```bash
+export JOBS=4
+python3.8 tools/experiments/run_experiment.py \
+  --config build/validation/experiment-implementation/inputs/SCENE/experiment-template.json \
+  --strategies 0,1,2,3 --test-controller --block-id integration-SCENE \
+  --output-root build/validation/experiment-implementation/runs --timeout 120
+```
+
+- 三组均 exit 0，共 **12 轮 complete**；另有圆圈 NoForward 先导1轮 complete。
+  每轮恰好36 GENERATED、36互斥终态；请求 ID/时刻与冻结计划一致，t0/t2真实样本、t2退出及t2+1ns完成均核对。
+  同一场景四算法的输入哈希、来源哈希一致；网络类别和控制子集闭合、原始文件哈希复核通过。
+- 每轮测量窗实际交接次数：圆圈5、方阵2、蜘蛛网3（均为两车合计）。
+  圆圈 VTDF/RTVTDF 捕获2/3次 REACTIVE_RELAY，方阵6/5次，蜘蛛网 RTVTDF 3次；
+  三场景测试控制器分别捕获35、28、33次 PREDICTIVE_EXTRA。这些是日志机制验收，不是算法优劣结论。
+- `python3.8 E/audit_integration.py`（将 E 展开为上述目录）→ exit 0，
+  `E/integration-report.json` 保存12轮具体目录、断言范围和计数；
+  `circle-block.log`、`grid-block.log`、`spidermap-block.log` 保存 runner 结果。
+  每轮 `manifest.json`、`run-metrics.json/csv`、`raw/` 均保留。
+  圆圈块运行后补强了工具的 XML 来源/完成计数校验，最终审计使用补强后的汇总器重新验证全部12轮。
+- 另用现有圆圈 checkpoint
+  `data/models/circle/tkan-lstm/20260813-202805/tkan-lstm-circle-noforward-20260813-202805.pt`
+  执行策略3，使用同一输入、`--model-file`、block `integration-circle-real-model`，
+  去掉 `--test-controller` → exit 0。run 为 `20261020T135812.073022Z-0fded453`；
+  C++ 与真实 Python 控制器均 exit 0，35次决策后 done，36请求闭合，捕获2次预测额外提交。
+  模型 SHA256 为 `ab0015243af833550a3486be858aeb07d57c1b86b65d390c897e0cf9316918ca`；没有训练或改写权重。
+- 无实验配置的三个旧入口分别运行 `--s=6 --rsu-forward-strategy=0 --sumo-gui=0 --save-data=0 --pcap=0 --log=0`
+  和同一组显式种子 → 均 exit 0；`E/legacy-report.json` 及 `legacy-*/simulation.log` 保存命令与结果。
+  这是旧入口短时兼容性检查，不代替长期默认实验或原训练采样验收。
+
+### 覆盖边界与结论
+
+上述单元及集成采集验收通过。网络/控制指标是 **NDN L3 出站 Interest/Data 字节**，
+额外 Data 是 **应用提交尝试数**；未实现设备接受、LP分片/MAC开销或全部隐式 NFD 副本身份。
+普通 Nack 单列次数；hello 等共同移动控制不因算法名称 Naive 而人工清零。
+
+三场景四算法矩阵使用均匀概率测试控制器且全部标记 `validation_only=true`，
+不能当作 TKAN-LSTM 效果。圆圈真实模型单轮也只是接口/采集验证；方阵和蜘蛛网没有正式模型效果验收。
+实际 smoke 覆盖了预测额外与补救分支；`REPEATED_SUBMIT` 规则有单元测试，但本次真实场景没有触发该分支。
+没有开展正式参数扫描、独立重复、置信区间、论文绘图、模型泛化或部署推理时延实验。
+后续按采集指南和原设计开展独立预实验，再冻结正式比较条件。
