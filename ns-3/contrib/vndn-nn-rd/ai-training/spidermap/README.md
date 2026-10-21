@@ -1,5 +1,9 @@
 # 蜘蛛网 TKAN-LSTM 离线训练
 
+2026-10-21批次采用实际hello观测快照与统一回程时刻标签，详见
+[正式数据集、训练与评估流程](../FORMAL_PIPELINE.md)。
+下面旧CSV流程保留兼容，不能直接作为该批正式论文数据入口。
+
 本目录从 spidermap 场景的 `training-tag-<obu>.csv` 训练七类服务 RSU 分类器。
 它沿用 [circle](../circle/) 的独立 `train_tkan_lstm.py` 结构，包含数据处理、
 TKAN-LSTM、训练及 checkpoint 保存；仅复用 [efficient_kan](../efficient_kan/kan.py)

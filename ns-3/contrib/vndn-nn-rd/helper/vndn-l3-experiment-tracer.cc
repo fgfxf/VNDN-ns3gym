@@ -2,12 +2,16 @@
 #include "vndn-l3-experiment-tracer.h"
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
 #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+#include "ns3/ndnSIM/NFD/daemon/fw/face-table.hpp"
 #include "ns3/node-list.h"
 #include "ns3/simulator.h"
 #include "ns3/callback.h"
+#include "ns3/channel.h"
+#include "../src/json/single_include/nlohmann/json.hpp"
 #include <fstream>
 #include <stdexcept>
 #include <vector>
+#include <set>
 
 namespace vanet {
 namespace {
@@ -133,6 +137,66 @@ struct VndnL3ExperimentTracer::Impl
 VndnL3ExperimentTracer::VndnL3ExperimentTracer (std::unique_ptr<Impl> impl)
   : m_impl (std::move (impl)) {}
 VndnL3ExperimentTracer::~VndnL3ExperimentTracer () = default;
+void
+VndnL3ExperimentTracer::SaveFaceRoles (
+    const std::string &directory, const std::string &scenario, const std::string &runId,
+    const std::map<uint32_t, std::string> &nodeRoles)
+{
+  using Json = nlohmann::json;
+  const std::string path = directory + "/face-roles.json";
+  if (std::ifstream (path).good ())
+    throw std::runtime_error ("Refusing to overwrite existing Face roles");
+  Json document = {{"schema_version", 1}, {"scenario", scenario}, {"run_id", runId},
+                   {"nodes", Json::array ()}, {"faces", Json::array ()}};
+  for (auto it = ns3::NodeList::Begin (); it != ns3::NodeList::End (); ++it)
+    {
+      const auto node = *it;
+      const auto role = nodeRoles.find (node->GetId ());
+      if (role == nodeRoles.end ())
+        throw std::runtime_error ("A topology node is missing its experiment role");
+      document["nodes"].push_back ({{"node_id", node->GetId ()}, {"role", role->second}});
+      auto l3 = node->GetObject<ns3::ndn::L3Protocol> ();
+      if (l3 == nullptr)
+        continue;
+      for (const auto &face : l3->getFaceTable ())
+        {
+          const auto *transport =
+              dynamic_cast<const ns3::ndn::NetDeviceTransport *> (face.getTransport ());
+          if (transport == nullptr)
+            {
+              document["faces"].push_back (
+                  {{"node_id", node->GetId ()}, {"face_id", face.getId ()},
+                   {"role", "local"}, {"device_index", nullptr}, {"peer_node_ids", Json::array ()}});
+              continue;
+            }
+          const auto device = transport->GetNetDevice ();
+          std::set<uint32_t> peers;
+          const auto channel = device->GetChannel ();
+          if (channel != nullptr)
+            for (uint32_t index = 0; index < channel->GetNDevices (); ++index)
+              {
+                const auto peer = channel->GetDevice (index)->GetNode ();
+                if (peer != nullptr && peer->GetId () != node->GetId ())
+                  peers.insert (peer->GetId ());
+              }
+          std::string faceRole = device->IsPointToPoint () ? "p2p" : "wireless";
+          if (role->second == "rsu" && device->IsPointToPoint () && peers.size () == 1 &&
+              nodeRoles.count (*peers.begin ()) != 0 &&
+              nodeRoles.at (*peers.begin ()) == "router")
+            faceRole = "router_return";
+          document["faces"].push_back (
+              {{"node_id", node->GetId ()}, {"face_id", face.getId ()},
+               {"role", faceRole}, {"device_index", device->GetIfIndex ()},
+               {"peer_node_ids", peers}});
+        }
+    }
+  std::ofstream output;
+  output.exceptions (std::ios::failbit | std::ios::badbit);
+  output.open (path);
+  output << document.dump (2) << '\n';
+  output.close ();
+}
+
 std::unique_ptr<VndnL3ExperimentTracer>
 VndnL3ExperimentTracer::InstallAll (const std::string &directory, int64_t start, int64_t end)
 {

@@ -52,6 +52,28 @@ P2P 设备仍按原路径发送，本地传输和接收重组未修改。此修�
 
 ## 离线训练与在线推理
 
+2026-10-21新增正式实验入口：`--training-snapshots`与实验配置的`training_snapshots`布尔字段
+启用RSU被动观测，输出`training-observations.jsonl`及`face-roles.json`。
+输入由在线Gym与采样共用的函数构造，保留真实hello接收时间、空/短历史和多源请求身份。
+`tools/experiments/build_training_dataset.py`按显式run清单及train/validation/evaluation划分，
+将Router回程Face收到的首个业务Data与车辆关联事件匹配；过期、未知、失联等标签排除并报告，
+请求性能分母不因此改变。每个源RSU仅用该请求第一次合格观测，不按结果行重新滑窗。
+
+三场景训练器通过`--dataset-manifest`调用共享`formal_training.py`，保持各自模型入口及
+共享`efficient_kan`；使用mmap数据、train归一化/类别权重、验证macro-F1优先选模及早停。
+正式checkpoint保存观测/标签契约、split及源码/数据哈希、初始化种子和固定选择阈值。
+控制器`--require-formal-contract`拒绝旧契约或错场景模型；
+临时模型需要明确`--allow-validation-only`，不能用于正式统计。
+实验C++另输出`neural-decisions.jsonl`，记录实际接受的float概率、目标站及fallback，
+完成标记核对记录数。真实模型运行器同时封存`controller-decisions.jsonl`，
+保留完整Python概率和预期选站，核对其行数与C++动作计数。
+实验编排入口为`tools/experiments/campaign.py`，训练/评估/图集阶段入口为
+`campaign_workflow.py`；阶段依赖、输入、源码、模型与产物均验证哈希，失败attempt保留。
+上述入口的真实三场景验收与正式数据进度见
+[执行记录](RETRAIN_EXECUTION_20261021.md)，不能把工具实现完成视作新模型已经训练完成。
+
+以下为保留的旧CSV兼容模式，其标签语义与新正式契约不同：
+
 - OBU 输出每车 `training-tag-<obu>.csv`、RTT 和统计文件；训练行包含请求发送时的六维状态，以及 DATA/TIMEOUT 结果出现时的服务 RSU 编号。
 - 三个场景分别在 `ai-training/circle/`、`ai-training/grid/`、`ai-training/spidermap/` 内维护完整的训练脚本、测试、README 和 Python 3.8 依赖。训练与模型实现各自独立，KAN 投影共享 `ai-training/efficient_kan/kan.py`。
 - 训练说明：[圆圈](../../contrib/vndn-nn-rd/ai-training/circle/README.md)、[方阵](../../contrib/vndn-nn-rd/ai-training/grid/README.md)、[蜘蛛网](../../contrib/vndn-nn-rd/ai-training/spidermap/README.md)。三个训练器沿用相同 TKAN-LSTM 网络和 checkpoint 权重结构。

@@ -120,7 +120,7 @@ class ValidationGateTest(unittest.TestCase):
                 os.environ["JOBS"] = old_jobs
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
-        self.assertEqual(len(report["steps"]), 13)
+        self.assertEqual(len(report["steps"]), 14)
         call = json.loads((self.root / "build-call.json").read_text())
         self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
         for step in report["steps"]:
@@ -150,6 +150,15 @@ class ValidationGateTest(unittest.TestCase):
                 step = next(step for step in report["steps"] if step["name"] == suite)
                 self.assertEqual(step["evidence"]["suite"], suite)
                 self.assertGreater(step["evidence"]["test_nodes"], 0)
+
+    def test_training_snapshot_and_formal_training_are_required(self):
+        code, report = self.invoke()
+        self.assertEqual(code, 0)
+        names = [step["name"] for step in report["steps"]]
+        self.assertEqual(names.count("vndn-training-snapshot"), 1)
+        shared = next(step for step in report["steps"] if step["name"] == "inference-python")
+        self.assertEqual(shared["command"][-1], "test_*.py",
+                         "The shared training directory must include the formal contract tests")
 
     def test_neural_delivery_suite_evidence_is_required(self):
         for suite in ("vndn-router-neural-pit", "vndn-fragment-destination"):
@@ -309,10 +318,10 @@ class ValidationGateTest(unittest.TestCase):
                     self.write_python_fixture(name)
 
     def test_python_suites_have_separate_processes_logs_and_evidence(self):
-        # The inference gate selects its own test file, not unrelated Python tests.
+        # The shared gate discovers test_*.py, not arbitrary helper modules.
         inference_directory = self.root / self.python_suites["inference-python"][0]
-        (inference_directory / "test_unrelated.py").write_text(
-            "raise RuntimeError('unrelated Python test must not run')\n", encoding="utf-8")
+        (inference_directory / "unrelated_helper.py").write_text(
+            "raise RuntimeError('a non-test helper must not run')\n", encoding="utf-8")
         code, report = self.invoke("--skip-build")
         self.assertEqual(code, 0)
         steps = [step for step in report["steps"] if step["name"] in self.python_suites]
@@ -326,6 +335,16 @@ class ValidationGateTest(unittest.TestCase):
             self.assertEqual(Path(step["log"]).name, step["name"] + ".log")
             summary = Path(step["log"]).with_suffix(".json")
             self.assertEqual(json.loads(summary.read_text()), step["evidence"])
+
+    def test_formal_training_failure_cannot_be_ignored_by_shared_gate(self):
+        directory = self.root / self.python_suites["inference-python"][0]
+        (directory / "test_formal_training.py").write_text(
+            "import unittest\nclass Formal(unittest.TestCase):\n"
+            "    def test_contract(self): self.fail('formal training contract regression')\n")
+        code, report = self.invoke("--skip-build")
+        self.assertNotEqual(code, 0)
+        self.assertEqual(report["steps"][-1]["name"], "inference-python")
+        self.assertEqual(report["steps"][-1]["status"], "failed")
 
     def test_skip_build_is_explicit_and_reports_are_unique(self):
         self.assertEqual(self.invoke("--skip-build")[0], 0)

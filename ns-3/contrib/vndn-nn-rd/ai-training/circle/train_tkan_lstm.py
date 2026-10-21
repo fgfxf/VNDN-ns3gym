@@ -389,6 +389,11 @@ def checkpoint_payload(
 
 def main() -> int:
     """加载数据、训练、验证并保存最佳模型 / Run the complete pipeline."""
+    if any(value == "--dataset-manifest" or value.startswith("--dataset-manifest=")
+           for value in sys.argv[1:]):
+        from formal_training import train
+        train(sys.argv[1:], "circle", CircleTKANLSTM)
+        return 0
     arguments = parse_arguments()
     if arguments.epochs < 1 or arguments.batch_size < 1:
         raise ValueError("epochs 和 batch-size 必须为正数")

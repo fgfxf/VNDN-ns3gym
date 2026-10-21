@@ -84,6 +84,7 @@ int main(int argc,char *argv[]){
     double startY = 300.0;
     uint32_t usedNodeCounter = 0;//移动节点池   使用过的节点计数
     std::string experimentConfigFile;
+    std::string trainingSnapshotsOption;
     std::unique_ptr<vanet::ExperimentConfig> experiment;
     std::string sumoConfigPath = VndnUtilsHelper::ndn4ivc_traces_folder + "/" +
         scenario_name + "/" + scenario_file + ".sumo.cfg";
@@ -93,6 +94,8 @@ int main(int argc,char *argv[]){
     ns3::CommandLine cmd;
     cmd.AddValue ("experiment-config", "Explicit controlled experiment JSON",
                   experimentConfigFile);
+    cmd.AddValue ("training-snapshots", "Passive experiment observations: 0 or 1",
+                  trainingSnapshotsOption);
     cmd.AddValue ("i", "Interest interval (milliseconds)", NdnInterval);
     cmd.AddValue ("s", "Simulation time (seconds)", simTime);
     cmd.AddValue ("pcap", "Enable PCAP", enPcap);
@@ -114,6 +117,13 @@ int main(int argc,char *argv[]){
                   "OBU request frequency multiplier in handover areas",
                   handoverFrequencyMultiplier);
     cmd.Parse (argc, argv);
+    if ((!trainingSnapshotsOption.empty () && trainingSnapshotsOption != "0" &&
+         trainingSnapshotsOption != "1") ||
+        (trainingSnapshotsOption == "1" && experimentConfigFile.empty ()))
+      {
+        std::cerr << "--training-snapshots requires 0/1 and an experiment config when enabled\n";
+        return 2;
+      }
 
     if (rsuForwardStrategyValue > 3)
       {
@@ -129,6 +139,8 @@ int main(int argc,char *argv[]){
           {
             experiment.reset (new vanet::ExperimentConfig (
                 vanet::LoadExperimentConfig (experimentConfigFile, "circle")));
+            if (!trainingSnapshotsOption.empty ())
+              experiment->trainingSnapshots = trainingSnapshotsOption == "1";
             nVehicles = static_cast<uint32_t> (experiment->vehicleIds.size ());
             sumoConfigPath = vanet::QuoteSumoConfigPath (experiment->sumoConfigPath);
             sumoSeed = static_cast<int> (experiment->sumoSeed);
@@ -241,6 +253,9 @@ int main(int argc,char *argv[]){
       {
         vanet::VndnExperimentRecorder::Config recording;
         recording.outputDirectory = experiment->outputDirectory;
+        recording.scenario = experiment->scenario;
+        recording.runId = experiment->runId;
+        recording.trainingSnapshots = experiment->trainingSnapshots;
         recording.startNs = experiment->measurementStartNs;
         recording.endNs = experiment->measurementEndNs;
         recording.drainEndNs = experiment->drainEndNs;
@@ -445,8 +460,20 @@ int main(int argc,char *argv[]){
     ns3::Simulator::Schedule(ns3::Seconds(1.0),&VndnUtilsHelper::checkDisableNodes);//延迟移除被sumo移除的节点
     std::unique_ptr<vanet::VndnL3ExperimentTracer> experimentL3;
     if (experiment)
-      experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
-          experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
+      {
+        experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
+            experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
+        if (experiment->trainingSnapshots)
+          {
+            std::map<uint32_t, std::string> roles;
+            for (uint32_t i = 0; i < nodePool.GetN (); ++i)
+              roles[nodePool.Get (i)->GetId ()] = i < nRSUs ? "rsu" : "obu";
+            roles[routerNodes.Get (0)->GetId ()] = "router";
+            roles[serverNodes.Get (0)->GetId ()] = "server";
+            vanet::VndnL3ExperimentTracer::SaveFaceRoles (
+                experiment->outputDirectory, experiment->scenario, experiment->runId, roles);
+          }
+      }
 
     ///////////追踪，获取仿真数据
     std::unique_ptr<ns3::AnimationInterface> animation;

@@ -27,12 +27,12 @@ ROOT = Path(__file__).resolve().parents[1]
 CPP_SUITES = ("vndn-rsu-forwarding-policy", "vndn-neural-return-selection",
               "vndn-experiment-config", "vndn-experiment-recorder",
               "vndn-l3-experiment-tracer", "vndn-router-neural-pit",
-              "vndn-fragment-destination")
+              "vndn-fragment-destination", "vndn-training-snapshot")
 PYTHON_SUITES = (
     ("circle-python", "contrib/vndn-nn-rd/ai-training/circle/tests", "test_*.py"),
     ("grid-python", "contrib/vndn-nn-rd/ai-training/grid/tests", "test_*.py"),
     ("spidermap-python", "contrib/vndn-nn-rd/ai-training/spidermap/tests", "test_*.py"),
-    ("inference-python", "contrib/vndn-nn-rd/ai-training/tests", "test_tkan_inference.py"),
+    ("inference-python", "contrib/vndn-nn-rd/ai-training/tests", "test_*.py"),
     ("experiments-python", "tools/experiments/tests", "test_*.py"),
 )
 PYTHON_RUNNER = """

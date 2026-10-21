@@ -24,6 +24,7 @@ struct ExperimentConfig
   std::string routeFilePath;
   std::string requestPlanPath;
   std::string outputDirectory;
+  bool trainingSnapshots = false;
   uint64_t measurementStartNs = 0;
   uint64_t measurementEndNs = 0;
   uint64_t drainEndNs = 0;

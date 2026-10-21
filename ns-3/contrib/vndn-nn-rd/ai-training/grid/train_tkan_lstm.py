@@ -501,6 +501,11 @@ def checkpoint_payload(
 
 def main() -> int:
     """加载数据、训练、验证并保存最佳模型 / Run the complete pipeline."""
+    if any(value == "--dataset-manifest" or value.startswith("--dataset-manifest=")
+           for value in sys.argv[1:]):
+        from formal_training import train
+        train(sys.argv[1:], "grid", GridTKANLSTM)
+        return 0
     arguments = parse_arguments()
     if any(getattr(arguments, name) < 1 for name in (
         "epochs", "batch_size", "stride", "hidden_size", "grid_size", "spline_order"

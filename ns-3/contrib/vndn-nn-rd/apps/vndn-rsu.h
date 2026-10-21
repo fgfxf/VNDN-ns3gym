@@ -248,6 +248,13 @@ private:
   RequestNeuralRoute (const ndn::Interest &interest, uint32_t obuNodeId,
                       uint64_t obuMac);
 
+  /** Same causal hello window for live Gym and passive NoForward sampling. */
+  std::vector<std::array<double, 6>>
+  BuildNeuralObservation (uint32_t obuNodeId) const;
+
+  void
+  RecordTrainingObservation (const ndn::Interest &interest);
+
   std::vector<uint32_t>
   GetNeuralCandidateRsuIds () const;
 
@@ -339,6 +346,8 @@ private:
   std::map<int64_t, int64_t> m_vehicleNextRsu;
   /// 车辆节点ID -> 最近的 hello 特征序列，顺序与训练 CSV 一致
   std::map<int64_t, std::deque<std::array<double, 6>>> m_vehicleObservationHistory;
+  /// Actual receive timestamps; padding never creates synthetic hello events.
+  std::map<int64_t, std::deque<uint64_t>> m_vehicleObservationReceiveTimes;
   /// 车辆超时时间（毫秒），超过该时间未回复则视为离开
   uint32_t m_vehicleTimeoutMs;
 

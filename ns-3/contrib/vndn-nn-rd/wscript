@@ -57,6 +57,7 @@ def build(bld):
         'test/vndn-experiment-recorder-test.cc',
         'test/vndn-router-neural-pit-test.cc',
         'test/vndn-fragment-destination-test.cc',
+        'test/vndn-training-snapshot-test.cc',
     ]
 
     if bld.env.ENABLE_EXAMPLES:

@@ -7,6 +7,7 @@
 #include <ndn-cxx/lp/nack.hpp>
 #include <cstdint>
 #include <memory>
+#include <map>
 #include <string>
 
 namespace vanet {
@@ -28,6 +29,10 @@ public:
   ~VndnL3ExperimentTracer ();
   void Flush ();
   void Close ();
+  /** Immutable physical topology metadata, separate from packet accounting. */
+  static void SaveFaceRoles (const std::string &outputDirectory,
+                             const std::string &scenario, const std::string &runId,
+                             const std::map<uint32_t, std::string> &nodeRoles);
 
   static VndnL3Description Describe (const ndn::Interest &interest);
   static VndnL3Description Describe (const ndn::Data &data);

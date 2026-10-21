@@ -65,6 +65,7 @@ private:
         {"schema_version", 1}, {"scenario", "circle"}, {"run_id", "fixture"},
         {"sumo_config", "simulation.sumocfg"}, {"route_file", "routes.rou.xml"},
         {"request_plan", "requests.json"}, {"output_dir", "results"},
+        {"training_snapshots", true},
         {"measurement_start_s", 2.0}, {"measurement_end_s", 5.0},
         {"drain_end_s", 8.5},
         {"seeds", {{"rng_seed", 7}, {"rng_run", 3}, {"sumo_seed", 5}, {"srand_seed", 9}}}};
@@ -122,6 +123,14 @@ private:
                            "Reject the MRG32k3a modulus before ns-3 aborts");
     NS_TEST_EXPECT_MSG_EQ (Rejects (configuration, plan, "grid"), true,
                            "Reject a configuration from another scenario");
+    for (const Json &invalid : {Json (1), Json ("true"), Json (nullptr),
+                                Json::array (), Json::object ()})
+      {
+        bad = configuration;
+        bad["training_snapshots"] = invalid;
+        NS_TEST_EXPECT_MSG_EQ (Rejects (bad, plan), true,
+                               "A passive training switch must be a JSON boolean");
+      }
     Write ("other.rou.xml", "<routes><vehicle id=\"other\"/></routes>");
     bad = configuration;
     bad["route_file"] = "other.rou.xml";
@@ -160,6 +169,8 @@ private:
                            "The evidence records the actual algorithm");
     NS_TEST_EXPECT_MSG_EQ (effective.at ("expected_requests").get<uint64_t> (), 2,
                            "The evidence preserves the exact request budget");
+    NS_TEST_EXPECT_MSG_EQ (effective.value ("training_snapshots", false), true,
+                           "Effective evidence must preserve enabled passive training snapshots");
     vanet::SaveExperimentCompletion (loaded, true, loaded.drainEndNs + 1);
     Json completion;
     std::ifstream completionInput (resultDirectory + "/simulation-result.json");

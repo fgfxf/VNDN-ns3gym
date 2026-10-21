@@ -1,4 +1,5 @@
 import importlib.util
+from collections import Counter
 import json
 import tempfile
 import unittest
@@ -88,6 +89,98 @@ class GenerateInputsTests(unittest.TestCase):
                 contents = [(path.parent / config[field]).read_bytes()
                             for path, config in zip(paths, configs)]
                 self.assertEqual(contents[0], contents[1])
+
+    def test_seven_rsu_routes_cover_roads_beyond_the_legacy_source_subset(self):
+        for scene in ("grid", "spidermap"):
+            with self.subTest(scene=scene), tempfile.TemporaryDirectory() as root:
+                result = self.generate(Path(root) / "inputs", scene, vehicles=5)
+                folder = Path(result["experiment_config"]).parent
+                network = ET.parse(folder / "network.net.xml").getroot()
+                normal = {e.attrib["id"] for e in network.findall("edge")
+                          if e.attrib.get("function") != "internal"}
+                cars = ET.parse(folder / "routes.rou.xml").getroot().findall("vehicle")
+                for car in cars:
+                    self.assertEqual(set(car.find("route").attrib["edges"].split()), normal,
+                                     "Each coverage route must span the road graph, not only old routes")
+
+    def test_coverage_tours_avoid_immediate_uturns_at_short_junctions(self):
+        for scene in ("grid", "spidermap"):
+            with self.subTest(scene=scene), tempfile.TemporaryDirectory() as root:
+                result = self.generate(Path(root) / "inputs", scene, vehicles=40, requests=60000,
+                                       speed_kmh=50, measurement_start=20, seed=10009)
+                folder = Path(result["experiment_config"]).parent
+                net = ET.parse(folder / "network.net.xml").getroot()
+                turns = {(item.attrib["from"], item.attrib["to"]): item.attrib["dir"]
+                         for item in net.findall("connection")}
+                report = json.loads(Path(result["input_summary"]).read_text())
+                for cycle in report["route_families"]:
+                    for first, second in zip(cycle, cycle[1:] + cycle[:1]):
+                        self.assertNotEqual(
+                            turns[first, second], "t",
+                            "Coverage tours must not force immediate reversals through narrow U-turns")
+                self.assertEqual(report["route_policy"], "road-coverage-v2")
+
+    def test_route_families_are_balanced_even_for_low_vehicle_counts(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self.generate(Path(root) / "inputs", "spidermap", vehicles=5)
+            report = json.loads(Path(result["input_summary"]).read_text())
+            self.assertEqual(report.get("route_policy"), "road-coverage-v2")
+            family_count = report["route_family_count"]
+            counts = [sum(v["route_family_index"] == i for v in report["vehicles"])
+                      for i in range(family_count)]
+            self.assertLessEqual(max(counts) - min(counts), 1)
+            self.assertGreaterEqual(family_count, 2)
+
+    def test_circle_departures_use_one_physical_cycle_not_repeated_source_indices(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self.generate(
+                Path(root) / "inputs", "circle", vehicles=40, requests=60000,
+                speed_kmh=50, measurement_start=20, seed=10009)
+            report = json.loads(Path(result["input_summary"]).read_text())
+            cycle = report["route_families"][0]
+            self.assertEqual(len(cycle), 16,
+                             "Six identical laps must not create 96 distinct insertion positions")
+            self.assertEqual(report["route_policy"], "source-cycle-v2")
+            vehicles = ET.parse(Path(result["experiment_config"]).parent /
+                                "routes.rou.xml").getroot().findall("vehicle")
+            starts = Counter(v.find("route").attrib["edges"].split()[0] for v in vehicles)
+            self.assertEqual(set(starts), set(cycle))
+            self.assertLessEqual(max(starts.values()), 4,
+                                 "Forty vehicles must not alias onto seven starts on short e4")
+
+    def test_cycle_reduction_preserves_nonperiodic_revisits_and_legal_turns(self):
+        with tempfile.TemporaryDirectory() as root:
+            project = Path(root) / "project"
+            source = project / "contrib/vndn-nn-rd/traces/circle-simple"
+            source.mkdir(parents=True)
+            (source / "circle.net.xml").write_text(
+                '<net><edge id="a"><lane length="100"/></edge>'
+                '<edge id="b"><lane length="100"/></edge>'
+                '<edge id="c"><lane length="100"/></edge>'
+                '<connection from="a" to="b"/><connection from="b" to="a"/>'
+                '<connection from="a" to="c"/><connection from="c" to="a"/></net>')
+            for name, route in (("repeated", "a b a c a b a c"), ("one", "a b a c")):
+                (source / "circle.rou.xml").write_text(
+                    '<routes><route id="loop" edges="{}"/>'
+                    '<vehicle id="original" route="loop"/></routes>'.format(route))
+                result = self.generate(Path(root) / name, ns3_root=project)
+                report = json.loads(Path(result["input_summary"]).read_text())
+                self.assertEqual(report["route_families"], [["a", "b", "a", "c"]],
+                                 "Reduce only whole repeated periods, never remove individual revisits")
+
+    def test_speed_scan_reuses_exact_requests_and_route_prefixes(self):
+        for scene in ("circle", "grid", "spidermap"):
+            with self.subTest(scene=scene), tempfile.TemporaryDirectory() as root:
+                paths = []
+                for speed in (10, 50):
+                    result = self.generate(Path(root) / str(speed), scene, speed_kmh=speed)
+                    paths.append(Path(result["experiment_config"]).parent)
+                self.assertEqual((paths[0] / "request-plan.json").read_bytes(),
+                                 (paths[1] / "request-plan.json").read_bytes())
+                cars = [ET.parse(p / "routes.rou.xml").getroot().findall("vehicle") for p in paths]
+                for slow, fast in zip(*cars):
+                    a, b = (c.find("route").attrib["edges"].split() for c in (slow, fast))
+                    self.assertEqual(a, b[:len(a)])
 
     def test_remaining_route_survives_drain_after_free_departure_position(self):
         with tempfile.TemporaryDirectory() as root:

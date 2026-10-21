@@ -25,9 +25,11 @@ _CONTROLLER = runpy.run_path(str(_CONTROLLER_PATH))
 probabilities_for_candidates = _CONTROLLER["probabilities_for_candidates"]
 
 
-def load_model(model_file, device):
+def load_model(model_file, device, require_formal=False, allow_validation_only=False):
     """Load a seven-RSU spidermap checkpoint without opening a Gym connection."""
-    return _CONTROLLER["load_model"](model_file, device, expected_scenario="spidermap")
+    return _CONTROLLER["load_model"](
+        model_file, device, expected_scenario="spidermap", require_formal=require_formal,
+        allow_validation_only=allow_validation_only)
 
 
 def main(argv=None):

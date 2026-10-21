@@ -2,6 +2,7 @@
 #define VNDN_EXPERIMENT_RECORDER_H
 
 #include <cstdint>
+#include <array>
 #include <fstream>
 #include <map>
 #include <set>
@@ -23,6 +24,9 @@ public:
   struct Config
   {
     std::string outputDirectory;
+    std::string scenario;
+    std::string runId;
+    bool trainingSnapshots = false;
     uint64_t startNs = 0;
     uint64_t endNs = 0;
     uint64_t drainEndNs = 0;
@@ -64,6 +68,18 @@ public:
                           const std::string &parentAttemptId = "");
   void RecordWirelessSubmission (uint64_t nowNs, const std::string &name,
                                  uint32_t sourceNode, uint32_t targetNode);
+  /** Side-channel observation only; never changes pending requests or packets. */
+  void RecordTrainingSnapshot (
+      uint64_t nowNs, const std::string &name, uint32_t obuNodeId,
+      uint32_t sourceRsuId, uint64_t incomingFaceId,
+      const std::vector<uint32_t> &candidateRsuIds,
+      const std::vector<std::array<double, 6>> &features,
+      const std::vector<uint64_t> &helloReceiveTimesNs);
+  void RecordNeuralDecision (
+      uint64_t nowNs, const std::string &name, uint32_t obuNodeId, uint32_t sourceRsuId,
+      const std::vector<uint32_t> &candidateRsuIds, const std::vector<float> &probabilities,
+      const std::vector<uint32_t> &selectedRsuIds, double probabilityGap,
+      double minSecondProbability, const std::string &actionStatus);
   uint64_t GetGeneratedCount () const;
   uint64_t GetTerminalCount () const;
   uint64_t GetExtraAttemptCount () const;
@@ -80,6 +96,12 @@ private:
   std::ofstream m_requestOutput;
   std::ofstream m_mobilityOutput;
   std::ofstream m_attemptOutput;
+  std::ofstream m_trainingOutput;
+  std::ofstream m_neuralOutput;
+  std::map<std::tuple<std::string, uint32_t, uint32_t>, uint64_t> m_firstTrainingEvents;
+  uint64_t m_trainingRows = 0;
+  uint64_t m_trainingEligible = 0;
+  uint64_t m_neuralDecisions = 0;
   uint64_t m_terminalCount = 0;
   uint64_t m_attemptCount = 0;
   bool m_finalized = false;

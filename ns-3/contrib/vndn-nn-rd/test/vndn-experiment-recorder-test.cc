@@ -117,6 +117,10 @@ public:
                            std::string::npos, "A dash marks unavailable ancestry without inventing a parent");
     NS_TEST_EXPECT_MSG_NE (read ("recorder-complete.json").find ("\"complete\":true"),
                            std::string::npos, "Completion marker follows closed raw CSV files");
+    NS_TEST_EXPECT_MSG_EQ (std::ifstream (config.outputDirectory + "/neural-decisions.jsonl").good (),
+                           true, "Every experiment seals an explicit C++ neural decision log, even when empty");
+    NS_TEST_EXPECT_MSG_NE (read ("recorder-complete.json").find ("\"neural_decision_rows\":0"),
+                           std::string::npos, "The completion marker accounts for zero actual neural decisions");
   }
 };
 

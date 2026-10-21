@@ -1,4 +1,5 @@
 #include "vndn-experiment-recorder.h"
+#include "../src/json/single_include/nlohmann/json.hpp"
 #include <cmath>
 #include <cstdio>
 #include <iomanip>
@@ -32,6 +33,11 @@ VndnExperimentRecorder::VndnExperimentRecorder (const Config &config) : m_config
       config.drainEndNs < config.endNs + REQUEST_LIFETIME_NS ||
       config.mobilitySampleNs == 0)
     throw std::invalid_argument ("Invalid experiment measurement/drain window");
+  if (config.trainingSnapshots &&
+      (config.outputDirectory.empty () || config.runId.empty () ||
+       (config.scenario != "circle" && config.scenario != "grid" &&
+        config.scenario != "spidermap")))
+    throw std::invalid_argument ("Training snapshots require an output directory, run and scenario");
   for (const auto &vehicle : config.requestPlan)
     {
       std::set<uint64_t> sequences;
@@ -56,6 +62,9 @@ VndnExperimentRecorder::VndnExperimentRecorder (const Config &config) : m_config
       open (m_requestOutput, "request-events.csv");
       open (m_mobilityOutput, "mobility-events.csv");
       open (m_attemptOutput, "data-attempts.csv");
+      open (m_neuralOutput, "neural-decisions.jsonl");
+      if (config.trainingSnapshots)
+        open (m_trainingOutput, "training-observations.jsonl");
       m_requestOutput << "time_ns,event,request_id,name,vehicle_id,node_id,sequence,"
                          "send_ns,deadline_ns,rsu_id\n";
       m_mobilityOutput << "time_ns,event,vehicle_id,node_id,x,y,speed_mps,rsu_id,"
@@ -173,6 +182,110 @@ VndnExperimentRecorder::RecordWirelessSubmission (uint64_t nowNs,
     RecordDataAttempt (nowNs, name, sourceNode, targetNode, "REPEATED_SUBMIT");
 }
 
+void
+VndnExperimentRecorder::RecordTrainingSnapshot (
+    uint64_t nowNs, const std::string &name, uint32_t obuNodeId,
+    uint32_t sourceRsuId, uint64_t incomingFaceId,
+    const std::vector<uint32_t> &candidateRsuIds,
+    const std::vector<std::array<double, 6>> &features,
+    const std::vector<uint64_t> &helloReceiveTimesNs)
+{
+  if (!m_config.trainingSnapshots)
+    return;
+  if (m_finalized)
+    throw std::logic_error ("Training observation after recorder finalization");
+  using Json = nlohmann::json;
+  const uint64_t event = ++m_trainingRows;
+  const Request *request = FindRequest (name);
+  std::string reason;
+  bool first = false;
+  Json firstEvent = nullptr;
+  if (request == nullptr)
+    reason = "UNKNOWN_REQUEST";
+  else if (request->nodeId != obuNodeId)
+    reason = "OBU_ID_MISMATCH";
+  else
+    {
+      const auto inserted = m_firstTrainingEvents.emplace (
+          std::make_tuple (name, obuNodeId, sourceRsuId), event);
+      first = inserted.second;
+      firstEvent = inserted.first->second;
+      if (!first)
+        reason = "DUPLICATE_SOURCE_REQUEST";
+      else if (nowNs < request->sendNs)
+        reason = "DECISION_BEFORE_SEND";
+      else if (nowNs > request->deadlineNs)
+        reason = "DECISION_AFTER_DEADLINE";
+    }
+  if (reason.empty () &&
+      (features.size () != 10 || helloReceiveTimesNs.size () > 10))
+    reason = "INVALID_OBSERVATION_SHAPE";
+  uint64_t previous = 0;
+  for (const uint64_t received : helloReceiveTimesNs)
+    {
+      if (reason.empty () && (received < previous || received > nowNs))
+        reason = "INVALID_HISTORY_TIMES";
+      previous = received;
+    }
+  for (const auto &state : features)
+    for (const double value : state)
+      if (reason.empty ())
+        {
+          if (!std::isfinite (value))
+            reason = "NONFINITE_FEATURE";
+          else if (!std::isfinite (static_cast<float> (value)))
+            reason = "FLOAT32_OVERFLOW";
+        }
+  if (reason.empty ())
+    ++m_trainingEligible;
+  Json row = {
+    {"schema_version", 1}, {"observation_contract", "rsu-hello-window-v1"},
+    {"scenario", m_config.scenario}, {"run_id", m_config.runId},
+    {"name", name}, {"obu_node_id", obuNodeId}, {"source_rsu_id", sourceRsuId},
+    {"incoming_face_id", incomingFaceId}, {"decision_event_id", event},
+    {"decision_time_ns", nowNs}, {"candidate_rsu_ids", candidateRsuIds},
+    {"features", features}, {"hello_receive_times_ns", helloReceiveTimesNs},
+    {"actual_history_length", helloReceiveTimesNs.size ()},
+    {"padding_count", helloReceiveTimesNs.size () <= 10 ? 10 - helloReceiveTimesNs.size () : 0},
+    {"first_for_source_request", first}, {"first_decision_event_id", firstEvent},
+    {"sample_exclusion_reason", reason},
+    {"history_age_ns", helloReceiveTimesNs.empty () || helloReceiveTimesNs.back () > nowNs
+                           ? Json (nullptr) : Json (nowNs - helloReceiveTimesNs.back ())}
+  };
+  row["request_id"] = request == nullptr ? Json (nullptr) : Json (request->requestId);
+  row["vehicle_id"] = request == nullptr ? Json (nullptr) : Json (request->vehicleId);
+  row["send_time_ns"] = request == nullptr ? Json (nullptr) : Json (request->sendNs);
+  row["deadline_ns"] = request == nullptr ? Json (nullptr) : Json (request->deadlineNs);
+  m_trainingOutput << row.dump () << '\n';
+}
+
+void
+VndnExperimentRecorder::RecordNeuralDecision (
+    uint64_t nowNs, const std::string &name, uint32_t obuNodeId, uint32_t sourceRsuId,
+    const std::vector<uint32_t> &candidateRsuIds, const std::vector<float> &probabilities,
+    const std::vector<uint32_t> &selectedRsuIds, double probabilityGap,
+    double minSecondProbability, const std::string &actionStatus)
+{
+  if (m_finalized)
+    throw std::logic_error ("Neural decision after recorder finalization");
+  if (actionStatus != "ACCEPTED" && actionStatus != "FALLBACK_INVALID_ACTION")
+    throw std::invalid_argument ("Unknown neural action observation status");
+  using Json = nlohmann::json;
+  const Request *request = FindRequest (name);
+  Json row = {
+    {"schema_version", 1}, {"scenario", m_config.scenario}, {"run_id", m_config.runId},
+    {"decision_event_id", ++m_neuralDecisions}, {"decision_time_ns", nowNs},
+    {"name", name}, {"obu_node_id", obuNodeId}, {"source_rsu_id", sourceRsuId},
+    {"candidate_rsu_ids", candidateRsuIds}, {"probabilities", probabilities},
+    {"selected_rsu_ids", selectedRsuIds}, {"dual_path_probability_gap", probabilityGap},
+    {"dual_path_min_second_probability", minSecondProbability}, {"action_status", actionStatus}
+  };
+  row["request_id"] = request == nullptr ? Json (nullptr) : Json (request->requestId);
+  row["vehicle_id"] = request == nullptr ? Json (nullptr) : Json (request->vehicleId);
+  if (m_neuralOutput.is_open ())
+    m_neuralOutput << row.dump () << '\n';
+}
+
 uint64_t VndnExperimentRecorder::GetGeneratedCount () const { return m_requests.size (); }
 uint64_t VndnExperimentRecorder::GetTerminalCount () const { return m_terminalCount; }
 uint64_t VndnExperimentRecorder::GetExtraAttemptCount () const { return m_attemptCount; }
@@ -191,7 +304,8 @@ VndnExperimentRecorder::Finalize (uint64_t nowNs)
   for (const auto &entry : m_config.requestPlan) planned += entry.second.size ();
   m_complete = nowNs >= m_config.drainEndNs && m_terminalCount == m_requests.size () &&
                m_requests.size () == planned;
-  for (auto *stream : {&m_requestOutput, &m_mobilityOutput, &m_attemptOutput})
+  for (auto *stream : {&m_requestOutput, &m_mobilityOutput, &m_attemptOutput,
+                       &m_trainingOutput, &m_neuralOutput})
     if (stream->is_open ())
       {
         stream->flush ();
@@ -208,7 +322,13 @@ VndnExperimentRecorder::Finalize (uint64_t nowNs)
              << ",\"generated\":" << m_requests.size () << ",\"terminal\":"
              << m_terminalCount << ",\"planned\":" << planned
              << ",\"extra_attempts\":" << m_attemptCount << ",\"final_time_ns\":"
-             << nowNs << "}\n";
+             << nowNs << ",\"training_snapshots\":"
+             << (m_config.trainingSnapshots ? "true" : "false")
+             << ",\"training_snapshot_rows\":" << m_trainingRows
+             << ",\"training_snapshot_eligible\":" << m_trainingEligible
+             << ",\"training_snapshot_excluded\":" << m_trainingRows - m_trainingEligible
+             << ",\"neural_decision_rows\":" << m_neuralDecisions
+             << "}\n";
       marker.close ();
       if (std::rename (temporary.c_str (), path.c_str ()) != 0)
         throw std::runtime_error ("Cannot finalize experiment completion marker");

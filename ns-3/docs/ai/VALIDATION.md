@@ -58,22 +58,25 @@ python3.8 tools/validate.py
 2. `./waf build -j 4 --targets=test-runner`，仅构建测试运行器及依赖。
 3. `vndn-rsu-forwarding-policy`、`vndn-neural-return-selection`、`vndn-experiment-config`、
    `vndn-experiment-recorder`、`vndn-l3-experiment-tracer`、`vndn-router-neural-pit`、
-   `vndn-fragment-destination` 七个 C++ 套件。
+   `vndn-fragment-destination`、`vndn-training-snapshot` 八个 C++ 套件。
 4. 分别在独立 Python 进程运行 `ai-training/circle/tests`、`ai-training/grid/tests`、`ai-training/spidermap/tests`。
-5. `ai-training/tests/test_tkan_inference.py` 的模型加载与推理兼容性测试。
-6. `tools/experiments/tests/` 的输入生成、串行运行器、请求闭合及负载汇总测试。
+5. `ai-training/tests/test_*.py` 的模型加载、推理兼容性及正式训练/独立评估契约测试。
+6. `tools/experiments/tests/` 的输入生成、串行运行器、请求闭合、数据集、
+   调度恢复、统计与实际绘图测试。
 
-报告中的执行步骤共十三项：一次构建、七个 C++ 套件、五组 Python 测试。
-2026-10-20 正式交付修复后的这十三项已全部通过，见
+当前报告中的执行步骤共十四项：一次构建、八个 C++ 套件、五组 Python 测试。
+2026-10-20 正式交付修复后的旧十三项曾全部通过，见
 [实际单元报告](../../build/validation/20261020T154751.173146Z-c470c777/report.json)；
 这不包含三场景端到端仿真。
+2026-10-21新增入口的实际红绿及集成验收见[执行记录](RETRAIN_EXECUTION_20261021.md)；
+不能将旧十三项报告引用为新增测试已通过。
 
 新训练测试包含临时合成七类数据的一轮 CPU 训练及模型保存/重载，产物随临时目录清理；不采集 SUMO 数据，不训练正式实验模型。
 独立进程避免三个同名 `train_tkan_lstm.py` 的导入缓存相互污染。
 推理测试放在 `ai-training/tests/`，避免在 `scratch/` 新建纯 Python 子目录而被 waf 自动识别为 C++ 程序。
 
 标准 ns-3 test-runner 链接所有启用模块的测试库，首次构建会编译部分上游测试。
-实际执行范围仍只有上述七个研究套件；不意味着所有 ns-3 测试都已运行。
+实际执行范围仍只有上述八个研究套件；不意味着所有 ns-3 测试都已运行。
 
 报告保存在 `build/validation/<唯一运行目录>/report.json`，附每步日志、C++ XML 和 Python 测试统计。
 只有选中的套件实际执行并通过、Python 测试数大于零且未跳过时才成功。
@@ -113,6 +116,9 @@ python3.8 -m unittest discover \
 python3.8 -m unittest discover \
   -s contrib/vndn-nn-rd/ai-training/tests -p 'test_tkan_inference.py' -v
 ```
+
+正式训练相关改动须将最后一条的pattern改为`test_*.py`，或直接执行统一入口，
+以覆盖共享正式训练测试；只跑旧推理文件不能替代完整训练契约验证。
 
 本项目跳过 test.py 自动构建的选项是 `--nowaf`。test.py 会将 SKIP 计入成功，
 所以仅退出码 0 不足以证明套件通过；正式记录优先使用统一入口及其断言结果。

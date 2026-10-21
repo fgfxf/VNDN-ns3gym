@@ -1,11 +1,13 @@
 """Pure-Python checkpoint and C++ candidate-interface regression tests."""
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -29,6 +31,68 @@ CIRCLE = load_controller("circle")
 
 
 class InferenceContractTest(unittest.TestCase):
+    def test_present_but_incomplete_formal_contract_is_rejected(self):
+        checkpoint = self.checkpoint()
+        checkpoint["formal_contract"] = {}
+        with self.assertRaisesRegex(ValueError, "formal|contract"):
+            self.saved_load(CIRCLE, checkpoint)
+
+    def test_strict_formal_mode_rejects_legacy_before_gym(self):
+        torch.save(self.checkpoint(), self.model_path)
+        with self.assertRaisesRegex(ValueError, "formal"):
+            CIRCLE.load_model(self.model_path, self.device, require_formal=True)
+
+    def test_decision_log_captures_current_info_before_step(self):
+        torch.save(self.checkpoint(), self.model_path)
+        log = self.model_path.with_name("decisions.jsonl")
+        observation = {"features": np.zeros((10, 6)), "rsu_ids": np.array([0, 1]),
+                       "obu_id": np.array([2])}
+        info = "sourceRsu=0,obu=2,name=/com/baidu/test,time_ns=100"
+
+        class FakeEnvironment:
+            def reset(self):
+                return observation
+
+            def get_state(self):
+                return observation, 0, False, info
+
+            def step(self, action):
+                return observation, 0, True, "next observation info"
+
+            def close(self):
+                pass
+
+        gym = SimpleNamespace(ns3env=SimpleNamespace(Ns3Env=lambda **kwargs: FakeEnvironment()))
+        with patch.dict(sys.modules, {"ns3gym": gym}):
+            CIRCLE.main(["--model-file", str(self.model_path), "--device", "cpu",
+                         "--decision-log", str(log)])
+        record = json.loads(log.read_text())
+        self.assertEqual(record["extra_info"], info)
+        self.assertEqual(record["model_sha256"], CIRCLE.sha256_file(self.model_path))
+        self.assertEqual(record["candidate_rsu_ids"], [0, 1])
+
+    def test_nonfinite_online_observation_is_rejected(self):
+        checkpoint = self.checkpoint()
+        model, metadata, _ = self.saved_load(CIRCLE, checkpoint)
+        values = np.zeros((10, 6))
+        values[0, 0] = np.nan
+        with self.assertRaisesRegex(ValueError, "finite"):
+            CIRCLE.probabilities_for_candidates(
+                {"features": values, "rsu_ids": [0, 1]}, model, metadata, self.device)
+
+    def test_nonfinite_weights_are_rejected_before_model_is_used(self):
+        checkpoint = self.checkpoint()
+        next(iter(checkpoint["state_dict"].values())).view(-1)[0] = float("nan")
+        with self.assertRaisesRegex(ValueError, "finite"):
+            self.saved_load(CIRCLE, checkpoint)
+
+    def test_single_candidate_expected_selection_is_well_defined(self):
+        from formal_training import selected_targets
+        first, second, extra = selected_targets(np.ones((2, 1), dtype=np.float32))
+        np.testing.assert_array_equal(first, [0, 0])
+        np.testing.assert_array_equal(second, [0, 0])
+        np.testing.assert_array_equal(extra, [False, False])
+
     def setUp(self):
         torch.manual_seed(19)
         self.directory = tempfile.TemporaryDirectory()

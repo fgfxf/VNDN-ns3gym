@@ -26,9 +26,20 @@
   用户已授权正式修复，Router cc/h 与 `generic-link-service.cpp`、
   `ndn-net-device-transport.cpp` 已落实网络 PIT 下游清理及所有分片的目的地址传递。
   这次获准的两个底层文件修改不扩大采集统计口径；L3 负载仍不包含 LP/分片/MAC 开销。
-  统一单元回归现含七个 C++ 套件及五组 Python 测试；Router 与分片测试分别覆盖十例、十九例。
+  统一单元回归现含八个 C++ 套件及五组 Python 测试（共享目录包含正式训练契约测试）；
+  新增`vndn-training-snapshot`验证旁路观测与实际动作记录。
+  Router 与分片测试分别覆盖十例、十九例。
   单元通过和交付改善不等于神经策略已不劣于转发策略，三场景结果及未覆盖边界以验收记录为准。
 - 修改 `contrib/vndn-nn-rd/` 或 `src/ndnSIM/NFD/` 时跟踪 Interest、控制消息、PIT、Data 回程全链路。
 - 修改 `scratch/vndn-map-simulator-common.h` 同时影响方阵和蜘蛛网；圆圈有独立主程序，也需检查语义一致性。
 - 当前学习方案是离线监督训练与模型推理。`GetNeuralReward() == 0` 不意味着研究方案缺失。
 - 每次逻辑修改追加 `docs/ai/CHANGELOG.md`；记录实际执行证据，不把 PASS 推广为未覆盖的实验结论。
+- 三场景重新采样/训练/论文图按[已授权计划](docs/ai/RETRAIN_AND_FIGURES_PLAN_20261021.md)
+  和[执行记录](docs/ai/RETRAIN_EXECUTION_20261021.md)推进。
+  新正式数据为RSU实际hello的10×6快照，标签按源RSU从Router首次回程的时间关联服务站；
+  旧请求结果CSV仅保留兼容入口，不能混入新正式训练。
+  P0–P6已获用户最终授权，不再逐阶段重复询问执行许可。
+  2026-10-21已启动预实验持久队列；开始新的运行前检查
+  `data/experiments/retrain-20261021/plan/queued-driver-state.json`、`state-pilot.json`
+  及执行记录，避免另起并发仿真。队列当前目标是`pilot-report`，不等于正式图集完成；
+  已封存的生产源码和执行辅助脚本在运行期间不得混改。

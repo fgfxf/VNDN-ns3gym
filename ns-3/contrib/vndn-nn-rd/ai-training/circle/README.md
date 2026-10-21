@@ -1,5 +1,9 @@
 # Circle TKAN-LSTM training
 
+2026-10-21批次采用实际hello观测快照与统一回程时刻标签，详见
+[正式数据集、训练与评估流程](../FORMAL_PIPELINE.md)。
+下面旧CSV流程保留兼容，不能直接作为该批正式论文数据入口。
+
 This directory trains a serving-RSU classifier from the circle scenario's
 `training-tag-<obu>.csv` files. The recurrent cell replaces the conventional
 LSTM affine gate projection with a KAN B-spline projection (TKAN/KAN+LSTM).

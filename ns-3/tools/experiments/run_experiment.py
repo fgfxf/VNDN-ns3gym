@@ -6,6 +6,7 @@ Repeat this command with a separately generated input/seed block for independent
 replications. A zero process exit alone never certifies a valid experiment.
 """
 import argparse
+import ast
 import csv
 from datetime import datetime, timezone
 import fcntl
@@ -90,6 +91,9 @@ def prepare_inputs(config_path):
     template = summary.read_json(config_path)
     if template.get("schema_version") != 1 or template.get("scenario") not in SCENARIOS:
         raise ValueError("Unsupported experiment schema/scenario")
+    for field in ("training_snapshots", "validation_only", "require_formal_contract"):
+        if field in template and type(template[field]) is not bool:
+            raise ValueError(field + " must be a JSON boolean")
     if not isinstance(template.get("seeds"), dict):
         raise ValueError("Missing explicit seed tuple")
     for key in ("rng_seed", "rng_run", "sumo_seed", "srand_seed"):
@@ -175,7 +179,7 @@ def stop_group(process):
     process.wait()
 
 
-def run_processes(commands, root, run, timeout):
+def run_processes(commands, root, run, timeout, check_cancelled=lambda: None):
     processes, handles, records = {}, {}, {}
     environment = os.environ.copy()
     environment.update(JOBS="4", VNDN_EXPERIMENT_RUN_DIR=str(run))
@@ -184,6 +188,7 @@ def run_processes(commands, root, run, timeout):
     error = None
     try:
         for name, command in commands:
+            check_cancelled()
             handles[name] = (run / (name + ".log")).open("w", encoding="utf-8")
             records[name] = {"command": command, "returncode": None, "cwd": str(root),
                              "log": name + ".log", "JOBS": "4"}
@@ -193,6 +198,7 @@ def run_processes(commands, root, run, timeout):
                 command, cwd=str(root), env=environment, stdout=handles[name],
                 stderr=subprocess.STDOUT, start_new_session=True)
         while True:
+            check_cancelled()
             for name, process in processes.items():
                 code = process.poll()
                 records[name]["returncode"] = code
@@ -212,6 +218,11 @@ def run_processes(commands, root, run, timeout):
             records[name]["returncode"] = process.returncode
         for handle in handles.values():
             handle.close()
+    if error is None:
+        try:
+            check_cancelled()
+        except KeyboardInterrupt as caught:
+            error = str(caught) or "Interrupted"
     if error is None and "controller" in records:
         text = (run / "controller.log").read_text(encoding="utf-8", errors="replace")
         if "Done / 完成" not in text:
@@ -234,11 +245,60 @@ def binary_evidence(root, target):
         raise ValueError("Simulator executable missing after waf run: " + str(binary))
     evidence = {"path": str(binary), "sha256": summary.sha256_file(binary),
                 "captured": "after successful waf run", "shared_libraries": {}}
-    for library in sorted((root / "build").glob("*.so")):
-        if any(part in library.name for part in ("ndnSIM", "vndn", "traci", "opengym")):
-            evidence["shared_libraries"][str(library)] = summary.sha256_file(library)
     cache = root / "build/c4che/_cache.py"
-    evidence["build_cache_sha256"] = summary.sha256_file(cache) if cache.is_file() else None
+    # Match wutils.get_proc_env without executing the configuration cache or
+    # invoking waf/configure. build/lib is absent from the parent shell by default.
+    module_paths = None
+    try:
+        for line in cache.read_text(encoding="utf-8").splitlines():
+            if line.startswith("NS3_MODULE_PATH = "):
+                module_paths = ast.literal_eval(line.split("=", 1)[1].strip())
+                break
+    except (OSError, ValueError, SyntaxError) as error:
+        raise ValueError("Cannot read waf dependency search paths: " + str(error))
+    if not isinstance(module_paths, list) or any(
+            not isinstance(path, str) or not path for path in module_paths):
+        raise ValueError("Missing or invalid waf NS3_MODULE_PATH dependency search paths")
+    environment = os.environ.copy()
+    search_paths = list(module_paths)
+    if "LD_LIBRARY_PATH" in environment:
+        search_paths.append(environment["LD_LIBRARY_PATH"])
+    environment["LD_LIBRARY_PATH"] = os.pathsep.join(search_paths)
+    environment["LC_ALL"] = "C"
+    try:
+        probe = subprocess.run(["ldd", str(binary)], cwd=str(root), env=environment,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ValueError("ldd dependency resolution failed: " + str(error))
+    if probe.returncode != 0:
+        raise ValueError("ldd dependency resolution failed: " + probe.stderr.strip())
+    resolved = {}
+    for line in probe.stdout.splitlines():
+        text = line.strip()
+        if "=>" in text:
+            name, value = text.split("=>", 1)
+            if value.strip().startswith("not found"):
+                raise ValueError("ldd dependency not found: " + name.strip())
+            value = value.rsplit(" (", 1)[0].strip()
+        elif text.startswith("/"):
+            value = text.rsplit(" (", 1)[0].strip()
+            name = Path(value).name
+        else:
+            # linux-vdso is supplied by the kernel and has no backing ELF file.
+            continue
+        path = Path(value)
+        if not path.is_absolute() or not path.is_file():
+            raise ValueError("Invalid ldd dependency path: " + value)
+        resolved[name.strip()] = str(path.resolve())
+    if not resolved:
+        raise ValueError("ldd did not resolve any shared dependencies")
+    evidence["shared_libraries"] = {
+        filename: summary.sha256_file(Path(filename)) for filename in sorted(set(resolved.values()))}
+    evidence["resolved_dependencies"] = resolved
+    evidence["resolution_method"] = "ldd with waf NS3_MODULE_PATH and inherited LD_LIBRARY_PATH"
+    evidence["module_search_paths"] = module_paths
+    evidence["build_cache_sha256"] = summary.sha256_file(cache)
     return evidence
 
 
@@ -250,18 +310,26 @@ def execute_run(args, root, template, input_hashes, strategy, source):
     effective = dict(template, run_id=identifier, output_dir=str(run / "raw"))
     effective["strategy"] = strategy
     effective["block_id"] = args.block_id
-    effective["validation_only"] = bool(args.test_controller)
+    effective["validation_only"] = bool(
+        args.test_controller or args.validation_only or template.get("validation_only", False))
+    effective["training_snapshots"] = bool(
+        args.training_snapshots or template.get("training_snapshots", False))
+    effective["require_formal_contract"] = bool(
+        args.require_formal_contract or template.get("require_formal_contract", False))
     write_json(run / "experiment.json", effective)
     manifest = {
         "schema_version": 1, "run_id": identifier, "block_id": args.block_id,
         "scenario": effective["scenario"], "strategy": strategy,
-        "status": "running", "validation_only": bool(args.test_controller),
+        "status": "running", "validation_only": effective["validation_only"],
+        "training_snapshots": effective["training_snapshots"],
+        "require_formal_contract": effective["require_formal_contract"],
         "started_utc": utc_now(), "input_hashes": input_hashes, "source": source,
         "config_sha256": summary.sha256_file(run / "experiment.json"),
         "model": None, "processes": {}, "measurement_scope": summary.MEASUREMENT_SCOPE,
         "timeout_seconds": args.timeout,
     }
     try:
+        args.check_cancelled()
         verify_hashes(input_hashes, "Input")
         if args.model_file is not None:
             verify_hashes({str(args.model_file): args.model_sha256}, "Model")
@@ -277,7 +345,12 @@ def execute_run(args, root, template, input_hashes, strategy, source):
                 controller = root / "scratch" / ("vndn-" + scenario + "-simulator") / (
                     "vndn-" + scenario + "-tkan-gym.py")
                 controller_args = ["--port", str(args.gym_port),
-                                   "--model-file", str(args.model_file), "--device", "cpu"]
+                                   "--model-file", str(args.model_file), "--device", "cpu",
+                                   "--decision-log", str(run / "raw/controller-decisions.jsonl")]
+                if effective["require_formal_contract"]:
+                    controller_args.append("--require-formal-contract")
+                if effective["validation_only"]:
+                    controller_args.append("--allow-validation-only")
                 manifest["model"] = {
                     "path": str(args.model_file), "sha256": args.model_sha256}
             if not controller.is_file():
@@ -291,7 +364,8 @@ def execute_run(args, root, template, input_hashes, strategy, source):
         commands.append(("simulation", [str(root / "waf"), "--run",
                                         shlex.join(simulation), "-j", "4"]))
         write_json(run / "manifest.json", manifest)
-        records, error, elapsed = run_processes(commands, root, run, args.timeout)
+        records, error, elapsed = run_processes(
+            commands, root, run, args.timeout, args.check_cancelled)
         manifest["processes"], manifest["elapsed_seconds"] = records, elapsed
         if error:
             raise ValueError(error)
@@ -305,15 +379,51 @@ def execute_run(args, root, template, input_hashes, strategy, source):
             raise ValueError("Effective config changed during a run")
         metrics = summary.summarize_run(run, require_manifest=False)
         metrics.update(block_id=args.block_id, strategy=strategy,
-                       validation_only=bool(args.test_controller))
+                       validation_only=effective["validation_only"])
         write_metrics(run, metrics)
         artifact_names = ["experiment.json", "run-metrics.json", "run-metrics.csv"]
         artifact_names += ["raw/" + name for name in summary.RAW_FILES]
+        completion = summary.read_json(run / "raw/recorder-complete.json")
         if (run / "raw/data-rx.csv").is_file():
             artifact_names.append("raw/data-rx.csv")
+        if effective["training_snapshots"]:
+            # Required even for a valid zero-observation run. Its absence is a
+            # collector failure, not evidence that all requests were unusable.
+            for name in ("training-observations.jsonl", "face-roles.json"):
+                if not (run / "raw" / name).is_file():
+                    raise ValueError("Missing enabled training output: " + name)
+                artifact_names.append("raw/" + name)
+            with (run / "raw/training-observations.jsonl").open() as stream:
+                rows = sum(1 for line in stream if line.strip())
+            if (completion.get("training_snapshots") is not True or
+                    completion.get("training_snapshot_rows") != rows or
+                    completion.get("training_snapshot_eligible", -1) +
+                    completion.get("training_snapshot_excluded", -1) != rows):
+                raise ValueError("Training observation count does not match completion ledger")
+        if "neural_decision_rows" in completion:
+            path = run / "raw/neural-decisions.jsonl"
+            if not path.is_file():
+                raise ValueError("Missing C++ neural decision log")
+            with path.open() as stream:
+                rows = sum(1 for line in stream if line.strip())
+            if completion["neural_decision_rows"] != rows:
+                raise ValueError("Neural decision count does not match completion ledger")
+            artifact_names.append("raw/neural-decisions.jsonl")
+        if strategy == 3 and not args.test_controller:
+            path = run / "raw/controller-decisions.jsonl"
+            if not path.is_file():
+                raise ValueError("Missing model controller decision log")
+            with path.open() as stream:
+                rows = sum(1 for line in stream if line.strip())
+            expected = summary.integer(
+                completion.get("neural_decision_rows"), "controller decision expected C++ count")
+            if rows != expected:
+                raise ValueError("Model controller decision count does not match C++ completion ledger")
+            artifact_names.append("raw/controller-decisions.jsonl")
         artifact_names += [name + ".log" for name in records]
         manifest["artifact_hashes"] = {
             name: summary.sha256_file(run / name) for name in artifact_names}
+        args.check_cancelled()
         manifest["status"] = "complete"
     except (OSError, ValueError, KeyError, KeyboardInterrupt) as error:
         manifest["status"] = "failed"
@@ -340,11 +450,18 @@ def parse_arguments(argv):
     parser.add_argument("--python", default="python3.8")
     parser.add_argument("--gym-port", type=int, default=5555)
     parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--training-snapshots", action="store_true",
+                        help="Record the actual RSU decision inputs without changing forwarding")
+    parser.add_argument("--validation-only", action="store_true",
+                        help="Mark every strategy as development/pilot evidence")
+    parser.add_argument("--require-formal-contract", action="store_true",
+                        help="Reject legacy, mismatched or temporary neural model metadata")
     return parser.parse_args(argv)
 
 
-def main(argv=None, root=None):
+def _run_block(argv, root, check_cancelled):
     args = parse_arguments(argv)
+    args.check_cancelled = check_cancelled
     root = Path(root).resolve() if root is not None else ROOT
     try:
         if not math.isfinite(args.timeout) or args.timeout <= 0:
@@ -379,12 +496,34 @@ def main(argv=None, root=None):
                 raise ValueError("Another experiment runner owns this project's serial lock")
             source = source_snapshot(root)
             for strategy in strategies:
+                check_cancelled()
                 if not execute_run(args, root, template, hashes, strategy, source):
                     return 1
         return 0
     except (OSError, ValueError, KeyError, KeyboardInterrupt) as error:
         print("Experiment block failed: " + (str(error) or "Interrupted"), file=sys.stderr)
         return 1
+
+
+def main(argv=None, root=None):
+    # A flag avoids raising between Popen's child creation and its registration
+    # for cleanup. Repeated SIGTERM cannot interrupt the finally/reaping path.
+    interrupted = []
+    previous = signal.getsignal(signal.SIGTERM)
+
+    def request_stop(signum, frame):
+        if not interrupted:
+            interrupted.append(signal.Signals(signum).name)
+
+    def check_cancelled():
+        if interrupted:
+            raise KeyboardInterrupt("Interrupted by " + interrupted[0])
+
+    signal.signal(signal.SIGTERM, request_stop)
+    try:
+        return _run_block(argv, root, check_cancelled)
+    finally:
+        signal.signal(signal.SIGTERM, previous)
 
 
 if __name__ == "__main__":

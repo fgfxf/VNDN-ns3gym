@@ -259,6 +259,12 @@ LoadExperimentConfig (const std::string &path, const std::string &expectedScenar
   result.runId = data.at ("run_id").get<std::string> ();
   if (result.runId.empty ())
     throw std::runtime_error ("Experiment run_id must not be empty");
+  if (data.count ("training_snapshots") != 0)
+    {
+      if (!data.at ("training_snapshots").is_boolean ())
+        throw std::runtime_error ("training_snapshots must be a JSON boolean");
+      result.trainingSnapshots = data.at ("training_snapshots").get<bool> ();
+    }
   result.sumoConfigPath = ExistingFile (base, data.at ("sumo_config").get<std::string> ());
   result.routeFilePath = ExistingFile (base, data.at ("route_file").get<std::string> ());
   result.requestPlanPath = ExistingFile (base, data.at ("request_plan").get<std::string> ());
@@ -329,7 +335,8 @@ SaveEffectiveExperimentConfig (const ExperimentConfig &config, uint32_t strategy
                    {"measurement_end_ns", config.measurementEndNs}, {"drain_end_ns", config.drainEndNs},
                    {"seeds", {{"rng_seed", config.rngSeed}, {"rng_run", config.rngRun},
                               {"sumo_seed", config.sumoSeed}, {"srand_seed", config.srandSeed}}},
-                   {"strategy", strategy}, {"vehicle_ids", config.vehicleIds},
+                   {"strategy", strategy}, {"training_snapshots", config.trainingSnapshots},
+                   {"vehicle_ids", config.vehicleIds},
                    {"expected_requests", count}});
   MakeDirectories (config.outputDirectory + "/ai-training");
 }

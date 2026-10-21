@@ -35,6 +35,7 @@ when their gap is at most 0.10 or the runner-up probability is at least 0.10.
 
 import argparse
 import importlib.util
+import json
 from numbers import Integral
 import sys
 from pathlib import Path
@@ -62,6 +63,9 @@ if _TRAINING_MODULE_NAME not in sys.modules:
 CircleTKANLSTM = sys.modules[_TRAINING_MODULE_NAME].CircleTKANLSTM
 FEATURE_NAMES = ("x", "y", "speed", "acceleration", "angle", "lane_index")
 SCENARIO_LABELS = {"circle": (0, 1), "grid": tuple(range(7)), "spidermap": tuple(range(7))}
+sys.path.insert(0, str(AI_CIRCLE_DIRECTORY.parent))
+from formal_contract import validate_formal_contract
+from formal_data import sha256_file
 
 
 DEFAULT_MODEL_FILE = (
@@ -90,6 +94,13 @@ def parse_arguments(argv=None, scenario="circle", require_model_file=False) -> a
     parser.add_argument(
         "--debug", action="store_true", help="Enable ns3-gym bridge debug output"
     )
+    parser.add_argument("--require-formal-contract", action="store_true")
+    parser.add_argument("--allow-validation-only", action="store_true",
+                        help="Explicitly permit a development-only formal checkpoint")
+    parser.add_argument("--decision-log", type=Path,
+                        help="Exclusive JSONL output of unrounded inference probabilities")
+    parser.add_argument("--threads", type=int, default=1,
+                        help="Bound CPU inference threads; default 1")
     return parser.parse_args(argv)
 
 
@@ -102,7 +113,8 @@ def select_device(requested: str) -> torch.device:
 
 
 def load_model(
-    model_file: Path, device: torch.device, expected_scenario="circle"
+    model_file: Path, device: torch.device, expected_scenario="circle",
+    require_formal=False, allow_validation_only=False,
 ) -> tuple:
     """按 checkpoint 元数据重建模型 / Rebuild model from checkpoint metadata."""
     model_file = model_file.expanduser().resolve()
@@ -112,7 +124,10 @@ def load_model(
     # 本地训练生成的可信 checkpoint；显式参数也避免 PyTorch 的默认值警告。
     # This is a trusted local checkpoint; make the intended pickle mode explicit.
     checkpoint = torch.load(str(model_file), map_location=device, weights_only=False)
-    validate_checkpoint(checkpoint, expected_scenario)
+    validate_checkpoint(checkpoint, expected_scenario, require_formal, allow_validation_only)
+    if any(torch.is_tensor(value) and not torch.isfinite(value).all()
+           for value in checkpoint["state_dict"].values()):
+        raise ValueError("checkpoint state_dict must contain finite weights")
 
     parameters = checkpoint["model_parameters"]
     model = CircleTKANLSTM(
@@ -128,12 +143,14 @@ def load_model(
     return model, checkpoint, model_file
 
 
-def validate_checkpoint(checkpoint: Dict, expected_scenario: str) -> None:
+def validate_checkpoint(checkpoint: Dict, expected_scenario: str,
+                        require_formal=False, allow_validation_only=False) -> None:
     """Validate the model's scenario and fixed C++ 10×6 observation contract."""
     if expected_scenario not in SCENARIO_LABELS:
         raise ValueError("unsupported scenario: {}".format(expected_scenario))
     if not isinstance(checkpoint, dict):
         raise ValueError("checkpoint must be a dictionary")
+    validate_formal_contract(checkpoint, require_formal, allow_validation_only)
     required = {
         "model_parameters",
         "state_dict",
@@ -198,16 +215,22 @@ def probabilities_for_candidates(
     features = np.asarray(observation["features"], dtype=np.float32).reshape(
         sequence_length, input_size
     )
+    if not np.isfinite(features).all():
+        raise ValueError("online observation must contain only finite float32 features")
     candidate_rsu_ids = np.asarray(observation["rsu_ids"], dtype=np.int64)
     mean = np.asarray(checkpoint["normalization_mean"], dtype=np.float32)
     standard_deviation = np.asarray(
         checkpoint["normalization_std"], dtype=np.float32
     )
     normalized = (features - mean) / standard_deviation
+    if not np.isfinite(normalized).all():
+        raise ValueError("normalized observation must be finite")
 
     inputs = torch.from_numpy(normalized).unsqueeze(0).to(device)
     with torch.no_grad():
         logits = model(inputs)
+        if not torch.isfinite(logits).all():
+            raise ValueError("model logits must be finite")
         label_probabilities = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
     label_to_index = {
@@ -220,7 +243,7 @@ def probabilities_for_candidates(
             probabilities[index] = label_probabilities[model_index]
 
     probability_sum = float(probabilities.sum())
-    if probability_sum <= 0.0:
+    if not np.isfinite(probabilities).all() or not np.isfinite(probability_sum) or probability_sum <= 0.0:
         raise ValueError(
             "候选 RSU 与模型标签没有交集 / candidate RSUs do not match model labels: "
             "candidates={}, labels={}".format(
@@ -237,9 +260,14 @@ def probabilities_for_candidates(
 
 def main(argv=None, expected_scenario="circle", require_model_file=False) -> int:
     arguments = parse_arguments(argv, expected_scenario, require_model_file)
+    if arguments.threads < 1:
+        raise ValueError("--threads must be positive")
+    torch.set_num_threads(arguments.threads)
     device = select_device(arguments.device)
     model, checkpoint, model_file = load_model(
-        arguments.model_file, device, expected_scenario=expected_scenario
+        arguments.model_file, device, expected_scenario=expected_scenario,
+        require_formal=arguments.require_formal_contract,
+        allow_validation_only=arguments.allow_validation_only,
     )
     print("Model / 模型: {}".format(model_file))
     print("Device / 设备: {}".format(device))
@@ -249,6 +277,10 @@ def main(argv=None, expected_scenario="circle", require_model_file=False) -> int
     # 离线加载/验证不依赖 Gym，也不会创建 socket；元数据错误在连接前报告。
     from ns3gym import ns3env
 
+    decision_stream = None
+    model_sha256 = sha256_file(model_file)
+    if arguments.decision_log is not None:
+        decision_stream = arguments.decision_log.open("x", encoding="utf-8")
     environment = ns3env.Ns3Env(
         port=arguments.port,
         stepTime=0.0,
@@ -266,6 +298,20 @@ def main(argv=None, expected_scenario="circle", require_model_file=False) -> int
             )
             candidate_ids = np.asarray(observation["rsu_ids"], dtype=np.int64)
             obu_id = int(np.asarray(observation["obu_id"])[0])
+            if decision_stream is not None:
+                from formal_training import selected_targets
+                first, second, extra = selected_targets(action.reshape(1, -1))
+                expected_selection = [int(candidate_ids[first[0]])]
+                if extra[0]:
+                    expected_selection.append(int(candidate_ids[second[0]]))
+                decision_stream.write(json.dumps(dict(
+                    schema_version=1, scenario=expected_scenario,
+                    decision_index=decision_count, obu_node_id=obu_id,
+                    candidate_rsu_ids=candidate_ids.tolist(), probabilities=action.tolist(),
+                    expected_selected_rsu_ids=expected_selection,
+                    extra_info=environment.get_state()[3], model_sha256=model_sha256,
+                ), allow_nan=False) + "\n")
+                decision_stream.flush()
             print(
                 "Decision {} / 决策 {}: OBU={} probabilities={}".format(
                     decision_count,
@@ -285,6 +331,8 @@ def main(argv=None, expected_scenario="circle", require_model_file=False) -> int
         print("Ctrl-C -> Exit / 用户终止")
     finally:
         environment.close()
+        if decision_stream is not None:
+            decision_stream.close()
     print("Done / 完成，共 {} 次决策".format(decision_count))
     return 0
 

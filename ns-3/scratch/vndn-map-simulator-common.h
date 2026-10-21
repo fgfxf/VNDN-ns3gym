@@ -142,6 +142,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   double obuFrequency = 40.0;
   double handoverFrequencyMultiplier = 4.0;
   std::string experimentConfigFile;
+  std::string trainingSnapshotsOption;
   std::unique_ptr<vanet::ExperimentConfig> experiment;
   std::string sumoConfigPath =
       VndnUtilsHelper::ndn4ivc_traces_folder + "/" + scenario.scenarioName + "/" +
@@ -150,6 +151,8 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   CommandLine commandLine;
   commandLine.AddValue ("experiment-config", "Explicit controlled experiment JSON",
                         experimentConfigFile);
+  commandLine.AddValue ("training-snapshots", "Passive experiment observations: 0 or 1",
+                        trainingSnapshotsOption);
   commandLine.AddValue ("i", "Interest interval (milliseconds)", ndnIntervalMs);
   commandLine.AddValue ("s", "Simulation time (seconds)", simulationTime);
   commandLine.AddValue ("pcap", "Enable PCAP", enablePcap);
@@ -173,6 +176,13 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
                         "OBU frequency multiplier in handover areas",
                         handoverFrequencyMultiplier);
   commandLine.Parse (argc, argv);
+  if ((!trainingSnapshotsOption.empty () && trainingSnapshotsOption != "0" &&
+       trainingSnapshotsOption != "1") ||
+      (trainingSnapshotsOption == "1" && experimentConfigFile.empty ()))
+    {
+      std::cerr << "--training-snapshots requires 0/1 and an experiment config when enabled\n";
+      return 2;
+    }
 
   if (rsuForwardStrategyValue > 3)
     {
@@ -190,6 +200,8 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
               scenario.scenarioName == "grid-vanet-test" ? "grid" : "spidermap";
           experiment.reset (new vanet::ExperimentConfig (
               vanet::LoadExperimentConfig (experimentConfigFile, experimentScenario)));
+          if (!trainingSnapshotsOption.empty ())
+            experiment->trainingSnapshots = trainingSnapshotsOption == "1";
           nVehicles = static_cast<uint32_t> (experiment->vehicleIds.size ());
           sumoConfigPath = vanet::QuoteSumoConfigPath (experiment->sumoConfigPath);
           sumoSeed = static_cast<int> (experiment->sumoSeed);
@@ -281,6 +293,9 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
     {
       vanet::VndnExperimentRecorder::Config recording;
       recording.outputDirectory = experiment->outputDirectory;
+      recording.scenario = experiment->scenario;
+      recording.runId = experiment->runId;
+      recording.trainingSnapshots = experiment->trainingSnapshots;
       recording.startNs = experiment->measurementStartNs;
       recording.endNs = experiment->measurementEndNs;
       recording.drainEndNs = experiment->drainEndNs;
@@ -443,8 +458,20 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   VndnUtilsHelper::ScheduleDisableNodesCheck ();
   std::unique_ptr<vanet::VndnL3ExperimentTracer> experimentL3;
   if (experiment)
-    experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
-        experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
+    {
+      experimentL3 = vanet::VndnL3ExperimentTracer::InstallAll (
+          experiment->outputDirectory, experiment->measurementStartNs, experiment->drainEndNs);
+      if (experiment->trainingSnapshots)
+        {
+          std::map<uint32_t, std::string> roles;
+          for (uint32_t i = 0; i < nodePool.GetN (); ++i)
+            roles[nodePool.Get (i)->GetId ()] = i < nRsus ? "rsu" : "obu";
+          roles[routerNodes.Get (0)->GetId ()] = "router";
+          roles[serverNodes.Get (0)->GetId ()] = "server";
+          vanet::VndnL3ExperimentTracer::SaveFaceRoles (
+              experiment->outputDirectory, experiment->scenario, experiment->runId, roles);
+        }
+    }
 
   std::unique_ptr<AnimationInterface> animation;
   std::unique_ptr<VndnPcapWriter> pcapWriter;

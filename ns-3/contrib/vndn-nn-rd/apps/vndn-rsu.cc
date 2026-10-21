@@ -154,6 +154,11 @@ VndnRsu::OnInterest (const ndn::Interest &interest)
       return;
     }
 
+  // Pure side-channel observation before policy-specific early returns. A real
+  // repeated wireless callback remains observable, while a local proxy does not
+  // satisfy the incoming-face condition. No protocol pending state is added.
+  RecordTrainingObservation (interest);
+
   // RSU app 代理发出的同名 Interest 可能再次匹配本应用的根前缀。
   // pending 表中已存在该名称时，说明它已经被代理，不得再次代理。
   if (m_pendingVehicleRequests.count (interest.getName ()) != 0)
@@ -243,9 +248,14 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
       j.value ("Speed", 0.0), j.value ("Acceleration", 0.0),
       j.value ("Angle", 0.0), static_cast<double> (j.value ("LaneIndex", 0))};
   auto &history = m_vehicleObservationHistory[obuNodeId];
+  auto &receiveTimes = m_vehicleObservationReceiveTimes[obuNodeId];
   history.push_back (observation);
+  receiveTimes.push_back (ns3::Simulator::Now ().GetNanoSeconds ());
   while (history.size () > m_neuralSequenceLength)
-    history.pop_front ();
+    {
+      history.pop_front ();
+      receiveTimes.pop_front ();
+    }
 
   // 补救 Data 可能比车辆在新 RSU 的首次 hello 注册更早到达。
   // 注册完成后立即刷新这些暂存 Data，避免交接竞态造成丢包。
@@ -1086,9 +1096,48 @@ VndnRsu::InitializeOpenGym ()
                        << m_openGymPort);
 }
 
+std::vector<std::array<double, 6>>
+VndnRsu::BuildNeuralObservation (uint32_t obuNodeId) const
+{
+  std::vector<std::array<double, 6>> observations;
+  const auto history = m_vehicleObservationHistory.find (obuNodeId);
+  if (history != m_vehicleObservationHistory.end () && !history->second.empty ())
+    {
+      while (observations.size () + history->second.size () < m_neuralSequenceLength)
+        observations.push_back (history->second.front ());
+      observations.insert (observations.end (), history->second.begin (), history->second.end ());
+    }
+  else
+    observations.assign (m_neuralSequenceLength, std::array<double, 6> {});
+  return observations;
+}
+
+void
+VndnRsu::RecordTrainingObservation (const ndn::Interest &interest)
+{
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (recorder == nullptr || !recorder->GetConfig ().trainingSnapshots)
+    return;
+  const auto incoming = interest.getTag<ndn::lp::IncomingFaceIdTag> ();
+  const auto tag = interest.getTag<vanet::lp::VndnTag> ();
+  static const ndn::Name business ("/com/baidu");
+  if (incoming == nullptr || *incoming != m_wirelessFaceId || tag == nullptr ||
+      !business.isPrefixOf (interest.getName ()))
+    return;
+  const uint32_t obuNodeId = tag->getSenderNodeId ();
+  std::vector<uint64_t> received;
+  const auto times = m_vehicleObservationReceiveTimes.find (obuNodeId);
+  if (times != m_vehicleObservationReceiveTimes.end ())
+    received.assign (times->second.begin (), times->second.end ());
+  recorder->RecordTrainingSnapshot (
+      ns3::Simulator::Now ().GetNanoSeconds (), interest.getName ().toUri (),
+      obuNodeId, m_thisNode->GetId (), *incoming, GetNeuralCandidateRsuIds (),
+      BuildNeuralObservation (obuNodeId), received);
+}
+
 void
 VndnRsu::RequestNeuralRoute (const ndn::Interest &interest, uint32_t obuNodeId,
-                             uint64_t obuMac)
+                            uint64_t obuMac)
 {
   if (s_openGym == nullptr)
     {
@@ -1105,22 +1154,7 @@ VndnRsu::RequestNeuralRoute (const ndn::Interest &interest, uint32_t obuNodeId,
   job.obuNodeId = obuNodeId;
   job.obuMac = obuMac;
   job.candidateRsuIds = GetNeuralCandidateRsuIds ();
-
-  auto history = m_vehicleObservationHistory.find (obuNodeId);
-  if (history != m_vehicleObservationHistory.end () && !history->second.empty ())
-    {
-      // 序列不足 10 步时用最早状态在左侧填充，最新状态始终位于末尾。
-      // Left-pad a short history with its earliest state.
-      while (job.observations.size () + history->second.size () <
-             m_neuralSequenceLength)
-        job.observations.push_back (history->second.front ());
-      job.observations.insert (job.observations.end (), history->second.begin (),
-                               history->second.end ());
-    }
-  else
-    {
-      job.observations.assign (m_neuralSequenceLength, std::array<double, 6> {});
-    }
+  job.observations = BuildNeuralObservation (obuNodeId);
 
   if (job.candidateRsuIds.empty ())
     job.candidateRsuIds.push_back (m_thisNode->GetId ());
@@ -1207,7 +1241,9 @@ VndnRsu::GetNeuralExtraInfo ()
     return "no-pending-neural-job";
   std::ostringstream info;
   info << "sourceRsu=" << s_neuralRouteJobs.front ().source->m_thisNode->GetId ()
-       << ",obu=" << s_neuralRouteJobs.front ().obuNodeId;
+       << ",obu=" << s_neuralRouteJobs.front ().obuNodeId
+       << ",name=" << s_neuralRouteJobs.front ().interest->getName ().toUri ()
+       << ",time_ns=" << ns3::Simulator::Now ().GetNanoSeconds ();
   return info.str ();
 }
 
@@ -1225,6 +1261,14 @@ VndnRsu::ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action)
       probabilities->GetData ().size () != job.candidateRsuIds.size ())
     {
       NS_LOG_WARN ("ns3-gym 返回的概率数量无效，退化为当前 RSU");
+      auto *recorder = VndnExperimentRecorder::GetActive ();
+      if (recorder != nullptr)
+        recorder->RecordNeuralDecision (
+            ns3::Simulator::Now ().GetNanoSeconds (), job.interest->getName ().toUri (),
+            job.obuNodeId, job.source->m_thisNode->GetId (), job.candidateRsuIds,
+            probabilities == nullptr ? std::vector<float> {} : probabilities->GetData (),
+            {job.source->m_thisNode->GetId ()}, job.source->m_neuralDualPathProbabilityGap,
+            job.source->m_neuralDualPathMinSecondProbability, "FALLBACK_INVALID_ACTION");
       job.source->ForwardVehicleInterest (*job.interest, job.obuNodeId, job.obuMac,
                                           {job.source->m_thisNode->GetId ()});
       return false;
@@ -1238,6 +1282,13 @@ VndnRsu::ExecuteNeuralAction (ns3::Ptr<ns3::OpenGymDataContainer> action)
           job.candidateRsuIds, values,
           job.source->m_neuralDualPathProbabilityGap,
           job.source->m_neuralDualPathMinSecondProbability);
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (recorder != nullptr)
+    recorder->RecordNeuralDecision (
+        ns3::Simulator::Now ().GetNanoSeconds (), job.interest->getName ().toUri (),
+        job.obuNodeId, job.source->m_thisNode->GetId (), job.candidateRsuIds, values,
+        selectedRsuIds, job.source->m_neuralDualPathProbabilityGap,
+        job.source->m_neuralDualPathMinSecondProbability, "ACCEPTED");
 
   std::vector<float> sortedValues = values;
   std::sort (sortedValues.begin (), sortedValues.end (), std::greater<float> ());

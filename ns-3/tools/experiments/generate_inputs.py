@@ -69,6 +69,22 @@ def _close_route(route, connections):
     raise ValueError("source route cannot be closed using legal road connections")
 
 
+def _primitive_cycle(route, connections):
+    """Remove exact whole-lap repetition before assigning physical start edges.
+
+    Repeated individual edges are intentional in a road-coverage tour. Only an
+    identical whole period with a legal closing turn may be reduced.
+    """
+    for size in range(1, len(route) + 1):
+        if len(route) % size:
+            continue
+        cycle = route[:size]
+        if cycle * (len(route) // size) == route and (
+                cycle[0] in connections.get(cycle[-1], ())):
+            return list(cycle)
+    raise ValueError("route has no legal closed period")
+
+
 def _source_routes(route_root):
     named = {item.attrib["id"]: item.attrib["edges"].split()
              for item in route_root.findall("route")}
@@ -83,6 +99,48 @@ def _source_routes(route_root):
     if not routes:
         raise ValueError("source route must contain explicit vehicles")
     return routes
+
+
+def _edge_path(first, last, connections, reverse=False):
+    """Return legal successors, excluding first and including last."""
+    if first == last:
+        return []
+    pending = deque([(first, [])])
+    visited = {first}
+    while pending:
+        edge, path = pending.popleft()
+        for successor in sorted(connections.get(edge, ()), reverse=reverse):
+            if successor == last:
+                return path + [successor]
+            if successor not in visited:
+                visited.add(successor)
+                pending.append((successor, path + [successor]))
+    raise ValueError("road coverage cannot reach {} from {}".format(last, first))
+
+
+def _coverage_families(edges, connections, sources):
+    """Two frozen tours of the unchanged directed road graph.
+
+    Each tour visits every normal edge through legal non-U-turn connections.
+    Offsets and family assignment vary by seed, not by speed or algorithm.
+    This is planned-road coverage, never a claim of runtime RSU coverage.
+    """
+    families = []
+    for reverse in (False, True):
+        ordered = sorted(edges, reverse=reverse)
+        tour = [ordered[0]]
+        visited = set(tour)
+        for target in ordered[1:]:
+            if target not in visited:
+                path = _edge_path(tour[-1], target, connections, reverse)
+                tour.extend(path)
+                visited.update(path)
+        closing = _edge_path(tour[-1], tour[0], connections, reverse)
+        tour.extend(closing[:-1])
+        if tour[0] not in connections.get(tour[-1], ()):
+            raise ValueError("road coverage tour is not a closed legal cycle")
+        families.append((tour, sources[len(families) % len(sources)][1]))
+    return families
 
 
 def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
@@ -124,15 +182,32 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
              if item.attrib.get("function") != "internal"}
     lengths = {name: float(item.find("lane").attrib["length"])
                for name, item in edges.items()}
-    connections = {}
+    connections, coverage_connections = {}, {}
     for item in network.findall("connection"):
         first, second = item.attrib["from"], item.attrib["to"]
         if first in edges and second in edges:
             connections.setdefault(first, set()).add(second)
+            if item.attrib.get("dir") != "t":
+                coverage_connections.setdefault(first, set()).add(second)
     sources = _source_routes(route_root)
-    closed = [(_close_route(route, connections), original_type)
-              for route, original_type in sources]
+    if scenario == "circle":
+        closed = [(_close_route(route, connections), original_type)
+                  for route, original_type in sources]
+        route_policy = "source-cycle-v2"
+    else:
+        closed = _coverage_families(edges, coverage_connections, sources)
+        route_policy = "road-coverage-v2"
+    closed = [(_primitive_cycle(cycle, connections), original_type)
+              for cycle, original_type in closed]
     random_source = random.Random(seed)
+    family_order = list(range(len(closed)))
+    random_source.shuffle(family_order)
+    family_counts = {family: sum(family_order[i % len(closed)] == family
+                                for i in range(vehicles)) for family in family_order}
+    family_seen = {family: 0 for family in family_order}
+    # Mobility and requests use distinct deterministic streams: route traversal
+    # or its required extension must not perturb a speed scan's request times.
+    request_random = random.Random("vndn-request-v1:" + str(seed))
     new_routes = ET.Element("routes")
     planned_vehicles = []
     speed_mps = speed_kmh / 3.6
@@ -141,8 +216,11 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
     # that SUMO admits all vehicles before t0, which the runtime must verify.
     minimum_distance = speed_mps * (stop_ns / 1e9) + max(10.0, speed_mps)
     for index in range(vehicles):
-        cycle, source_type = closed[index % len(closed)]
-        offset = random_source.randrange(len(cycle))
+        family = family_order[index % len(closed)]
+        cycle, source_type = closed[family]
+        offset = int((family_seen[family] + random_source.random()) *
+                     len(cycle) / family_counts[family]) % len(cycle)
+        family_seen[family] += 1
         cycle = cycle[offset:] + cycle[:offset]
         cycle_length = sum(lengths[edge] for edge in cycle)
         if cycle_length <= 0:
@@ -163,7 +241,9 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
                                  "departSpeed": "0"})
         ET.SubElement(vehicle, "route", {"edges": " ".join(route)})
         planned_vehicles.append({"vehicle_id": vehicle_id,
-                                 "source_route_index": index % len(closed),
+                                 "source_route_index": family % len(sources),
+                                 "route_family_index": family,
+                                 "route_start_offset": offset,
                                  "route_length_m": sum(lengths[edge] for edge in route)})
 
     plan = []
@@ -172,7 +252,7 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
         count = quotient + (index < remainder)
         # A reproducible phase spreads traffic without turning nominal rate into
         # a random number of requests. Integer arithmetic preserves boundaries.
-        phase = random_source.randrange(1_000_000)
+        phase = request_random.randrange(1_000_000)
         for sequence in range(1, count + 1):
             relative = ((sequence - 1) * 1_000_000 + phase) * duration_ns // (count * 1_000_000)
             plan.append({"vehicle_id": vehicle["vehicle_id"], "sequence": sequence,
@@ -207,9 +287,14 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
         "source_network_sha256": hashlib.sha256((source / net_name).read_bytes()).hexdigest(),
         "source_routes_sha256": hashlib.sha256((source / route_name).read_bytes()).hexdigest(),
         "seed": seed,
+        "route_policy": route_policy,
+        "route_family_count": len(closed),
+        "route_families": [cycle for cycle, _ in closed],
+        "normal_road_edge_count": len(edges),
+        "request_seed_stream": "vndn-request-v1:" + str(seed),
         "limitations": ["Actual speed, admission before t0 and handover coverage require runtime validation.",
                         "Routes are closed and extended; this is a new experimental mobility input.",
-                        "Route families follow source inputs, so full RSU coverage is not guaranteed."],
+                        "Planned road coverage does not guarantee runtime RSU class coverage."],
     }
     output.mkdir(parents=True, exist_ok=False)
     try:
