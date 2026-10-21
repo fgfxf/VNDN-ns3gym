@@ -204,7 +204,9 @@ def run_processes(commands, root, run, timeout, check_cancelled=lambda: None):
                 records[name]["returncode"] = code
                 if code is not None and code != 0:
                     raise RuntimeError("{} exited with {}".format(name, code))
-            if all(process.poll() is not None for process in processes.values()):
+            # Use the statuses checked above. A second poll could observe a
+            # newly failed child and break without checking its exit code.
+            if all(record["returncode"] is not None for record in records.values()):
                 break
             if time.monotonic() - started > timeout:
                 raise RuntimeError("Experiment process timeout after {} s".format(timeout))
@@ -218,6 +220,11 @@ def run_processes(commands, root, run, timeout, check_cancelled=lambda: None):
             records[name]["returncode"] = process.returncode
         for handle in handles.values():
             handle.close()
+    if error is None:
+        for name, record in records.items():
+            if record["returncode"] != 0:
+                error = "{} exited with {}".format(name, record["returncode"])
+                break
     if error is None:
         try:
             check_cancelled()
@@ -327,6 +334,7 @@ def execute_run(args, root, template, input_hashes, strategy, source):
         "config_sha256": summary.sha256_file(run / "experiment.json"),
         "model": None, "processes": {}, "measurement_scope": summary.MEASUREMENT_SCOPE,
         "timeout_seconds": args.timeout,
+        "execution_mode": "existing-binary" if args.no_build else "waf-build-and-run",
     }
     try:
         args.check_cancelled()
@@ -337,6 +345,13 @@ def execute_run(args, root, template, input_hashes, strategy, source):
             raise ValueError("Source changed before a run in the comparison block")
         commands = []
         scenario = effective["scenario"]
+        target = "vndn-" + scenario + "-simulator"
+        if args.no_build:
+            executable = root / "build/scratch" / target / target
+            if not executable.is_file() or not os.access(str(executable), os.X_OK):
+                raise ValueError("--no-build requires an existing executable: " + str(executable))
+            manifest["binary_before"] = binary_evidence(root, target)
+            manifest["binary_before"]["captured"] = "before existing-binary execution"
         if strategy == 3:
             if args.test_controller:
                 controller = root / "tools/experiments/test_controller.py"
@@ -356,12 +371,12 @@ def execute_run(args, root, template, input_hashes, strategy, source):
             if not controller.is_file():
                 raise ValueError("Controller not found: " + str(controller))
             commands.append(("controller", [args.python, str(controller)] + controller_args))
-        target = "vndn-" + scenario + "-simulator"
         simulation = [target, "--experiment-config=" + str(run / "experiment.json"),
                       "--rsu-forward-strategy=" + str(strategy),
                       "--open-gym-port=" + str(args.gym_port),
                       "--save-data=0", "--sumo-gui=0", "--pcap=0", "--log=0"]
-        commands.append(("simulation", [str(root / "waf"), "--run",
+        commands.append(("simulation", [str(root / "waf"),
+                                        "--run-no-build" if args.no_build else "--run",
                                         shlex.join(simulation), "-j", "4"]))
         write_json(run / "manifest.json", manifest)
         records, error, elapsed = run_processes(
@@ -370,6 +385,13 @@ def execute_run(args, root, template, input_hashes, strategy, source):
         if error:
             raise ValueError(error)
         manifest["binary"] = binary_evidence(root, target)
+        if args.no_build:
+            before = dict(manifest["binary_before"])
+            before.pop("captured", None)
+            after = dict(manifest["binary"])
+            after.pop("captured", None)
+            if before != after:
+                raise ValueError("Existing binary or linked dependencies changed during the run")
         verify_hashes(input_hashes, "Input")
         if manifest["model"]:
             verify_hashes({manifest["model"]["path"]: manifest["model"]["sha256"]}, "Model")
@@ -450,6 +472,8 @@ def parse_arguments(argv):
     parser.add_argument("--python", default="python3.8")
     parser.add_argument("--gym-port", type=int, default=5555)
     parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--no-build", action="store_true",
+                        help="Run the existing executable through waf --run-no-build")
     parser.add_argument("--training-snapshots", action="store_true",
                         help="Record the actual RSU decision inputs without changing forwarding")
     parser.add_argument("--validation-only", action="store_true",

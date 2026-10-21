@@ -3,6 +3,12 @@
 开发规则见 [工作区 AGENTS.md](../../../AGENTS.md)，项目结构见 [PROJECT.md](PROJECT.md)。
 本文件中的命令除特别说明外均在 `/home/fgfxf/ndnSIM/ns-3` 执行。
 
+10小时初稿入口、固定参数和实际运行状态见[quick执行记录](QUICK_DRAFT_EXECUTION_20261021.md)。
+本次只修改Python编排、训练恢复及绘图，整体回归使用`export JOBS=4`后
+`python3.8 tools/validate.py --skip-build`，明确复用现有C++测试程序。
+新增quick设计、两种子绘图、显式all阶段依赖、稳定epoch恢复测试，分别保留先失败后通过的证据。
+训练恢复单测核查权重、Adam、随机状态及历史与未中断训练一致；不等于已经验证突然掉电或论文性能。
+
 ## 修改前后必须做什么
 
 1. 先选择与修改相关的现有测试，运行并保存基线。
@@ -94,6 +100,22 @@ python3.8 -m unittest discover -s tools/tests -p 'test_validate.py' -v
 ```
 
 这些是工具的行为测试，使用临时测试夹具，不替代真实 C++ / 模型测试。
+
+2026-10-21新增公共NDN Scheduler回归位于
+`src/ndnSIM/tests/unit-tests/ndn-cxx/scheduler.t.cpp`，使用ndnSIM的Boost测试入口，
+不属于上述ns-3 `test-runner`八个研究套件。修改调度器后先按目标增量构建
+`ndnSIM-unit-tests`，再运行已有程序，例如：
+
+```bash
+export JOBS=4
+LD_LIBRARY_PATH="$PWD/build/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  build/src/ndnSIM/tests/ns3-dev-ndnSIM-unit-tests-debug \
+  --run_test=NdnCxxScheduler --report_level=detailed
+```
+
+它核查真实内核唤醒数以及业务回调，不用仅“回调执行一次”代替事件膨胀检查。
+红绿、局部构建及三场景短对照证据见[精简执行记录](COMPACT_EXECUTION_20261021.md)。
+精简实验工具的端到端编排、覆盖核查及25图契约测试已纳入`tools/experiments/tests/`。
 
 仅修改 Python 训练/推理时，可先分别运行对应目录的测试，设置 `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1` 限制小规模验证的 CPU 开销。
 新增场景的训练使用说明见 [grid README](../../contrib/vndn-nn-rd/ai-training/grid/README.md) 和 [spidermap README](../../contrib/vndn-nn-rd/ai-training/spidermap/README.md)。

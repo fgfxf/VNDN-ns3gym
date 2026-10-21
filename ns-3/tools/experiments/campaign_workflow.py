@@ -254,8 +254,14 @@ def _record(folder):
     return value
 
 
+def _stage_parent(root, stage, scene, plan):
+    revision = len(plan.get("sampling_revisions", []))
+    namespace = "datasets-revision-{:03d}".format(revision) if stage == "datasets" and revision else stage
+    return root / "workflow" / namespace / scene
+
+
 def _completed(root, stage, scene, plan):
-    parent = root / "workflow" / stage / scene
+    parent = _stage_parent(root, stage, scene, plan)
     records = [(folder, _record(folder)) for folder in sorted(parent.glob("attempt-*"))]
     finished = [(path, record) for path, record in records if record["status"] == "complete"]
     if len(finished) > 1:
@@ -301,7 +307,7 @@ def _model_product(path, scene, plan, dataset_path, config):
     candidates = model["candidates"]
     seeds = [row["seed"] for row in candidates]
     if sorted(seeds) != sorted(config["initialization_seeds"]):
-        raise ValueError("model must include all three predeclared initialization candidates")
+        raise ValueError("model must include all predeclared initialization candidates")
     for row in candidates:
         _check_file(row["checkpoint_path"], row["checkpoint_sha256"])
         _check_file(row["history_path"], row["history_sha256"])
@@ -346,7 +352,14 @@ def _figure_product(analysis, figures, manifest, plan):
     if index["analysis_sha256"] != digest(analysis / "aggregate.json"):
         raise ValueError("figure analysis hash changed")
     items = index["figures"]
-    if len(items) != 30 or len({item["id"] for item in items}) != 30:
+    if "figure_ids" in plan:
+        aggregate_tools = _module("_workflow_figure_contract", HERE / "aggregate_campaign.py")
+        expected = aggregate_tools.expected_figure_ids(plan["scans"])
+        if plan["figure_ids"] != expected:
+            raise ValueError("declared figure IDs differ from the frozen scan design")
+        if len(items) != len(expected) or {item["id"] for item in items} != set(expected):
+            raise ValueError("exactly {} declared numbered figures are required".format(len(expected)))
+    elif len(items) != 30 or len({item["id"] for item in items}) != 30:
         raise ValueError("exactly 30 numbered figures are required")
     for item in items + index["diagnostics"]:
         if set(item["files"]) != {"pdf", "svg", "png"}:
@@ -358,22 +371,28 @@ def _figure_product(analysis, figures, manifest, plan):
             _check_file(path, item["sha256"][extension])
 
 
-def _configuration(path):
+def _configuration(path, profile=None):
     config = read_json(Path(path))
     defaults = dict(epochs=100, hidden_size=32, grid_size=5, spline_order=3, dropout=.1,
                     batch_size=256, learning_rate=.001, patience=15,
                     selection_tolerance=1e-10, threads=1, device="cpu")
+    quick = profile == "quick-draft-v1"
+    if quick:
+        defaults["epochs"] = 30
     if set(config) - set(defaults) - {"initialization_seeds"}:
         raise ValueError("unknown training configuration fields")
     seeds = config.get("initialization_seeds", [])
-    if (len(seeds) != 3 or len(set(seeds)) != 3 or
+    required = 1 if quick else 3
+    if (len(seeds) != required or len(set(seeds)) != required or
             any(type(seed) is not int or seed < 0 for seed in seeds)):
-        raise ValueError("exactly three unique nonnegative initialization seeds are required")
+        raise ValueError("exactly {} unique nonnegative initialization seeds are required".format(required))
     defaults.update(config)
     for key in ("epochs", "hidden_size", "grid_size", "spline_order", "batch_size",
                 "patience", "threads"):
         if type(defaults[key]) is not int or defaults[key] < 1:
             raise ValueError("positive integer training configuration required: " + key)
+    if quick and defaults["epochs"] > 30:
+        raise ValueError("quick-draft-v1 permits at most 30 epochs")
     if defaults["threads"] > 4 or defaults["device"] != "cpu":
         raise ValueError("this campaign uses CPU training with at most four threads")
     for key in ("dropout", "learning_rate", "selection_tolerance"):
@@ -408,11 +427,16 @@ def _validated_exports(root, plan, split):
 def _plan_basis(plan, stage):
     basis = dict(validation_only=plan["validation_only"],
                  development={split: campaign.execution_identity(plan, split) for split in SPLITS})
+    if "design_profile" in plan:
+        basis["design_profile"] = plan["design_profile"]
     if stage in ("evaluate", "figures"):
         basis.update(models=plan["models"], bootstrap=plan["bootstrap"])
     if stage == "figures":
         basis.update(test=campaign.execution_identity(plan, "test"),
                      time_bin_seconds=plan["time_bin_seconds"])
+        for key in ("design_profile", "figure_ids"):
+            if key in plan:
+                basis[key] = plan[key]
     return basis
 
 
@@ -461,7 +485,7 @@ def _assert_unchanged(root, plan, stage, dependencies):
 
 
 def _stage(root, stage, scene, plan, context, dependencies, action, verify):
-    parent = root / "workflow" / stage / scene
+    parent = _stage_parent(root, stage, scene, plan)
     identity = _hash_object(dict(plan=_plan_basis(plan, stage), context=context,
                                  dependencies=dependencies))
     folders = sorted(parent.glob("attempt-*"))
@@ -566,7 +590,7 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
             if training_config is None:
                 raise ValueError("train requires --training-config frozen before evaluation")
             training_config = Path(training_config).expanduser().resolve()
-            config = _configuration(training_config)
+            config = _configuration(training_config, profile=plan.get("design_profile"))
             config_sha = digest(training_config)
             for current in selected:
                 dataset_record = _completed(root, "datasets", current, plan)
@@ -576,22 +600,31 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
                                 str(training_config): config_sha}
                 context = dict(config=config, model_root=str(model_root))
                 def train(folder, number, identity):
-                    # Neither an old model nor a failed attempt is ever overwritten.
+                    resume = plan.get("design_profile") == "quick-draft-v1"
+                    # Quick attempts share only the explicitly identified epoch session;
+                    # command logs and workflow attempt evidence remain separate.
+                    suffix = ("{}-{}-session".format(plan["campaign_id"], identity[:16]) if resume else
+                              "{}-{}-attempt-{:03d}".format(plan["campaign_id"], identity[:16], number))
                     output = (model_root / current / "tkan-lstm" /
-                              ("{}-{}-attempt-{:03d}".format(plan["campaign_id"], identity[:16], number)))
-                    if output.exists():
+                              suffix)
+                    if output.exists() and not resume:
                         raise FileExistsError("model attempt directory already exists: " + str(output))
-                    output.mkdir(parents=True)
+                    if not resume:
+                        output.mkdir(parents=True)
                     write_json(folder / "training-config.json", config)
                     command = [python, str(AI_ROOT / current / "train_tkan_lstm.py"),
                                "--dataset-manifest", str(dataset), "--output-root", str(output)]
+                    if resume:
+                        command.extend(["--session-dir", str(output)])
                     for key, value in config.items():
                         command.append("--" + key.replace("_", "-"))
                         command.extend(str(item) for item in (value if isinstance(value, list) else [value]))
                     command.extend(extra_flags)
                     write_json(folder / "commands.json", [command])
                     _run_command(command, folder / "train.log", timeout)
-                    manifests = list(output.glob("*/model-manifest.json"))
+                    manifests = ([output / "model-manifest.json"] if resume and
+                                 (output / "model-manifest.json").is_file() else
+                                 list(output.glob("*/model-manifest.json")))
                     if len(manifests) != 1:
                         raise ValueError("training must produce exactly one timestamped model manifest")
                     model = read_json(manifests[0])
@@ -657,6 +690,9 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
                                 scans=plan["scans"], models=plan["models"], model_evaluations=evaluations,
                                 blocks=[blocks[key] for key in sorted(blocks)],
                                 time_bin_seconds=plan["time_bin_seconds"])
+                for key in ("design_profile", "figure_ids"):
+                    if key in plan:
+                        manifest[key] = plan[key]
                 dependencies = {str(Path(row["path"]) / "manifest.json"): row["manifest_sha256"]
                                 for row in exported}
                 dependencies.update({row["path"]: row["sha256"] for row in evaluations.values()})

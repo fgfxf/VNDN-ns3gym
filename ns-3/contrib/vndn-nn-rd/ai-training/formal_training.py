@@ -6,15 +6,20 @@ per run with a bounded LRU, not concatenated into a campaign-sized tensor.
 import argparse
 import bisect
 from collections import OrderedDict, defaultdict
+import copy
 import csv
 from datetime import datetime, timezone
+import hashlib
 import importlib.util
+import inspect
 import json
 import math
+import os
 from pathlib import Path
 import random
 import shutil
 import sys
+import uuid
 
 import numpy as np
 import torch
@@ -219,6 +224,8 @@ def formal_arguments(argv):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-manifest", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--session-dir", type=Path,
+                        help="stable, identity-checked session; resume committed complete epochs")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--hidden-size", type=int, default=32)
     parser.add_argument("--grid-size", type=int, default=5)
@@ -264,6 +271,231 @@ def _checkpoint(model, args, manifest, mean, std, best):
             selection_tolerance=args.selection_tolerance))
 
 
+def _atomic_write(path, writer):
+    """Publish a file only after its contents are durable, without truncating the old one."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp-" + uuid.uuid4().hex)
+    try:
+        with temporary.open("wb") as stream:
+            writer(stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(str(temporary), str(path))
+        directory = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def _atomic_json(path, value):
+    encoded = (json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    _atomic_write(path, lambda stream: stream.write(encoded))
+
+
+def _save_epoch(output, seed, state):
+    """The small pointer is the commit; an unreferenced epoch file is never resumed."""
+    relative = "resume-{}/epoch-{:05d}-{}.pt".format(seed, state["epoch"], uuid.uuid4().hex)
+    checkpoint = output / relative
+    _atomic_write(checkpoint, lambda stream: torch.save(state, stream))
+    pointer = dict(schema_version=1, identity=state["identity"], seed=seed,
+                   epoch=state["epoch"], complete=state["complete"],
+                   path=relative, sha256=sha256_file(checkpoint))
+    _atomic_json(output / "resume-{}.json".format(seed), pointer)
+    return pointer
+
+
+def _load_epoch(output, seed, identity):
+    path = output / "resume-{}.json".format(seed)
+    if not path.exists():
+        return None
+    pointer = read_json(path)
+    checkpoint = (output / pointer["path"]).resolve()
+    if output.resolve() not in checkpoint.parents:
+        raise ValueError("resume checkpoint is outside the training session")
+    if pointer.get("schema_version") != 1 or pointer.get("identity") != identity or pointer.get("seed") != seed:
+        raise ValueError("resume identity differs from training configuration")
+    verify_hash(checkpoint, pointer["sha256"])
+    state = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    if (state.get("identity"), state.get("seed"), state.get("epoch"), state.get("complete")) != (
+            identity, seed, pointer["epoch"], pointer["complete"]):
+        raise ValueError("resume state does not match committed epoch")
+    if len(state["history"]) != state["epoch"]:
+        raise ValueError("resume history/epoch mismatch")
+    return state
+
+
+def _random_state(generator, device):
+    return dict(python=random.getstate(), numpy=np.random.get_state(),
+                torch=torch.get_rng_state().clone(), loader=generator.get_state().clone(),
+                cuda=torch.cuda.get_rng_state_all() if device.type == "cuda" else None)
+
+
+def _restore_random_state(state, generator, device):
+    random.setstate(state["python"])
+    np.random.set_state(state["numpy"])
+    torch.set_rng_state(state["torch"])
+    generator.set_state(state["loader"])
+    if device.type == "cuda":
+        torch.cuda.set_rng_state_all(state["cuda"])
+
+
+def _session_identity(args, scenario, model_class, device):
+    settings = {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()
+                if k not in ("output_root", "session_dir")}
+    model_file = Path(inspect.getfile(model_class)).resolve()
+    value = dict(schema_version=1, scenario=scenario, arguments=settings,
+                 actual_device=str(device), python=sys.version, numpy=np.__version__,
+                 torch=str(torch.__version__), model_class=model_class.__qualname__,
+                 model_source_sha256=sha256_file(model_file),
+                 trainer_source_sha256=sha256_file(Path(__file__)))
+    identity = hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    return identity, value
+
+
+def _publish_candidate(output, seed, state):
+    """Export the independent best weights; current weights remain in the resume package."""
+    complete_path = output / "candidate-{}.complete.json".format(seed)
+    if complete_path.exists():
+        committed = read_json(complete_path)
+        if committed["identity"] != state["identity"] or not state["complete"]:
+            raise ValueError("completed candidate identity/state mismatch")
+        candidate = committed["candidate"]
+        verify_hash(candidate["checkpoint_path"], candidate["checkpoint_sha256"])
+        verify_hash(candidate["history_path"], candidate["history_sha256"])
+        return candidate
+    model_path = output / "candidate-{}.pt".format(seed)
+    history_path = output / "history-{}.jsonl".format(seed)
+    _atomic_write(model_path, lambda stream: torch.save(state["best_checkpoint"], stream))
+    history = "".join(json.dumps(row, allow_nan=False) + "\n" for row in state["history"]).encode()
+    _atomic_write(history_path, lambda stream: stream.write(history))
+    candidate = dict(seed=seed, checkpoint_path=str(model_path), checkpoint_sha256=sha256_file(model_path),
+                     metrics=state["best_checkpoint"]["validation_metrics"],
+                     history_path=str(history_path), history_sha256=sha256_file(history_path))
+    _atomic_json(complete_path, dict(identity=state["identity"], candidate=candidate))
+    return candidate
+
+
+def _train_session(args, scenario, model_class, manifest, mean, std, weights,
+                   train_set, validation_loader, device):
+    output = args.session_dir.expanduser().resolve()
+    identity, definition = _session_identity(args, scenario, model_class, device)
+    session_path = output / "training-session.json"
+    if session_path.exists():
+        session = read_json(session_path)
+        if session != dict(identity=identity, definition=definition):
+            raise ValueError("training session identity/configuration mismatch")
+    else:
+        if output.exists() and any(output.iterdir()):
+            raise ValueError("nonempty session directory has no committed training identity")
+        output.mkdir(parents=True, exist_ok=True)
+        _atomic_json(session_path, dict(identity=identity, definition=definition))
+        _atomic_json(output / "training-config.json", definition)
+    classes = len(SCENARIO_LABELS[scenario])
+    candidates, best_overall = [], None
+    for seed in args.initialization_seeds:
+        state = _load_epoch(output, seed, identity)
+        if state is None or not state["complete"]:
+            random.seed(seed)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            if device.type == "cuda":
+                torch.cuda.manual_seed_all(seed)
+            generator = torch.Generator().manual_seed(seed)
+            loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, generator=generator)
+            model = model_class(6, args.hidden_size, classes, args.grid_size,
+                                args.spline_order, args.dropout).to(device)
+            criterion = nn.CrossEntropyLoss(weight=torch.tensor(weights, dtype=torch.float32, device=device))
+            optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+            if state is None:
+                state = dict(identity=identity, seed=seed, epoch=0, complete=False, stop_reason=None,
+                             current_state=copy.deepcopy(model.state_dict()),
+                             optimizer=copy.deepcopy(optimizer.state_dict()), best_checkpoint=None,
+                             history=[], stalled=0, rng=_random_state(generator, device))
+                _save_epoch(output, seed, state)
+            else:
+                model.load_state_dict(state["current_state"])
+                optimizer.load_state_dict(state["optimizer"])
+            # Construction/loading may consume RNG. Restore last, immediately
+            # before the next loader iteration, including validation's CPU RNG.
+            _restore_random_state(state["rng"], generator, device)
+            for epoch in range(state["epoch"] + 1, args.epochs + 1):
+                model.train()
+                loss_sum, loss_weight = 0.0, 0.0
+                for inputs, targets in loader:
+                    inputs, targets = inputs.to(device), targets.to(device)
+                    optimizer.zero_grad()
+                    loss = criterion(model(inputs), targets)
+                    if not torch.isfinite(loss):
+                        raise ValueError("nonfinite training loss")
+                    loss.backward()
+                    if any(p.grad is not None and not torch.isfinite(p.grad).all() for p in model.parameters()):
+                        raise ValueError("nonfinite training gradient")
+                    optimizer.step()
+                    weight = criterion.weight[targets].sum().item()
+                    loss_sum += loss.item() * weight
+                    loss_weight += weight
+                metrics = evaluate_loader(model, validation_loader, device, classes)
+                metrics.update(epoch=epoch, seed=seed, train_loss=loss_sum / loss_weight)
+                best = state["best_checkpoint"]
+                if is_better(metrics, best["validation_metrics"] if best else None, args.selection_tolerance):
+                    best = copy.deepcopy(_checkpoint(model, args, manifest, mean, std, metrics))
+                    stalled = 0
+                else:
+                    stalled = state["stalled"] + 1
+                stop = "early_stopping" if args.patience and stalled >= args.patience else (
+                    "maximum_epochs" if epoch == args.epochs else None)
+                state = dict(identity=identity, seed=seed, epoch=epoch, complete=stop is not None,
+                             stop_reason=stop, current_state=copy.deepcopy(model.state_dict()),
+                             optimizer=copy.deepcopy(optimizer.state_dict()), best_checkpoint=best,
+                             history=state["history"] + [metrics], stalled=stalled,
+                             rng=_random_state(generator, device))
+                verify_hash(args.dataset_manifest, args.dataset_sha256)
+                _save_epoch(output, seed, state)
+                print("{} seed={} committed_epoch={} train_loss={:.6f} val_macro_f1={:.6f}".format(
+                    scenario, seed, epoch, metrics["train_loss"], metrics["macro_f1"]), flush=True)
+                if state["complete"]:
+                    break
+        if not state["complete"] or state["best_checkpoint"] is None:
+            raise ValueError("candidate did not reach a committed stopping condition")
+        candidate = _publish_candidate(output, seed, state)
+        candidates.append(candidate)
+        if is_better(candidate["metrics"], best_overall["metrics"] if best_overall else None,
+                     args.selection_tolerance):
+            best_overall = candidate
+    verify_hash(args.dataset_manifest, args.dataset_sha256)
+    load_dataset_manifest(args.dataset_manifest)
+    frozen_path = output / "model-manifest.json"
+    if frozen_path.exists():
+        result = read_json(frozen_path)
+        if result["candidates"] != candidates or result["dataset_manifest_sha256"] != args.dataset_sha256:
+            raise ValueError("frozen model differs from completed training candidates")
+        verify_hash(result["checkpoint_path"], result["checkpoint_sha256"])
+        verify_hash(result["training_history"]["path"], result["training_history"]["sha256"])
+        return result
+    final_path = output / "checkpoint.pt"
+    _atomic_write(final_path, lambda stream: stream.write(Path(best_overall["checkpoint_path"]).read_bytes()))
+    selected_history = output / "training-history.csv"
+    lines = ["epoch,train_loss,validation_loss,validation_macro_f1\r\n"]
+    for line in Path(best_overall["history_path"]).read_text().splitlines():
+        row = json.loads(line)
+        lines.append("{epoch},{train_loss},{cross_entropy},{macro_f1}\r\n".format(**row))
+    _atomic_write(selected_history, lambda stream: stream.write("".join(lines).encode()))
+    result = dict(schema_version=1, scenario=scenario, frozen=True,
+                  validation_only=manifest["validation_only"], checkpoint_path=str(final_path),
+                  checkpoint_sha256=sha256_file(final_path), dataset_manifest=str(args.dataset_manifest),
+                  dataset_manifest_sha256=args.dataset_sha256, selected_seed=best_overall["seed"],
+                  validation_metrics=best_overall["metrics"], candidates=candidates, evaluation_opened=False,
+                  training_history=dict(path=str(selected_history), sha256=sha256_file(selected_history)))
+    _atomic_json(frozen_path, result)
+    print("Frozen model: {}".format(final_path), flush=True)
+    return result
+
+
 def train(argv, scenario, model_class):
     args = formal_arguments(argv)
     args.dataset_manifest = args.dataset_manifest.resolve()
@@ -293,6 +525,9 @@ def train(argv, scenario, model_class):
     train_set = MmapSnapshots(args.dataset_manifest, manifest, "train", mean, std)
     validation_set = MmapSnapshots(args.dataset_manifest, manifest, "validation", mean, std)
     validation_loader = DataLoader(validation_set, batch_size=args.batch_size, shuffle=False)
+    if args.session_dir is not None:
+        return _train_session(args, scenario, model_class, manifest, mean, std, weights,
+                              train_set, validation_loader, device)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     output = args.output_root.resolve() / timestamp
     output.mkdir(parents=True, exist_ok=False)

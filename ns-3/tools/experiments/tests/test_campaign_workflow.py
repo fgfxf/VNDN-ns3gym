@@ -360,6 +360,23 @@ class WorkflowStagesTests(unittest.TestCase):
             self.run_stage("train", training_config=self.config)
         self.assertEqual(len(self.calls), 3)
 
+    def test_sampling_revision_builds_new_dataset_without_overwriting_prior_evidence(self):
+        first = self.run_stage("datasets")
+        old = {scene: Path(value["dataset_manifest"])
+               for scene, value in first["products"].items()}
+        hashes = {scene: self.sha(path) for scene, path in old.items()}
+        self.plan["sampling_revisions"] = [{"reason": "declared coverage extension"}]
+        self.write(self.root / "plan/design.json", self.plan)
+        second = self.run_stage("datasets")
+        self.assertEqual(len(self.calls), 6, "a new sampling revision must rebuild datasets")
+        for scene, value in second["products"].items():
+            new = Path(value["dataset_manifest"])
+            self.assertNotEqual(new, old[scene])
+            self.assertIn("datasets-revision-001", str(new))
+            self.assertEqual(self.sha(old[scene]), hashes[scene])
+            selected = WORKFLOW._completed(self.root, "datasets", scene, self.plan)
+            self.assertEqual(selected["products"]["dataset_manifest"], str(new))
+
     def test_rendering_with_one_missing_numbered_figure_fails_without_overwriting(self):
         self.formal()
         self.assertEqual(self.run_stage("evaluate")["status"], "complete")

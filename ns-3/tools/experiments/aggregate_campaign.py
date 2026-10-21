@@ -28,8 +28,24 @@ METRICS = ("isr_percent", "mean_success_rtt_ms", "network_mbit", "control_mbit",
            "control_bytes_per_interest", "extra_attempts_per_interest")
 MAIN_METRICS = METRICS[:5]
 SCANS = ("interest", "speed", "vehicles", "vehicles_fixed_k")
+COMPACT_PROFILE = "compact-exploratory-v1"
+QUICK_PROFILE = "quick-draft-v1"
 COUNT_FIELDS = ("generated", "satisfied", "sum_success_rtt_ns", "network_l3_bytes",
                 "control_l3_bytes", "extra_data_app_attempts")
+
+
+def expected_figure_ids(scans):
+    """Stable numbering: the deferred fixed-K figures retain their reserved slots."""
+    if set(scans) not in (set(SCANS), set(SCANS[:3])):
+        raise ValueError("figures require the three primary scans and optional fixed-K scan")
+    result = ["F{:02d}-{}-{}".format(scan_index * 5 + metric_index + 1, scan, metric)
+              for scan_index, scan in enumerate(SCANS) if scan in scans
+              for metric_index, metric in enumerate(MAIN_METRICS)]
+    result.extend("F{:02d}-{}-rtt-3d".format(21 + i, scene) for i, scene in enumerate(SCENARIOS))
+    result.extend("F{:02d}-{}-rtt-box".format(24 + i, scene) for i, scene in enumerate(SCENARIOS))
+    result.append("F27-baseline-total-traffic")
+    result.extend("F{:02d}-{}-confusion".format(28 + i, scene) for i, scene in enumerate(SCENARIOS))
+    return result
 
 
 def _positive_integer(value, name, minimum=0):
@@ -94,6 +110,7 @@ def paired_statistics(blocks, resamples=10000, seed=0):
     draws = np.random.RandomState(seed).randint(0, len(blocks), (resamples, len(blocks)))
     point = _metric_estimates(blocks, np.arange(len(blocks))[None, :])
     bootstrap = _metric_estimates(blocks, draws)
+    per_run = _metric_estimates(blocks, np.arange(len(blocks))[:, None])
     result = {"repetitions": len(blocks), "resamples": resamples, "seed": seed,
               "method": "paired complete-block percentile bootstrap, pointwise 95%",
               "metrics": {}, "effects": {}}
@@ -101,6 +118,13 @@ def paired_statistics(blocks, resamples=10000, seed=0):
         result["metrics"][metric] = {
             strategy: _interval(point[strategy][metric][0], bootstrap[strategy][metric])
             for strategy in STRATEGIES}
+        for strategy in STRATEGIES:
+            values = per_run[strategy][metric]
+            finite = values[np.isfinite(values)]
+            result["metrics"][metric][strategy].update(
+                run_values=[float(value) if math.isfinite(float(value)) else None for value in values],
+                run_defined=len(finite),
+                run_sd=float(np.std(finite, ddof=1)) if len(finite) > 1 else None)
         result["effects"][metric] = {
             "3-" + reference: _interval(
                 point["3"][metric][0] - point[reference][metric][0],
@@ -297,6 +321,8 @@ def aggregate_campaign(manifest_path, output_directory):
         "bootstrap": campaign["bootstrap"], "conditions": campaign["conditions"],
         "baseline_condition_id": campaign["baseline_condition_id"], "scans": campaign["scans"],
         "time_bin_seconds": campaign.get("time_bin_seconds", 5),
+        "design_profile": campaign.get("design_profile", "full"),
+        "figure_ids": expected_figure_ids(campaign["scans"]),
         "models": campaign["models"], "model_evaluations": evaluations,
         "run_count": len(run_records), "block_count": len(blocks),
         "factor_audit": factor_audit,
@@ -324,6 +350,11 @@ def aggregate_campaign(manifest_path, output_directory):
             "Boxplots pool successful packets descriptively; packets are not independent runs.",
         ],
     }
+    if campaign.get("design_profile") == QUICK_PROFILE:
+        result["notes"].append(
+            "Exploratory draft with two independent paired runs per condition; show individual "
+            "runs and sample SD descriptively, without significance claims. Bootstrap draws and "
+            "packets do not increase the independent replication count.")
     write_json(output / "aggregate.json", result)
     write_json(output / "status.json", {"status": "complete", "validation_only":
                                       campaign["validation_only"]})
@@ -376,8 +407,15 @@ def validate_campaign(campaign):
     baseline = campaign.get("baseline_condition_id")
     if not conditions or baseline not in conditions:
         raise ValueError("A canonical baseline condition is required")
-    if set(campaign.get("scans", {})) != set(SCANS):
-        raise ValueError("All four scans must be declared")
+    profile = campaign.get("design_profile", "full")
+    if profile not in ("full", COMPACT_PROFILE, QUICK_PROFILE):
+        raise ValueError("Unknown campaign design profile")
+    required_scans = SCANS[:3] if profile in (COMPACT_PROFILE, QUICK_PROFILE) else SCANS
+    if set(campaign.get("scans", {})) != set(required_scans):
+        raise ValueError("All scans declared by the design profile must be present")
+    expected_figures = expected_figure_ids(campaign["scans"])
+    if campaign.get("figure_ids", expected_figures) != expected_figures:
+        raise ValueError("Figure declaration differs from the frozen scan design")
     for scan, names in campaign["scans"].items():
         if not names or len(names) != len(set(names)) or baseline not in names or (
                 not set(names).issubset(conditions)):
@@ -407,11 +445,30 @@ def validate_campaign(campaign):
     if isinstance(bin_seconds, bool) or not isinstance(bin_seconds, (int, float)) or (
             not math.isfinite(bin_seconds) or bin_seconds <= 0):
         raise ValueError("Time-bin seconds must be positive and finite")
-    if not campaign["validation_only"] and (
-            len(repetitions) != 20 or len(conditions) != 17 or
-            bootstrap["resamples"] != 10000 or
-            any(len(value) != 5 for value in campaign["scans"].values())):
-        raise ValueError("Formal campaign requires 20 repetitions, 17 conditions and 10000 resamples")
+    if not campaign["validation_only"]:
+        if profile == QUICK_PROFILE:
+            parameters = {(c["vehicles"], c["speed_kmh"], c["requests"]) for c in conditions.values()}
+            expected_parameters = {(10, 30, 6000), (10, 30, 1500), (10, 30, 12000),
+                                   (10, 10, 6000), (10, 50, 6000), (5, 30, 3000),
+                                   (15, 30, 9000), (20, 30, 12000)}
+            if (repetitions != [52001, 52002] or len(conditions) != 8 or
+                    parameters != expected_parameters or bootstrap["resamples"] != 10000 or
+                    [len(campaign["scans"][s]) for s in SCANS[:3]] != [3, 3, 4]):
+                raise ValueError("Quick draft requires seeds 52001/52002, eight approved conditions, "
+                                 "3/3/4 scan points and 10000 resamples")
+        elif profile == COMPACT_PROFILE:
+            parameters = {(c["vehicles"], c["speed_kmh"], c["requests"]) for c in conditions.values()}
+            expected_parameters = {(10, 30, 15000), (10, 30, 3750), (10, 30, 30000),
+                                   (10, 10, 15000), (10, 50, 15000), (5, 30, 7500),
+                                   (15, 30, 22500), (20, 30, 30000)}
+            if (len(repetitions) != 5 or len(conditions) != 8 or
+                    parameters != expected_parameters or bootstrap["resamples"] != 10000 or
+                    [len(campaign["scans"][s]) for s in SCANS[:3]] != [3, 3, 4]):
+                raise ValueError("Formal compact design requires five seeds, eight approved conditions, "
+                                 "3/3/4 scan points and 10000 resamples")
+        elif (len(repetitions) != 20 or len(conditions) != 17 or bootstrap["resamples"] != 10000 or
+                any(len(value) != 5 for value in campaign["scans"].values())):
+            raise ValueError("Formal campaign requires 20 repetitions, 17 conditions and 10000 resamples")
     for field in ("models", "model_evaluations"):
         if set(campaign.get(field, {})) != set(SCENARIOS):
             raise ValueError(field + " must cover all three scenarios")
@@ -486,6 +543,11 @@ def audit_run(path, manifest, config, metrics, campaign, block, condition, strat
     if type(manifest.get("validation_only")) is not bool or (
             manifest["validation_only"] and not campaign["validation_only"]):
         raise ValueError("Validation/test-controller run cannot enter formal results")
+    if campaign.get("design_profile") == QUICK_PROFILE and not campaign["validation_only"]:
+        window = [config.get(name) for name in
+                  ("measurement_start_s", "measurement_end_s", "drain_end_s")]
+        if window != [20, 140, 143.5]:
+            raise ValueError("quick draft run window must be 20/140/143.5 seconds")
     if strategy == "3":
         expected_model = campaign["models"][block["scene"]]
         if not manifest.get("model") or manifest["model"].get("sha256") != expected_model["sha256"]:

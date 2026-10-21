@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.8
 """Serial campaign design and execution with preserved attempts."""
 import argparse
+import copy
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import fcntl
@@ -20,6 +21,10 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SCENES = ("circle", "grid", "spidermap")
 CANCEL_GRACE_SECONDS = 30
+COMPACT_PROFILE = "compact-exploratory-v1"
+QUICK_PROFILE = "quick-draft-v1"
+SPARSE_PROFILES = (COMPACT_PROFILE, QUICK_PROFILE)
+SAMPLING_SPLITS = ("train", "validation", "evaluation")
 
 
 def _module(name):
@@ -41,7 +46,15 @@ def digest(path):
     return runner.summary.sha256_file(Path(path))
 
 
-def make_plan(campaign_id, duration=300, warmup=20, drain=3.5):
+def make_plan(campaign_id, duration=None, warmup=20, drain=3.5, profile="full"):
+    if profile not in ("full",) + SPARSE_PROFILES:
+        raise ValueError("unknown design profile")
+    if duration is None:
+        duration = 120 if profile == QUICK_PROFILE else 300
+    if profile == COMPACT_PROFILE and (duration, warmup, drain) != (300, 20, 3.5):
+        raise ValueError("compact profile freezes measurement/warmup/drain at 300/20/3.5 seconds")
+    if profile == QUICK_PROFILE and (duration, warmup, drain) != (120, 20, 3.5):
+        raise ValueError("quick profile freezes measurement/warmup/drain at 120/20/3.5 seconds")
     for value in (duration, warmup, drain):
         if isinstance(value, bool) or not math.isfinite(value):
             raise ValueError("time settings must be finite")
@@ -69,10 +82,18 @@ def make_plan(campaign_id, duration=300, warmup=20, drain=3.5):
         "vehicles": [condition(n, 30, int(n * 5 * duration)) for n in (5, 10, 20, 30, 40)],
         "vehicles_fixed_k": [condition(n, 30, base) for n in (5, 10, 20, 30, 40)],
     }
+    if profile in SPARSE_PROFILES:
+        conditions, by_parameters = [], {}
+        condition(10, 30, base)
+        scans = {
+            "interest": [condition(10, 30, k) for k in (base // 4, base, base * 2)],
+            "speed": [condition(10, v, base) for v in (10, 30, 50)],
+            "vehicles": [condition(n, 30, int(n * 5 * duration)) for n in (5, 10, 15, 20)],
+        }
     pilot = ["baseline"]
     for scan in ("interest", "speed", "vehicles"):
         pilot.extend([scans[scan][0], scans[scan][-1]])
-    return {
+    plan = {
         "schema_version": 1, "campaign_id": campaign_id,
         "created_utc": stamp(), "validation_only": False,
         "measurement_start": warmup, "measurement_duration": duration, "drain_seconds": drain,
@@ -88,11 +109,274 @@ def make_plan(campaign_id, duration=300, warmup=20, drain=3.5):
         "timeouts": {}, "minimum_free_disk_bytes": 20 * 1024**3,
         "status": "candidate-unfrozen",
     }
+    if profile in SPARSE_PROFILES:
+        quick = profile == QUICK_PROFILE
+        plan.update(design_profile=profile, sampling_jobs=_compact_initial_jobs(conditions, profile),
+                    sampling_revisions=[], sampling_max_additional_jobs=0 if quick else 24,
+                    sampling_max_additional_per_scene=0 if quick else 8,
+                    figure_ids=_module("aggregate_campaign").expected_figure_ids(scans))
+        plan["seed_families"] = {
+            "pilot": [12021] if quick else [11021],
+            **{split: sorted(row["seed_family"] for row in plan["sampling_jobs"][split])
+               for split in SAMPLING_SPLITS},
+            "test": [52001, 52002] if quick else list(range(51001, 51006)),
+        }
+        plan["pilot_conditions"] = ["baseline"]
+        validate_sampling_plan(plan)
+    return plan
+
+
+def _compact_initial_jobs(conditions, profile=COMPACT_PROFILE):
+    base = 6000 if profile == QUICK_PROFILE else 15000
+    representative = {(10, 30, base), (10, 10, base), (10, 50, base), (20, 30, base * 2)}
+    selected = [row["id"] for row in conditions if
+                (row["vehicles"], row["speed_kmh"], row["requests"]) in representative]
+    result = {}
+    offset = 2000 if profile == QUICK_PROFILE else 0
+    for split, start in (("train", 21001), ("validation", 31001), ("evaluation", 41001)):
+        ids = [row["id"] for row in conditions] if split == "train" else selected
+        result[split] = [dict(scene=scene, condition_id=cid,
+                              seed_family=start + offset + scene_index * len(ids) + index)
+                         for scene_index, scene in enumerate(SCENES) for index, cid in enumerate(ids)]
+    return result
+
+
+def validate_sampling_plan(plan):
+    """Validate sparse rows rather than multiplying their seed union by conditions."""
+    profile = plan.get("design_profile", "full")
+    if profile not in ("full",) + SPARSE_PROFILES:
+        raise ValueError("unknown design profile")
+    if profile not in SPARSE_PROFILES:
+        return
+    quick = profile == QUICK_PROFILE
+    duration = 120 if quick else 300
+    base = duration * 50
+    if (plan["measurement_duration"], plan["measurement_start"], plan["drain_seconds"]) != (
+            duration, 20, 3.5):
+        raise ValueError("sparse profile measurement window changed")
+    expected_parameters = {(10, 30, base), (10, 30, base // 4), (10, 30, base * 2),
+                           (10, 10, base), (10, 50, base), (5, 30, base // 2),
+                           (15, 30, base * 3 // 2), (20, 30, base * 2)}
+    conditions = plan["conditions"]
+    if len(conditions) != 8 or {(c["vehicles"], c["speed_kmh"], c["requests"])
+                              for c in conditions} != expected_parameters:
+        raise ValueError("compact requires exactly the eight approved conditions")
+    analysis = _module("aggregate_campaign")
+    if (set(plan["scans"]) != {"interest", "speed", "vehicles"} or
+            [len(plan["scans"][s]) for s in ("interest", "speed", "vehicles")] != [3, 3, 4]):
+        raise ValueError("compact requires three declared scans with 3/3/4 points")
+    by_parameters = {(c["vehicles"], c["speed_kmh"], c["requests"]): c["id"] for c in conditions}
+    expected_scans = {
+        "interest": [by_parameters[10, 30, k] for k in (base // 4, base, base * 2)],
+        "speed": [by_parameters[10, v, base] for v in (10, 30, 50)],
+        "vehicles": [by_parameters[n, 30, n * 5 * duration] for n in (5, 10, 15, 20)],
+    }
+    if plan["scans"] != expected_scans or plan["baseline_condition_id"] != by_parameters[10, 30, base]:
+        raise ValueError("compact scan coordinates or shared baseline changed")
+    if plan.get("figure_ids") != analysis.expected_figure_ids(plan["scans"]):
+        raise ValueError("compact figure declaration differs from the planned 25 figures")
+    formal_seeds = [52001, 52002] if quick else list(range(51001, 51006))
+    if plan["seed_families"]["test"] != formal_seeds:
+        raise ValueError("sparse profile requires its predeclared formal seed families")
+    limits = (0, 0) if quick else (24, 8)
+    if (plan.get("sampling_max_additional_jobs"), plan.get("sampling_max_additional_per_scene")) != limits:
+        raise ValueError("sampling addition limits differ from the approved profile")
+    if quick and (plan.get("sampling_revisions") != [] or plan["seed_families"]["pilot"] != [12021]):
+        raise ValueError("quick profile has fixed sampling and pilot seed declarations")
+    initial = _compact_initial_jobs(conditions, profile)
+    rows_by_split = plan.get("sampling_jobs", {})
+    if set(rows_by_split) != set(SAMPLING_SPLITS):
+        raise ValueError("all three sparse sampling splits must be declared")
+    ids = {row["id"] for row in conditions}
+    if len(ids) != 8:
+        raise ValueError("duplicate condition IDs")
+    seen = set()
+    if set(plan["seed_families"]) != {"pilot", "train", "validation", "evaluation", "test"}:
+        raise ValueError("compact requires the five declared seed-purpose splits")
+    for split, seeds in plan["seed_families"].items():
+        if (not seeds or any(type(s) is not int or s <= 0 for s in seeds) or
+                len(seeds) != len(set(seeds)) or seen.intersection(seeds)):
+            raise ValueError("invalid, duplicate or leaking seed families")
+        seen.update(seeds)
+    extras = []
+    for split in SAMPLING_SPLITS:
+        rows = rows_by_split[split]
+        if quick and rows != initial[split]:
+            raise ValueError("quick profile has a fixed 48-run sampling budget and assignment")
+        if rows[:len(initial[split])] != initial[split]:
+            raise ValueError("initial sparse sampling jobs cannot be removed or reinterpreted")
+        if sorted(row["seed_family"] for row in rows) != sorted(plan["seed_families"][split]):
+            raise ValueError("sampling jobs disagree with their declared seed families")
+        for index, row in enumerate(rows):
+            if (set(row) != {"scene", "condition_id", "seed_family"} or
+                    row["scene"] not in SCENES or row["condition_id"] not in ids):
+                raise ValueError("invalid sparse sampling job")
+            if index >= len(initial[split]):
+                start = {"train": 22000, "validation": 32000, "evaluation": 42000}[split]
+                if not start < row["seed_family"] < start + 100:
+                    raise ValueError("sampling addition must use its reserved seed domain")
+                extras.append(dict(row, split=split))
+    if len(extras) > 24 or any(sum(row["scene"] == scene for row in extras) > 8 for scene in SCENES):
+        raise ValueError("sampling additions exceed the approved 24/eight-per-scene budget")
+    declared = [row for revision in plan.get("sampling_revisions", []) for row in revision["additions"]]
+    key = lambda row: (row["split"], row["scene"], row["condition_id"], row["seed_family"])
+    if sorted(extras, key=key) != sorted(declared, key=key):
+        raise ValueError("sampling additions require an explicit revision record")
+
+
+def extend_sampling_plan(plan, additions, reason):
+    validate_sampling_plan(plan)
+    if plan.get("design_profile") == QUICK_PROFILE:
+        raise ValueError("quick profile has a fixed 48-run sampling budget; coverage failures must be reported")
+    if plan.get("design_profile") != COMPACT_PROFILE:
+        raise ValueError("bounded sampling additions require the compact profile")
+    if plan.get("status") == "formal-frozen" or plan.get("models"):
+        raise ValueError("sampling cannot change after models have been frozen")
+    if not isinstance(reason, str) or not reason.strip() or not additions:
+        raise ValueError("sampling additions require a nonempty coverage reason and job list")
+    revised = copy.deepcopy(plan)
+    for row in additions:
+        if set(row) != {"split", "scene", "condition_id", "seed_family"} or row["split"] not in SAMPLING_SPLITS:
+            raise ValueError("only explicit train/validation/evaluation jobs may be appended")
+        if type(row["seed_family"]) is not int or row["seed_family"] < 1:
+            raise ValueError("sampling seed family must be a positive integer")
+        split = row["split"]
+        revised["sampling_jobs"][split].append({k: v for k, v in row.items() if k != "split"})
+        revised["seed_families"][split].append(row["seed_family"])
+        revised["seed_families"][split].sort()
+    revised["sampling_revisions"].append(dict(number=len(revised["sampling_revisions"]) + 1,
+        utc=stamp(), reason=reason.strip(), additions=copy.deepcopy(additions)))
+    validate_sampling_plan(revised)
+    return revised
+
+
+def _commit_sampling_revision(root, directory):
+    """Replay a prepared write set; an interrupted multi-file update stays auditable."""
+    record_path = directory / "revision.json"
+    record = runner.summary.read_json(record_path)
+    for item in record["files"]:
+        path = root / "plan" / item["name"]
+        if item["name"] != Path(item["name"]).name:
+            raise ValueError("invalid sampling revision path")
+        current = digest(path)
+        for label in ("before", "after"):
+            if digest(directory / item[label]) != item[label + "_sha256"]:
+                raise ValueError("sampling revision evidence was modified")
+        if current not in (item["before_sha256"], item["after_sha256"]):
+            raise ValueError("sampling revision cannot overwrite an unrelated design or state")
+    for item in record["files"]:
+        runner.write_json(root / "plan" / item["name"],
+                          runner.summary.read_json(directory / item["after"]))
+    record.update(status="complete", completed_utc=stamp())
+    runner.write_json(record_path, record)
+
+
+def recover_sampling_revision(root):
+    root = Path(root).resolve()
+    with (root / "plan/campaign.lock").open("a+") as lock, \
+            (root / "plan/workflow.lock").open("a+") as workflow_lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(workflow_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with (ROOT / "build/experiment-run.lock").open("a+") as probe:
+            fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if any(list((root / "workflow" / stage).glob("*/attempt-*"))
+               for stage in ("train", "evaluate", "figures")):
+            raise ValueError("cannot recover sampling changes after model/assessment work")
+        pending = [p.parent for p in (root / "plan/sampling-revisions").glob("*/revision.json")
+                   if runner.summary.read_json(p).get("status") == "prepared"]
+        if len(pending) != 1:
+            raise ValueError("exactly one prepared sampling revision is required")
+        revised = runner.summary.read_json(pending[0] / "after-design.json")
+        validate_sampling_plan(revised)
+        if runner.source_snapshot(ROOT)["sha256"] != revised["source_sha256"]:
+            raise ValueError("source changed since sampling revision preparation")
+        _commit_sampling_revision(root, pending[0])
+        return revised
+
+
+def append_sampling_jobs(root, additions, reason):
+    """Append covered-purpose jobs; preserve and revalidate every existing job identity."""
+    root = Path(root).resolve()
+    with (root / "plan/campaign.lock").open("a+") as lock, \
+            (root / "plan/workflow.lock").open("a+") as workflow_lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(workflow_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # Dataset-only coverage audits may legitimately trigger additions.
+        # workflow uses a new datasets-revision-NNN namespace afterwards, so
+        # the old dataset evidence and all its absolute paths stay intact.
+        if any(list((root / "workflow" / stage).glob("*/attempt-*"))
+               for stage in ("train", "evaluate", "figures")):
+            raise ValueError("sampling additions must precede model/assessment workflow attempts")
+        for path in (root / "plan/sampling-revisions").glob("*/revision.json"):
+            if runner.summary.read_json(path).get("status") != "complete":
+                raise ValueError("pending sampling revision; run recover-sampling first")
+        plan = runner.summary.read_json(root / "plan/design.json")
+        if plan.get("status") != "development-frozen":
+            raise ValueError("sampling additions require development-frozen and unfitted models")
+        if runner.source_snapshot(ROOT)["sha256"] != plan["source_sha256"]:
+            raise ValueError("source changed; old sampling cannot be reinterpreted")
+        with (ROOT / "build/experiment-run.lock").open("a+") as probe:
+            fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        revised = extend_sampling_plan(plan, additions, reason)
+        states = {}
+        for split in plan["seed_families"]:
+            path = root / "plan" / ("state-" + split + ".json")
+            if not path.exists():
+                continue
+            state = runner.summary.read_json(path)
+            if state.get("execution_design_sha256") != execution_identity(plan, split):
+                raise ValueError("old execution identity differs before sampling revision")
+            expected = {j["job_id"]: j for j in jobs_for(plan, split)}
+            for job_id, entry in state["jobs"].items():
+                if job_id not in expected or any(entry.get(k) != v for k, v in expected[job_id].items()):
+                    raise ValueError("existing job identity differs from the frozen sampling plan")
+                if entry.get("status") == "running":
+                    raise ValueError("reconcile interrupted running jobs before sampling revision")
+                job = expected[job_id]
+                model_sha = (plan["models"].get(job["scene"]) or {}).get("sha256")
+                complete = completed_attempt(entry.get("attempts", []), job, plan["source_sha256"], model_sha)
+                if entry.get("status") == "complete" and complete is None:
+                    raise ValueError("completed state has no verified completed attempt")
+                if complete is not None:
+                    _, hashes = runner.prepare_inputs(prepare_job_input(root, plan, job))
+                    if runner.summary.read_json(complete / "manifest.json")["input_hashes"] != hashes:
+                        raise ValueError("completed input differs during sampling revision")
+            new_state = copy.deepcopy(state)
+            new_state["execution_design_sha256"] = execution_identity(revised, split)
+            new_state["updated_utc"] = stamp()
+            states[path.name] = (state, new_state)
+        number = len(revised["sampling_revisions"])
+        directory = root / "plan/sampling-revisions" / ("revision-{:03d}".format(number))
+        directory.mkdir(parents=True, exist_ok=False)
+        files = []
+        # Commit the design last; any interruption before that leaves a prepared
+        # journal and a mismatch, which fails closed until explicit recovery.
+        for name, (before, after) in list(states.items()) + [("design.json", (plan, revised))]:
+            old, new = "before-" + name, "after-" + name
+            # Preserve the original bytes too: valid JSON whitespace is not a
+            # reason to reject (or silently rewrite) the previous identity.
+            shutil.copyfile(root / "plan" / name, directory / old)
+            runner.write_json(directory / new, after)
+            files.append(dict(name=name, before=old, after=new,
+                              before_sha256=digest(directory / old), after_sha256=digest(directory / new)))
+        previous_namespace = "datasets" if number == 1 else "datasets-revision-{:03d}".format(number - 1)
+        runner.write_json(directory / "revision.json", dict(schema_version=1, status="prepared",
+            number=number, reason=reason, additions=additions, created_utc=stamp(), files=files,
+            superseded_dataset_namespace=str(root / "workflow" / previous_namespace)))
+        _commit_sampling_revision(root, directory)
+        return revised
 
 
 def jobs_for(plan, split):
+    validate_sampling_plan(plan)
     if split not in plan["seed_families"]:
         raise ValueError("unknown data split: " + split)
+    if plan.get("design_profile") in SPARSE_PROFILES and split in SAMPLING_SPLITS:
+        jobs = []
+        for row in plan["sampling_jobs"][split]:
+            block = "{}-{}-{}-s{}".format(split, row["scene"], row["condition_id"], row["seed_family"])
+            jobs.append(dict(row, job_id=block + "-a0", block_id=block, split=split, strategy=0))
+        return jobs
     conditions = (plan["pilot_conditions"] if split == "pilot" else
                   [item["id"] for item in plan["conditions"]])
     jobs = []
@@ -104,10 +388,17 @@ def jobs_for(plan, split):
                     jobs.append(dict(job_id=block + "-a" + str(strategy), block_id=block,
                                      split=split, scene=scene, condition_id=cid,
                                      seed_family=seed, strategy=strategy))
+    if plan.get("design_profile") in SPARSE_PROFILES and split == "test":
+        baseline = plan["baseline_condition_id"]
+        ordered_conditions = [baseline] + [cid for cid in conditions if cid != baseline]
+        jobs.sort(key=lambda job: (plan["seed_families"][split].index(job["seed_family"]),
+                                   ordered_conditions.index(job["condition_id"]),
+                                   SCENES.index(job["scene"]), job["strategy"]))
     return jobs
 
 
 def initialize(root, plan):
+    validate_sampling_plan(plan)
     path = Path(root) / "plan/design.json"
     if path.exists():
         raise FileExistsError("refusing to overwrite campaign design: " + str(path))
@@ -179,6 +470,11 @@ def execution_identity(plan, split):
             "conditions", "baseline_condition_id", "scans", "source_sha256")
     value = {key: plan[key] for key in keys}
     value["seed_families"] = plan["seed_families"][split]
+    if plan.get("design_profile") in SPARSE_PROFILES:
+        value["design_profile"] = plan["design_profile"]
+        value["figure_ids"] = plan["figure_ids"]
+        if split in SAMPLING_SPLITS:
+            value["sampling_jobs"] = plan["sampling_jobs"][split]
     if split == "pilot":
         value["pilot_conditions"] = plan["pilot_conditions"]
     if split == "test":
@@ -331,7 +627,7 @@ def cancel_measured_runner(process):
     return cleanup
 
 
-def _run_job(root, plan, job, attempt_number, cancellation=None):
+def _run_job(root, plan, job, attempt_number, cancellation=None, no_build=False):
     config = prepare_job_input(root, plan, job)
     stage = "runs" if job["split"] == "test" else (
         "pilot" if job["split"] == "pilot" else "sampling")
@@ -343,6 +639,8 @@ def _run_job(root, plan, job, attempt_number, cancellation=None):
         "--output-root", str(attempt / "runs"), "--block-id", job["block_id"],
         "--strategy", str(job["strategy"]), "--timeout", str(timeout), "--python", sys.executable,
     ]
+    if no_build:
+        command.append("--no-build")
     if job["split"] != "test":
         command.append("--training-snapshots")
     if job["split"] == "pilot":
@@ -413,17 +711,17 @@ def _run_job(root, plan, job, attempt_number, cancellation=None):
 
 
 def execute(root, split, *, scenes=None, conditions=None, seeds=None, max_jobs=None,
-            max_attempts=2):
+            max_attempts=2, no_build=False):
     root = Path(root).resolve()
     with cancellation_signals() as cancellation, (root / "plan/campaign.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return _execute_locked(root, split, scenes=scenes, conditions=conditions, seeds=seeds,
                                max_jobs=max_jobs, max_attempts=max_attempts,
-                               cancellation=cancellation)
+                               cancellation=cancellation, no_build=no_build)
 
 
 def _execute_locked(root, split, *, scenes, conditions, seeds, max_jobs, max_attempts,
-                    cancellation):
+                    cancellation, no_build=False):
     check_cancelled(cancellation)
     plan = runner.summary.read_json(root / "plan/design.json")
     source = runner.source_snapshot(ROOT)["sha256"]
@@ -481,7 +779,7 @@ def _execute_locked(root, split, *, scenes, conditions, seeds, max_jobs, max_att
         runner.write_json(state_path, state)
         print("RUN {} attempt {}".format(job["job_id"], len(entry["attempts"]) + 1), flush=True)
         number = max([a["attempt"] for a in entry["attempts"]] or [0]) + 1
-        record = _run_job(root, plan, job, number, cancellation)
+        record = _run_job(root, plan, job, number, cancellation, no_build=no_build)
         entry["attempts"].append(record)
         entry["status"] = record["status"]
         state["updated_utc"] = stamp()
@@ -525,6 +823,7 @@ def freeze(root, phase, models, timeout):
     with (root / "plan/campaign.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         plan = runner.summary.read_json(root / "plan/design.json")
+        validate_sampling_plan(plan)
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be finite and positive")
         for value in models:
@@ -564,11 +863,16 @@ def freeze(root, phase, models, timeout):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "freeze", "run", "export"))
+    parser.add_argument("action", choices=("init", "freeze", "run", "export", "append-sampling", "recover-sampling"))
     parser.add_argument("--root", required=True, type=Path)
-    parser.add_argument("--duration", type=float, default=300)
+    parser.add_argument("--duration", type=float,
+                        help="measurement duration; defaults to 120 for quick-draft-v1, otherwise 300")
     parser.add_argument("--warmup", type=float, default=20)
     parser.add_argument("--drain", type=float, default=3.5)
+    parser.add_argument("--profile", choices=("full",) + SPARSE_PROFILES, default="full")
+    parser.add_argument("--additions", type=Path, help="JSON list of explicit split/scene/condition_id/seed_family jobs")
+    parser.add_argument("--reason", help="coverage deficiency that requires bounded sampling additions")
+    parser.add_argument("--no-build", action="store_true", help="run existing binaries without invoking a build")
     parser.add_argument("--phase", choices=("pilot", "development", "formal"), default="pilot")
     parser.add_argument("--model", action="append", default=[], help="scene=/absolute/checkpoint.pt")
     parser.add_argument("--split", choices=("pilot", "train", "validation", "evaluation", "test"),
@@ -583,12 +887,18 @@ def main(argv=None):
     root = args.root.expanduser().resolve()
     try:
         if args.action == "init":
-            initialize(root, make_plan(root.name, args.duration, args.warmup, args.drain))
+            initialize(root, make_plan(root.name, args.duration, args.warmup, args.drain, args.profile))
         elif args.action == "freeze":
             freeze(root, args.phase, args.model, args.timeout)
         elif args.action == "run":
             execute(root, args.split, scenes=args.scene, conditions=args.condition, seeds=args.seed,
-                    max_jobs=args.max_jobs, max_attempts=args.max_attempts)
+                    max_jobs=args.max_jobs, max_attempts=args.max_attempts, no_build=args.no_build)
+        elif args.action == "append-sampling":
+            if not args.additions:
+                raise ValueError("append-sampling requires --additions and --reason")
+            append_sampling_jobs(root, json.loads(args.additions.read_text()), args.reason)
+        elif args.action == "recover-sampling":
+            recover_sampling_revision(root)
         else:
             entries = export_runs(root, args.split)
             path = root / "plan" / ("verified-" + args.split + "-runs.json")

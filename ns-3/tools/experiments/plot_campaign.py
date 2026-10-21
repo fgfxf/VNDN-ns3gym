@@ -1,11 +1,12 @@
 #!/usr/bin/env python3.8
-"""Render 30 numbered publication figures from a complete audited campaign.
+"""Render the declared publication figures from a complete audited campaign.
 
 PDF/SVG are the shareable artifacts; PNG previews and source tables are retained.
 Validation-only fixtures receive a visible watermark in every output.
 """
 import argparse
 import csv
+import html
 import importlib.util
 import json
 import math
@@ -75,6 +76,11 @@ def load_analysis(directory):
                 "baseline_condition_id", "conditions", "scans"):
         if result.get(key) != campaign.get(key):
             raise ValueError("Analysis disagrees with frozen campaign: " + key)
+    if result.get("design_profile", "full") != campaign.get("design_profile", "full"):
+        raise ValueError("Analysis design profile differs from frozen campaign")
+    if result.get("figure_ids", analysis_tools.expected_figure_ids(result["scans"])) != \
+            analysis_tools.expected_figure_ids(campaign["scans"]):
+        raise ValueError("Analysis figure declaration differs from frozen campaign")
     table = list(csv_records(directory / "plot-summary.csv"))
     points = result.get("points", [])
     if len(table) != len(points):
@@ -118,6 +124,11 @@ def time_bins(records, start_ns, end_ns, bin_seconds):
 
 def _caption(result, english, chinese):
     label = " VALIDATION ONLY; synthetic small fixture." if result["validation_only"] else ""
+    if result.get("design_profile") == analysis_tools.QUICK_PROFILE:
+        count = len(result["repetitions"])
+        english = ("Exploratory draft: online comparison n={} paired runs per condition; "
+                   "descriptive results, no significance claim. ".format(count)) + english
+        chinese = "探索初稿：在线对比每条件n={}个配对运行，仅作描述，不作显著性结论。".format(count) + chinese
     if any(row["unique_physical_mobility"] == 1 and row["seed_families"] > 1
            for row in result.get("variation_audit", [])):
         english += (" Conditions with one observed mobility realization support only conditional "
@@ -127,13 +138,19 @@ def _caption(result, english, chinese):
 
 
 def save_figure(fig, output, identifier, kind, result, caption_en, caption_zh, metadata=None):
+    quick = result.get("design_profile") == analysis_tools.QUICK_PROFILE
     if result["validation_only"]:
         fig.text(.5, .015, "VALIDATION ONLY — NOT EXPERIMENTAL RESULTS",
                  ha="center", va="bottom", color="#A00000", fontsize=8)
+    if quick:
+        fig.text(.5, .04 if result["validation_only"] else .015,
+                 "EXPLORATORY DRAFT — online n={} paired runs/condition".format(len(result["repetitions"])),
+                 ha="center", va="bottom", color="#666666", fontsize=8)
     if any(getattr(axis, "name", "") == "3d" for axis in fig.axes):
         fig.subplots_adjust(left=.06, right=.90, bottom=.18, top=.90)
     else:
-        fig.tight_layout(rect=(0, .05 if result["validation_only"] else 0, 1, .94))
+        bottom = .08 if quick and result["validation_only"] else .05 if quick or result["validation_only"] else 0
+        fig.tight_layout(rect=(0, bottom, 1, .94))
     files, hashes = {}, {}
     for suffix in ("pdf", "svg", "png"):
         filename = identifier + "." + suffix
@@ -156,14 +173,22 @@ def lookup_points(result):
     return values
 
 
-def _draw_points(ax, xvalues, points, strategy):
+def _draw_points(ax, xvalues, points, strategy, descriptive=False):
     estimates = [point["estimate"] if point["estimate"] is not None else np.nan
                  for point in points]
     index = int(strategy)
     ax.plot(xvalues, estimates, label=ALGORITHMS[index], color=COLORS[index],
             marker=MARKERS[index], linestyle=LINES[index], markersize=4, linewidth=1.2)
     for x, point in zip(xvalues, points):
-        if point["estimate"] is not None and point["ci_low"] is not None:
+        if descriptive:
+            values = [v for v in point.get("run_values", []) if v is not None]
+            ax.scatter([x] * len(values), values, s=13, alpha=.35,
+                       color=COLORS[index], marker=MARKERS[index], zorder=2)
+            if point["estimate"] is not None and point.get("run_sd") is not None:
+                lo, hi = point["estimate"] - point["run_sd"], point["estimate"] + point["run_sd"]
+                ax.vlines(x, lo, hi, color=COLORS[index], linewidth=.8)
+                ax.plot([x, x], [lo, hi], "_", color=COLORS[index], markersize=5)
+        elif point["estimate"] is not None and point["ci_low"] is not None:
             # Percentile intervals can exclude the point estimate. Plot the
             # endpoints directly, rather than assuming nonnegative yerr.
             ax.vlines(x, point["ci_low"], point["ci_high"], color=COLORS[index], linewidth=.8)
@@ -174,8 +199,12 @@ def _draw_points(ax, xvalues, points, strategy):
 def scan_figures(result, output, points):
     figures = []
     conditions = {item["id"]: item for item in result["conditions"]}
+    compact = result.get("design_profile") in (analysis_tools.COMPACT_PROFILE, analysis_tools.QUICK_PROFILE)
     identifier = 1
     for scan in analysis_tools.SCANS:
+        if scan not in result["scans"]:
+            identifier += len(analysis_tools.MAIN_METRICS)
+            continue
         ids = result["scans"][scan]
         variable = "requests" if scan == "interest" else "speed_kmh" if scan == "speed" else "vehicles"
         x = [conditions[condition][variable] for condition in ids]
@@ -184,7 +213,7 @@ def scan_figures(result, output, points):
             for panel, (scene, ax) in enumerate(zip(SCENARIOS, axes)):
                 for strategy in STRATEGIES:
                     records = [points[scene, condition, strategy, metric] for condition in ids]
-                    _draw_points(ax, x, records, strategy)
+                    _draw_points(ax, x, records, strategy, descriptive=compact)
                 ax.set_title("({}) {}".format("abc"[panel], SCENE_LABELS[scene]))
                 ax.set_xlabel(AXIS_LABELS[scan])
                 ax.set_xticks(x)
@@ -197,15 +226,34 @@ def scan_figures(result, output, points):
             handles, labels = axes[0].get_legend_handles_labels()
             fig.legend(handles, labels, ncol=4, loc="upper center", frameon=False, fontsize=8)
             figure_id = "F{:02d}-{}-{}".format(identifier, scan, metric)
-            figures.append(save_figure(
-                fig, output, figure_id, "scan", result,
+            english = (
                 "{} versus {}. Each point uses {} complete independent paired simulation blocks; "
                 "bars are pointwise 95% whole-block bootstrap intervals. Success RTT is weighted "
                 "by satisfied requests; unavailable intervals are omitted and recorded in the table."
-                .format(METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])),
+                .format(METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+            chinese = (
                 "{}随{}变化；每点{}个完整配对运行块，区间为整块重采样的点态95%区间。"
                 "成功RTT按成功请求数加权；不可估计区间在数表注明。".format(
-                    METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])),
+                    METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+            if compact:
+                english = (
+                    "{} versus {}. {} paired independent runs per condition; faint symbols show "
+                    "individual run estimates and bars show one sample standard deviation, not a "
+                    "confidence interval. RTT centers pool success counts across runs; its SD describes "
+                    "defined per-run success means and omits zero-success runs only from the SD, never "
+                    "from the performance denominator. The point estimate need not equal the mean of "
+                    "the displayed per-run RTTs. Small-sample paired bootstrap intervals remain in "
+                    "the tables; neither bootstrap draws nor packets are independent runs."
+                    .format(METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+                chinese = (
+                    "{}随{}变化，每条件{}个独立配对运行；淡点为各次运行，误差线为一倍样本标准差，"
+                    "不是置信区间。RTT中心仍按成功数加权，SD仅描述有成功请求的各run均值，"
+                    "因此中心不必等于淡点均值；零成功run仍留在性能分母。小样本配对bootstrap区间"
+                    "保留于数表，重采样次数和包数不等于独立重复数。".format(
+                        METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+            figures.append(save_figure(
+                fig, output, figure_id, "scan", result,
+                english, chinese,
                 {"scan": scan, "metric": metric, "source_table": "plot-summary.csv",
                  "conditions": ids}))
             identifier += 1
@@ -360,12 +408,20 @@ def legacy_figures(result, directory, output):
 def traffic_figure(result, output, points):
     fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.6), sharey=True)
     baseline = result["baseline_condition_id"]
+    quick = result.get("design_profile") == analysis_tools.QUICK_PROFILE
     for panel, (scene, ax) in enumerate(zip(SCENARIOS, axes)):
         for strategy in STRATEGIES:
             point = points[scene, baseline, strategy, "network_mbit"]
             x = int(strategy)
             ax.bar(x, point["estimate"], color=COLORS[x], width=.65)
-            if point["ci_low"] is not None:
+            if quick:
+                values = [value for value in point.get("run_values", []) if value is not None]
+                ax.scatter([x] * len(values), values, color="black", alpha=.5, s=18, zorder=3)
+                if point.get("run_sd") is not None:
+                    lower, upper = point["estimate"] - point["run_sd"], point["estimate"] + point["run_sd"]
+                    ax.vlines(x, lower, upper, color="black", linewidth=1)
+                    ax.plot([x, x], [lower, upper], "_", color="black")
+            elif point["ci_low"] is not None:
                 ax.vlines(x, point["ci_low"], point["ci_high"], color="black", linewidth=1)
                 ax.plot([x, x], [point["ci_low"], point["ci_high"]], "_", color="black")
         ax.set_xticks(range(4), ("Naive", "VTDF", "RTVTDF", "Proposed"), rotation=15, fontsize=8)
@@ -373,13 +429,22 @@ def traffic_figure(result, output, points):
         ax.set_ylim(bottom=0)
         ax.grid(axis="y", alpha=.2)
     axes[0].set_ylabel(METRIC_LABELS["network_mbit"])
-    return save_figure(
-        fig, output, "F27-baseline-total-traffic", "traffic", result,
+    english = (
         "Baseline total outgoing NDN L3 traffic across network faces, including measurement and "
         "drain intervals. Means and pointwise 95% complete-block bootstrap intervals; native "
-        "LP/MAC overhead and retries are outside this measurement layer.",
-        "三场景基准条件的全网NDN L3出站总量，包含测量与排空窗口。给出均值及整块重采样"
-        "点态95%区间，不包括LP/MAC头和MAC重试。",
+        "LP/MAC overhead and retries are outside this measurement layer.")
+    chinese = ("三场景基准条件的全网NDN L3出站总量，包含测量与排空窗口。给出均值及整块重采样"
+               "点态95%区间，不包括LP/MAC头和MAC重试。")
+    if quick:
+        english = (
+            "Baseline total outgoing NDN L3 traffic across network faces, including measurement and "
+            "drain intervals. Bars show equal-run means, dots show individual runs and error bars show "
+            "one sample standard deviation, not a confidence interval. Native LP/MAC overhead and "
+            "retries are outside this measurement layer.")
+        chinese = ("三场景基准条件的全网NDN L3出站总量，包含测量与排空窗口。柱为各run等权均值，"
+                   "点为各次运行，误差线为一倍样本标准差，不是置信区间；不包括LP/MAC头和MAC重试。")
+    return save_figure(
+        fig, output, "F27-baseline-total-traffic", "traffic", result, english, chinese,
         {"source_table": "plot-summary.csv", "condition_id": baseline})
 
 
@@ -557,6 +622,41 @@ def supplementary_diagnostics(result, directory, output):
     return figures
 
 
+def write_draft_index(output, result, figures):
+    """Local preview of the actual rendered artifacts, with their full captions."""
+    title = "Exploratory draft / 探索初稿：25张实验图"
+    pieces = [
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<title>' + title + '</title>',
+        '<style>body{max-width:1200px;margin:2rem auto;padding:0 1rem;font-family:sans-serif;'
+        'line-height:1.5;color:#222}article{border-top:1px solid #ddd;padding:1rem 0}'
+        'img{max-width:100%;height:auto}a{margin-right:1rem}.note{color:#666}</style>',
+        '<h1>' + title + '</h1>',
+        '<p>在线对比每条件 n={} 个完整配对运行。图中淡点代表各次运行，主图与总流量图的误差线'
+        '为样本标准差，不是置信区间；本初稿不作显著性结论。</p>'.format(len(result["repetitions"])),
+        '<p class="note">下列图片来自本次已完成的汇总。点击PNG预览可放大；PDF与SVG适合论文排版。'
+        '各图保留英文与中文图注，完整来源见figure-index.json。</p>',
+    ]
+    if result["validation_only"]:
+        pieces.append('<p><strong>VALIDATION ONLY：合成验证夹具，不是论文实验结果。</strong></p>')
+    for item in figures:
+        identifier = html.escape(item["id"], quote=True)
+        files = {key: html.escape(value, quote=True) for key, value in item["files"].items()}
+        pieces.extend([
+            '<article data-figure-id="{}"><h2>{}</h2>'.format(identifier, identifier),
+            '<a href="{png}"><img src="{png}" loading="lazy" alt="{name}"></a>'.format(
+                name=identifier, **files),
+            '<p><a href="{pdf}">PDF</a><a href="{svg}">SVG</a><a href="{png}">PNG</a></p>'.format(**files),
+            '<p>' + html.escape(item["caption_zh"]) + '</p>',
+            '<p class="note">' + html.escape(item["caption_en"]) + '</p></article>',
+        ])
+    pieces.append('</html>')
+    path = output / "index.html"
+    path.write_text("\n".join(pieces), encoding="utf-8")
+    return {"path": path.name, "sha256": summary.sha256_file(path)}
+
+
 def plot_campaign(analysis_directory, output_directory):
     directory = Path(analysis_directory).resolve()
     output = Path(output_directory).resolve()
@@ -576,13 +676,15 @@ def plot_campaign(analysis_directory, output_directory):
         figures.extend(confusion_figures(result, output))
         diagnostics.extend(supplementary_diagnostics(result, directory, output))
     figures.sort(key=lambda item: item["id"])
-    if len(figures) != 30 or len({item["id"] for item in figures}) != 30:
-        raise ValueError("Expected exactly 30 numbered primary/supplementary figures")
+    expected = analysis_tools.expected_figure_ids(result["scans"])
+    if len(figures) != len(expected) or {item["id"] for item in figures} != set(expected):
+        raise ValueError("Rendered figures do not match the declared primary/supplementary figure IDs")
     # Revalidate frozen analysis artifacts after rendering, before marking complete.
     load_analysis(directory)
     report = {
         "schema_version": 1, "status": "complete", "validation_only": result["validation_only"],
         "campaign_id": result["campaign_id"], "campaign_sha256": result["campaign_sha256"],
+        "design_profile": result.get("design_profile", "full"), "figure_ids": expected,
         "analysis_sha256": summary.sha256_file(directory / "aggregate.json"),
         "plot_code_sha256": summary.sha256_file(Path(__file__)),
         "matplotlib_version": matplotlib.__version__, "numpy_version": np.__version__,
@@ -598,6 +700,11 @@ def plot_campaign(analysis_directory, output_directory):
         "source_tables": {path.name: summary.sha256_file(path)
                           for path in output.glob("*.csv")},
     }
+    if result.get("design_profile") == analysis_tools.QUICK_PROFILE:
+        report["browse_index"] = write_draft_index(output, result, figures)
+        report["plot_configuration"]["displayed_uncertainty"] = (
+            "individual paired runs and one sample standard deviation; exploratory n=2, "
+            "not a confidence interval or significance claim")
     analysis_tools.write_json(output / "figure-index.json", report)
     analysis_tools.write_json(output / "status.json", {"status": "complete",
                                                      "validation_only": result["validation_only"]})

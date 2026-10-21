@@ -2,6 +2,12 @@
 
 更新日期：2026-10-21。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
 
+最新任务是用户已授权执行的[10小时初稿批次](QUICK_DRAFT_EXECUTION_20261021.md)：
+120秒测量、48采样、192正式、三模型和25张探索图，使用独立quick目录并复用现有二进制。
+旧批次保持停止。手动分步骤与中断恢复的较大实施范围见[分步恢复方案](STEPWISE_RESUME_PLAN_20261021.md)，
+不能把该计划整体当作已上线；本次训练续训与实际验证状态以quick执行记录为准。
+用户只要立即停止，不需要轮末暂停。
+
 ## 用户确认的定位
 
 - 本项目是基于 ns-3 / ndnSIM、SUMO 和 ns3-gym 的车联网实验，研究车辆切换边缘基站时，NDN Data 回程沿原路径返回导致无法送达车辆的问题。
@@ -112,6 +118,10 @@ P2P 设备仍按原路径发送，本地传输和接收重组未修改。此修�
 测量结束后继续排空。新入口不依赖旧 `--obu-frequency` 的随机发包间隔。
 
 `tools/experiments/` 提供输入生成、串行四算法运行、完整性检查和逐轮汇总，产物与旧训练 CSV 分开。
+精简批次新增`run_campaign_pipeline.py`，区分准备模型`prepare`、用户手动正式实验`formal`、
+出图`figures`与`status --watch`进度查看；准备完成止于`ready-for-formal`。
+用户最新选择为48～72轮采样、480轮正式测试，操作与当前状态见
+[精简实验执行记录](COMPACT_EXECUTION_20261021.md)，不再套用旧4998轮规模。
 采集器订阅现有 L3 TraceSource，只累计网络 Face 的出站 Interest/Data `wireEncode()` 字节；
 Nack 单列次数。控制子集包含 hello、p2p-handshake、search/find、neural-route/neural-pit；
 封装业务 Data 的 forward 计入网络负载，不能整包算纯控制负载。
