@@ -39,7 +39,22 @@
   新正式数据为RSU实际hello的10×6快照，标签按源RSU从Router首次回程的时间关联服务站；
   旧请求结果CSV仅保留兼容入口，不能混入新正式训练。
   P0–P6已获用户最终授权，不再逐阶段重复询问执行许可。
-  2026-10-21已启动预实验持久队列；开始新的运行前检查
+  2026-10-21首轮预实验7200秒超时，旧等待队列已失败；12轮转发策略采集开关验收已通过，
+  用户随后明确要求让已有剩余编译结束后直接跑实验，不再configure或另起批量编译，接受少量非致命瑕疵。
+  已用现有程序开始真实三场景baseline，使用`--run-no-build`避免运行入口再次触发编译。
+  11:01已启动接续到出图的后台队列，入口为
+  `build/validation/runtime-diagnosis-20261021/no-build-entry/continue_experiments.py`；
+  查`plan/direct-pipeline-state.json`与`plan/direct-pipeline.log`。
+  它等待当前三场景基准完成后直接采集918轮训练/验证/独立评估数据，训练三个固定模型，
+  再运行既有模型工程核查、4080轮正式测试与出图；不再执行其余重复pilot或临时模型预演。
+  这是按用户最新指令调整工程准备顺序，未执行的预演不得标为通过，正式20种子不减少。
+  不要重启旧的`queued-driver`或优化构建脚本，也不要与新队列并行启动仿真。
+  最新状态见[运行恢复记录](docs/ai/RETRAIN_RUNTIME_RECOVERY_20261021.md)。开始新的运行前检查
   `data/experiments/retrain-20261021/plan/queued-driver-state.json`、`state-pilot.json`
-  及执行记录，避免另起并发仿真。队列当前目标是`pilot-report`，不等于正式图集完成；
+  及`long-driver-state.json`、`plan/resumed-real-experiments-launch.json`、
+  执行记录，避免另起并发构建或仿真。阶段完成不等于正式图集完成；
   已封存的生产源码和执行辅助脚本在运行期间不得混改。
+
+- **2026-10-21 11:44 用户已要求关闭当前仿真。** 当前仿真及自动接续队列已停止，
+  原始数据保留。停止记录为`data/experiments/retrain-20261021/plan/user-stop-20261021.json`。
+  上述自动执行授权已被本次停止指令中止，不得自行重启队列或后续实验，等待用户新的执行指令。
