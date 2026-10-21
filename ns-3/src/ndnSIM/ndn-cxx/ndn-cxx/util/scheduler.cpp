@@ -143,6 +143,15 @@ Scheduler::cancelAllEvents()
 void
 Scheduler::scheduleNext()
 {
+  // Replacing an EventId does not cancel its ns-3 event. Keep exactly one
+  // pending wakeup when an earlier deadline replaces the queue head.
+  if (m_timerEvent) {
+    if (!m_timerEvent->IsExpired()) {
+      ns3::Simulator::Remove(*m_timerEvent);
+    }
+    m_timerEvent.reset();
+  }
+
   if (!m_queue.empty()) {
     m_timerEvent = ns3::Simulator::Schedule(ns3::NanoSeconds((*m_queue.begin())->expiresFromNow().count()),
                                             &Scheduler::executeEvent, this);
