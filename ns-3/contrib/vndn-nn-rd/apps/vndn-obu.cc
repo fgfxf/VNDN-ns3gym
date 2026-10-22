@@ -304,14 +304,17 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
               if (currentCs.find (n) == currentCs.end ())
                 removed.push_back (n);
             }
-          j["CsAdded"] = added;
-          j["CsRemoved"] = removed;
-          j["CsUpdate"] = true;
+          if (!added.empty () || !removed.empty ())
+            {
+              j["CsAdded"] = added;
+              j["CsRemoved"] = removed;
+              j["CsUpdate"] = true;
+            }
         }
       m_lastCsNames = currentCs;
     }
 
-  std::string strContent = j.dump (4);
+  std::string strContent = j.dump ();
   data->setContent (reinterpret_cast<const uint8_t *> (strContent.c_str ()),
                     strContent.size ());
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标 MAC（当前驻留基站 MAC）

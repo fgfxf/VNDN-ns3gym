@@ -120,7 +120,7 @@ class ValidationGateTest(unittest.TestCase):
                 os.environ["JOBS"] = old_jobs
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
-        self.assertEqual(len(report["steps"]), 14)
+        self.assertEqual(len(report["steps"]), 15)
         call = json.loads((self.root / "build-call.json").read_text())
         self.assertEqual(call, {"argv": ["build", "-j", "4", "--targets=test-runner"], "jobs": "4", "cwd": str(self.root)})
         for step in report["steps"]:
@@ -143,7 +143,8 @@ class ValidationGateTest(unittest.TestCase):
         code, report = self.invoke()
         self.assertEqual(code, 0)
         names = [step["name"] for step in report["steps"]]
-        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination"):
+        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination",
+                      "vndn-rsu-neural-return-buffer"):
             with self.subTest(suite=suite):
                 self.assertEqual(names.count(suite), 1,
                                  "Delivery regressions must execute exactly once")
@@ -161,7 +162,8 @@ class ValidationGateTest(unittest.TestCase):
                          "The shared training directory must include the formal contract tests")
 
     def test_neural_delivery_suite_evidence_is_required(self):
-        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination"):
+        for suite in ("vndn-router-neural-pit", "vndn-fragment-destination",
+                      "vndn-rsu-neural-return-buffer"):
             for evidence in ({"xml": "empty"}, {"case_result": "SKIP"}, {"cpp_rc": 3}):
                 with self.subTest(suite=suite, evidence=evidence):
                     self.state(suites={suite: evidence})
@@ -189,7 +191,8 @@ class ValidationGateTest(unittest.TestCase):
         wscript = MODULE_PATH.parents[1] / "contrib/vndn-nn-rd/wscript"
         runpy.run_path(str(wscript))["build"](build)
         for source in ("test/vndn-router-neural-pit-test.cc",
-                       "test/vndn-fragment-destination-test.cc"):
+                       "test/vndn-fragment-destination-test.cc",
+                       "test/vndn-rsu-neural-return-buffer-test.cc"):
             with self.subTest(source=source):
                 self.assertEqual(build.test_library.source.count(source), 1,
                                  "The test-runner must link each delivery regression")

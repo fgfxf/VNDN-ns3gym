@@ -1035,6 +1035,21 @@ VndnRsu::OnNeuralReturnData (const ndn::Data &data)
   if (routeTag == nullptr || routeTag->getReturnRsuPrimary () < 0)
     return;
 
+  // Router's prepared-PIT return format uses sender=target RSU, senderMac=0
+  // and targetMac=OBU. The normal NFD path owns its wireless forwarding;
+  // a local APP/FORWARDER match may still invoke this unsolicited callback.
+  // Do not mistake that RSU identity for a waiting vehicle and retain/replay
+  // an already handled Data. A nonzero target alone is not sufficient: old
+  // OBU-tag fallback returns must continue through the registration path.
+  const uint32_t rsuNodeId = m_thisNode->GetId ();
+  const bool isPreparedRouterReturn =
+      routeTag->getTargetMac () != 0 && routeTag->getSenderMac () == 0 &&
+      routeTag->getSenderNodeId () == rsuNodeId &&
+      (routeTag->getReturnRsuPrimary () == static_cast<int64_t> (rsuNodeId) ||
+       routeTag->getReturnRsuSecondary () == static_cast<int64_t> (rsuNodeId));
+  if (isPreparedRouterReturn)
+    return;
+
   const uint32_t obuNodeId = routeTag->getSenderNodeId ();
   const uint64_t obuMac = routeTag->getSenderMac ();
   if (m_vehicleLastReplyMs.count (obuNodeId) == 0)

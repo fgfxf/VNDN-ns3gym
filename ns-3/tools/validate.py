@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CPP_SUITES = ("vndn-rsu-forwarding-policy", "vndn-neural-return-selection",
               "vndn-experiment-config", "vndn-experiment-recorder",
               "vndn-l3-experiment-tracer", "vndn-router-neural-pit",
+              "vndn-rsu-neural-return-buffer",
               "vndn-fragment-destination", "vndn-training-snapshot")
 PYTHON_SUITES = (
     ("circle-python", "contrib/vndn-nn-rd/ai-training/circle/tests", "test_*.py"),

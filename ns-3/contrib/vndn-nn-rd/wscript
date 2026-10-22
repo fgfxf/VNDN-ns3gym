@@ -56,6 +56,7 @@ def build(bld):
         'test/vndn-experiment-config-test.cc',
         'test/vndn-experiment-recorder-test.cc',
         'test/vndn-router-neural-pit-test.cc',
+        'test/vndn-rsu-neural-return-buffer-test.cc',
         'test/vndn-fragment-destination-test.cc',
         'test/vndn-training-snapshot-test.cc',
     ]
