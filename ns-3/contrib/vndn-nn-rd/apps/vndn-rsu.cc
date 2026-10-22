@@ -8,6 +8,7 @@
  */
 
 #include "vndn-rsu.h"
+#include "vndn-hello-wire.h"
 #include "ns3/vndn-rsu-app.h"
 
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
@@ -213,7 +214,7 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
   nlohmann::json j;
   try
     {
-      j = nlohmann::json::parse (jsonStr);
+      j = hello_wire::Decode (jsonStr);
     }
   catch (const std::exception &e)
     {

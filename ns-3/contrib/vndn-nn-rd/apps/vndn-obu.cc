@@ -8,6 +8,7 @@
  */
 
 #include "vndn-obu.h"
+#include "vndn-hello-wire.h"
 #include "ns3/vndn-obu-app.h"
 #include "ns3/node-list.h"
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
@@ -316,9 +317,9 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
       m_lastCsNames = currentCs;
     }
 
-  // Baselines retain their original four-space JSON encoding.
-  std::string strContent = j.dump (
-      m_forwardStrategy == RsuForwardStrategy_NeuralNetwork ? -1 : 4);
+  // Neural hello uses a lossless versioned payload; baseline bytes stay unchanged.
+  std::string strContent = m_forwardStrategy == RsuForwardStrategy_NeuralNetwork
+                               ? hello_wire::Encode (j) : j.dump (4);
   data->setContent (reinterpret_cast<const uint8_t *> (strContent.c_str ()),
                     strContent.size ());
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标 MAC（当前驻留基站 MAC）

@@ -943,3 +943,76 @@ driver退出130。进程核查无本次runner/ns-3/SUMO残留；旧无关SUMO110
   `data/experiments/neural-only-hello-20261022/`。未启动完整性能批次、重训或重画图/HTML。
 - 结论：代码修改、生产安装及所述验收完成。已有共享优化结果保留原配置解释；
   后续神经方案收益包含报文优化，不能全部归因于预测模型。
+
+## 2026-10-22：神经策略进一步探索，18轮配对验证及隔离CBOR候选
+
+- 用户授权探索其它改善方案，circle小批量通过后再验证grid和spidermap；优先业务成功率与交接时延，
+  保持原统计指标。仅神经策略享有额外编码收益，机制解释只写Markdown文档，不改对比HTML/图。
+- 起始HEAD `f623b37c5e3da8becc673e08c1361c186604c648`，源树起始干净；当前正式主库
+  `b73e0752d551e466c8f8dcec3a7015eaf98503f3f3779e6b6fb312a854da9504`保持。
+  正式改动仅AGENTS入口、本记录和新增`NEURAL_EXPLORATION_20261022.md`。
+- 候选源码位于`build/validation/neural-explore-20261022/candidate-wire-v1/source/`：
+  NN hello改为`VNH1 + CBOR [1,[六维原值],NextRsu,cacheObject]`，双端版本/形状/数值/缓存校验，
+  RSU恢复原JSON对象后走原逻辑；保留原数值精度/频率/缓存含义/模型输入和其他三策略旧JSON字节。
+  没有改正式cc/h、模型、选站阈值、NFD、统计/出图实现。
+- 先行基线：6项现有hello测试、5个相关C++套件通过。
+  真实分支提取探针旧实现435检查中15项有效失败；版本整数边界新测试另发现下界问题，修复后
+  `candidate-wire-v1/frozen-green/`441检查通过，覆盖56个策略/缓存/数值状态及24个坏输入。
+- 隔离工具`overlay.py`沿用最新神经专用hello构建计划中的10对象，复用8个正确对象，只编译OBU/RSU两对象、
+  链接1库；不采用早期构建树的陈旧对象，保留prepared-PIT身份修复。库SHA
+  `a930351bd444aaa3f1bf6a3291ce56d3ba247a1b3b5b50c1b01f93674998ba4f`。
+  三场景程序及其余动态依赖未改；每轮封存overlay-provenance，普通源树快照不冒充候选源。
+  `JOBS=4`，没有configure或批量重编，真实仿真串行。
+- 候选库实际加载到debug test-runner，5套件19用例全部通过（forwarding-policy、return-selection、
+  neural-return-buffer、training-snapshot、router-neural-pit）；ldd及XML在`candidate-cpp-tests-debug/`。
+  最初误选optimized test-runner无匹配测试，保留于`candidate-cpp-tests/`，不计有效RED或通过。
+  私有头/编解码独立复核未发现阻断缺陷，正式安装需同步双端并更新现有NN必须JSON的测试假设。
+- 隔离工具6项、新性能门槛6项、源站标签/分母审计13项行为测试先红后绿；相关旧固定交接工具7项基线通过。
+  `analyze.py`首次读取实际manifest时纠正execution_mode应为existing-binary，错误日志保留；
+  不完整运行标pending/null，不能计0或失败，也不挑多个完整attempt中的有利结果。
+- 先冻结`plan.json`，实际18轮全部complete且原始闭合/输入/模型/库/轨迹/请求配对核验通过。
+  三场景10车、速度设置30km/h、6000请求，20秒预热+120秒测量+3.5秒排空，种子52001/52002；
+  每场景当前RTVTDF/当前NN/候选NN各2轮。现有三模型权重不变。
+  circle门槛通过后才启动grid/spider。原始数据`data/experiments/neural-explore-20261022/`，
+  三场景完整报告在本轮build的`analysis/`；最终路径/SHA见`final-summary.json`和`runs-index.csv`。
+- circle当前NN→候选：ISR85.4083→90.6250%，RTT430.8669→346.4444ms，固定交接成功765→853，门槛通过。
+  grid：ISR90.1000→90.4667%，RTT315.3170→314.0629ms，交接1716→1747，通过但收益小；ISR仍低于当前RTVTDF。
+  spider：ISR60.7417→60.7167%，RTT301.3849→301.5705ms，交接547→545，性能门槛未通过。
+  候选控制负载三场景均下降，但不能替代成功率/时延门槛，不删除负向结果或修改门槛。
+- 严格源站实际回程子集审计完成12个NN运行，6个RT按定义跳过；模型输入契约及控制器/C++动作一致。
+  将模型top1、目标集合覆盖与业务交付分开；源站未回/无决策/多源等保留性能分母。
+  早期11808/11824是“任一选中站最早回程时刻”的集合覆盖，不是源站训练标签准确率。
+  grid可评价子集top1反而略降，不能宣称模型分类提高。两个开发种子不构成独立泛化/显著性结论。
+- 结论：候选保留隔离，完成本轮探索；不全局合入，不启动完整论文重跑或重训练。
+  相关小型代码/证据副本保存在`docs/ai/records/neural-explore-20261022/`，沿用原Git忽略规则，未自动提交。
+  详细结果、复算/单轮复跑命令、来源和已知失败见`NEURAL_EXPLORATION_20261022.md`。
+
+## 2026-10-22：按用户决定正式合入三场景神经专用无损hello编码
+
+- 用户明确选择“三个场景均启用，接受spider本轮小幅退化”。覆盖此前探索结束时不全局安装的限制，
+  保留spider未通过性能门槛的原事实，不重写门槛或结果。仅NN发送新编码，其他策略维持原JSON。
+- 起始保留前一任务AGENTS、CHANGELOG及探索记录的文档差异；未提交、重置或覆盖用户其它工作。
+  合入`vndn-obu.cc`、`vndn-rsu.cc`与新增`vndn-hello-wire.h`，三源与被冻结候选逐字一致。
+  NN发送VNH1/CBOR六维原值和缓存状态，RSU先校验后恢复原对象；旧JSON继续兼容，非NN保留dump(4)/空增量。
+  模型、选站阈值、hello频率、统计/HTML/绘图和三场景默认策略不变，不修改底层。
+- 修改前统一回归退出0，45 C++＋289 Python，报告`build/validation/20261022T064408.850439Z-e0ce2a1a/report.json`。
+  先扩展`tools/experiments/tests/test_hello_strategy.py`为8项测试，真实旧源码探针编译成功，
+  441项检查中15项有效RED：14个NN新编码断言、1个RSU新格式接受断言。证据目录准备错误单独保留，不计RED。
+  合入后同一测试SHA不变，8项/441检查全GREEN，覆盖56状态、24坏输入；保护数值、缓存和非NN字节。
+- 安装前新跑三场景候选NN参考；定向冻结3404输入/保护文件、编译2对象/链接1库，复用核验后的8对象。
+  阶段库实际通过9 C++套件45例后，备份并原子安装主模块库；三场景程序、其它依赖和公有类头不变。
+  当前库SHA`f51b177817af6b4b2c83f5e9d4d3ab4f02bef02a7c192705db760b962dbb2665`；
+  原b73库备份在本次build的before目录。全程JOBS=4，无configure、waf构建或批量重编。
+- 安装后12轮（三场景×四策略）串行全部complete且闭合校验通过，累计墙钟120.534秒。
+  配置5车/250请求/seed63021，5秒预热＋10秒测量＋3.5秒排空；NN加载各场景原quick模型。
+  非NN与原b73库九轮、NN与本次a930候选三轮比较，60原始CSV逐字相同，6决策JSONL按既定run_id规则一致。
+  安装核验工具6行为用例先RED后GREEN；真实核验包含全部24个manifest，不忽略失败/重复attempt。
+- 仿真结束后串行执行`export JOBS=4`及`python3.8 tools/validate.py --skip-build`，退出0，
+  45 C++＋291 Python全通过，无跳过。报告`build/validation/20261022T065928.532065Z-913c9547/report.json`。
+  源码/模型/依赖独立只读复核及实际loader身份检查保留；不把实现测试当作科研非劣性证明。
+- 新增[正式合入记录](NEURAL_WIRE_INSTALL_20261022.md)，同步AGENTS/PROJECT/VALIDATION和两份历史记录的后续状态说明。
+  本次证据`build/validation/neural-wire-install-20261022/`，原始数据`data/experiments/neural-wire-install-20261022/`。
+  小型代码/测试/日志副本位于`docs/ai/records/neural-wire-install-20261022/`，沿用Git忽略规则，仅本机存档。
+- 结论：正式实现和所述部署/回归验收完成。18轮探索性能仍是circle改善、grid小幅改善、spider小幅退化；
+  用户接受采用不改变负向结果，两开发种子不能证明泛化或统计显著性。额外机制只记Markdown，未改对比图/HTML。
+  未重训、未出新论文图、未启动完整实验队列；新源码后续性能须使用新数据，旧结果保留原版本解释。
