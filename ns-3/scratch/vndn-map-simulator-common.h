@@ -385,6 +385,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
     obu->SetAttribute ("EnableDataSave", BooleanValue (enableDataSave));
     obu->SetAttribute ("SaveFile", StringValue (aiTrainingFile));
     obu->SetAttribute ("CacheStrategy", EnumValue (cacheStrategy));
+    obu->SetAttribute ("RsuForwardStrategy", EnumValue (rsuForwardStrategy));
     obu->SetAttribute ("HandoverStrategy", EnumValue (handoverStrategy));
     node->AddApplication (obu);
 

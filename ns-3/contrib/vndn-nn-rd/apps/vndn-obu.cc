@@ -304,7 +304,9 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
               if (currentCs.find (n) == currentCs.end ())
                 removed.push_back (n);
             }
-          if (!added.empty () || !removed.empty ())
+          // Only the neural scheme omits an unchanged cache report.
+          if (m_forwardStrategy != RsuForwardStrategy_NeuralNetwork ||
+              !added.empty () || !removed.empty ())
             {
               j["CsAdded"] = added;
               j["CsRemoved"] = removed;
@@ -314,7 +316,9 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
       m_lastCsNames = currentCs;
     }
 
-  std::string strContent = j.dump ();
+  // Baselines retain their original four-space JSON encoding.
+  std::string strContent = j.dump (
+      m_forwardStrategy == RsuForwardStrategy_NeuralNetwork ? -1 : 4);
   data->setContent (reinterpret_cast<const uint8_t *> (strContent.c_str ()),
                     strContent.size ());
   // 封装车联网元信息标签：发送者节点 ID、MAC、目标 MAC（当前驻留基站 MAC）
@@ -630,6 +634,12 @@ void
 VndnObu::setCacheStrategy (CacheStrategy strategy)
 {
   m_cacheStrategy = strategy;
+}
+
+void
+VndnObu::setRsuForwardStrategy (RsuForwardStrategy strategy)
+{
+  m_forwardStrategy = strategy;
 }
 
 void

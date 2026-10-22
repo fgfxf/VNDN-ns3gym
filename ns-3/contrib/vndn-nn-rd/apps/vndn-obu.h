@@ -24,6 +24,7 @@
 #include <ndn-cxx/util/scheduler.hpp>
 
 #include "ns3/vndn-handover-strategy.h"
+#include "ns3/vndn-rsu-strategy.h"
 #include "ns3/vndn-experiment-recorder.h"
 
 #include "../src/json/single_include/nlohmann/json.hpp"
@@ -95,6 +96,10 @@ public:
    */
   void
   setCacheStrategy (CacheStrategy strategy);
+
+  /** Select the hello encoding associated with the scenario's return strategy. */
+  void
+  setRsuForwardStrategy (RsuForwardStrategy strategy);
 
   void
   setFrequency (double frequency);
@@ -270,6 +275,7 @@ private:
   // 缓存响应策略相关成员
   ////////////////////////////////////////////////////////////////////////
   CacheStrategy m_cacheStrategy = CacheStrategy_None; ///< 缓存响应策略
+  RsuForwardStrategy m_forwardStrategy = RsuForwardStrategy_NoForward; ///< 默认保留旧 hello 编码
   bool m_registered = false;                ///< 是否已向基站注册过（首次注册上报全量缓存列表）
   std::set<std::string> m_lastCsNames;      ///< 上次上报给基站的 CS 缓存名称集合
 

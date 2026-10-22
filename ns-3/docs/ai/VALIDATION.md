@@ -3,6 +3,12 @@
 开发规则见 [工作区 AGENTS.md](../../../AGENTS.md)，项目结构见 [PROJECT.md](PROJECT.md)。
 本文件中的命令除特别说明外均在 `/home/fgfxf/ndnSIM/ns-3` 执行。
 
+2026-10-21用户要求的独立绘图交接包位于`data/experiments/retrain-quick-2026102-others/`。
+包内原统计/绘图52项回归、迁移入口13项测试通过；从实际用户归档解压到新路径后，
+禁止读取原工程，完成check、34图重画及192轮重汇总/再绘验证。详细证据见
+[交接包验收](../../data/experiments/retrain-quick-2026102-others/provenance/VALIDATION.md)。
+主统计表逐字一致；仅原汇总代码车辆set迭代导致的加权平均速度浮点末位差适用明确容差。
+
 10小时初稿入口、固定参数和实际运行状态见[quick执行记录](QUICK_DRAFT_EXECUTION_20261021.md)。
 本次只修改Python编排、训练恢复及绘图，整体回归使用`export JOBS=4`后
 `python3.8 tools/validate.py --skip-build`，明确复用现有C++测试程序。
@@ -20,7 +26,20 @@
 纯文档改动检查事实与链接；重构先建立行为保护。
 失败、超时、缺依赖、跳过或零项测试都不能标为验收通过。
 
+2026-10-22 hello编码与回程缓存改动的实际验收见[小批量记录](PERFORMANCE_PILOT_20261021.md)。
+紧凑编码与空增量测试提取真实OBU/RSU代码，分别13个夹具、16步状态验证；
+RED/GREEN与可复算代码保存在[实现证据](records/performance-pilot-20261021/implementation/)。
+安装后统一入口实际通过9个C++套件45例、Python283例及独立入口行为22例，
+三场景候选实跑和安装后四策略短测记录分别保留。未改变模型/统计定义，也不据此承诺性能非劣性。
+
 ## 复用现有配置与首次启用测试
+
+神经专用hello的新增回归为`tools/experiments/tests/test_hello_strategy.py`，自动纳入现有第五组Python测试。
+它用`g++`编译真实源码分支提取探针，验证四策略44个缓存/编码状态，并检查三场景配置接线。
+这是源代码行为验证，仍需实际场景验证；运行时须有C++14编译器与项目JSON头。
+设置`HELLO_STRATEGY_EVIDENCE_DIR`可保留探针和结果；红绿及运行证据见
+[神经专用hello记录](NEURAL_ONLY_HELLO_20261022.md)。
+统一回归应与真实仿真串行运行：部分实验编排用例会获取全局实验锁，和运行器并行会因锁占用失败。
 
 **日常跑实验、重复仿真和回归测试尽可能不要运行 `./waf configure`。**
 它会重新配置项目，并可能触发大批量重新编译；已有可用配置时直接复用，按需增量构建。
@@ -64,13 +83,13 @@ python3.8 tools/validate.py
 2. `./waf build -j 4 --targets=test-runner`，仅构建测试运行器及依赖。
 3. `vndn-rsu-forwarding-policy`、`vndn-neural-return-selection`、`vndn-experiment-config`、
    `vndn-experiment-recorder`、`vndn-l3-experiment-tracer`、`vndn-router-neural-pit`、
-   `vndn-fragment-destination`、`vndn-training-snapshot` 八个 C++ 套件。
+   `vndn-rsu-neural-return-buffer`、`vndn-fragment-destination`、`vndn-training-snapshot` 九个 C++ 套件。
 4. 分别在独立 Python 进程运行 `ai-training/circle/tests`、`ai-training/grid/tests`、`ai-training/spidermap/tests`。
 5. `ai-training/tests/test_*.py` 的模型加载、推理兼容性及正式训练/独立评估契约测试。
 6. `tools/experiments/tests/` 的输入生成、串行运行器、请求闭合、数据集、
    调度恢复、统计与实际绘图测试。
 
-当前报告中的执行步骤共十四项：一次构建、八个 C++ 套件、五组 Python 测试。
+当前报告中的执行步骤共十五项：一次构建、九个 C++ 套件、五组 Python 测试。
 2026-10-20 正式交付修复后的旧十三项曾全部通过，见
 [实际单元报告](../../build/validation/20261020T154751.173146Z-c470c777/report.json)；
 这不包含三场景端到端仿真。
@@ -82,7 +101,7 @@ python3.8 tools/validate.py
 推理测试放在 `ai-training/tests/`，避免在 `scratch/` 新建纯 Python 子目录而被 waf 自动识别为 C++ 程序。
 
 标准 ns-3 test-runner 链接所有启用模块的测试库，首次构建会编译部分上游测试。
-实际执行范围仍只有上述八个研究套件；不意味着所有 ns-3 测试都已运行。
+实际执行范围仍只有上述九个研究套件；不意味着所有 ns-3 测试都已运行。
 
 报告保存在 `build/validation/<唯一运行目录>/report.json`，附每步日志、C++ XML 和 Python 测试统计。
 只有选中的套件实际执行并通过、Python 测试数大于零且未跳过时才成功。
@@ -103,7 +122,7 @@ python3.8 -m unittest discover -s tools/tests -p 'test_validate.py' -v
 
 2026-10-21新增公共NDN Scheduler回归位于
 `src/ndnSIM/tests/unit-tests/ndn-cxx/scheduler.t.cpp`，使用ndnSIM的Boost测试入口，
-不属于上述ns-3 `test-runner`八个研究套件。修改调度器后先按目标增量构建
+不属于上述ns-3 `test-runner`九个研究套件。修改调度器后先按目标增量构建
 `ndnSIM-unit-tests`，再运行已有程序，例如：
 
 ```bash
@@ -128,6 +147,7 @@ export JOBS=4
 python3.8 test.py --nowaf --suite=vndn-rsu-forwarding-policy
 python3.8 test.py --nowaf --suite=vndn-neural-return-selection
 python3.8 test.py --nowaf --suite=vndn-router-neural-pit
+python3.8 test.py --nowaf --suite=vndn-rsu-neural-return-buffer
 python3.8 test.py --nowaf --suite=vndn-fragment-destination
 python3.8 -m unittest discover \
   -s contrib/vndn-nn-rd/ai-training/circle/tests -p 'test_*.py' -v

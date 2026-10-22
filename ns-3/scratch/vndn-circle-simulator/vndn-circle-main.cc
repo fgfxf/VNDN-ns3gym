@@ -361,6 +361,7 @@ int main(int argc,char *argv[]){
         ndnApp->SetAttribute("EnableDataSave",ns3::BooleanValue(enDataSave));
         ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));
         ndnApp->SetAttribute("CacheStrategy",ns3::EnumValue(cacheStrategy));
+        ndnApp->SetAttribute("RsuForwardStrategy",ns3::EnumValue(rsuForwardStrategy));
         ndnApp->SetAttribute("HandoverStrategy",ns3::EnumValue(handoverStrategy));
         // ndnApp->SetAttribute("SaveDic",ns3::StringValue(aiTrainingTagDir));
         // ndnApp->SetAttribute("SaveFile",ns3::StringValue(aiTrainingTagFile));

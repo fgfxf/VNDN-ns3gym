@@ -1,0 +1,160 @@
+# 2026-10-22：方阵和蜘蛛网新方案小批量对照
+
+用户要求：“新的方案对grid和spider起作用吗？请小批量测试一下。”
+本次只检验已进入正式代码的A+B+E，不再修改协议实现、不训练模型、不改统计或绘图口径。
+A/B/E分别是hello紧凑编码、prepared神经回程缓存身份修正、省略空缓存增量。
+此前实现及验证见[小批量优化记录](PERFORMANCE_PILOT_20261021.md)。
+
+## 开跑前固定的范围
+
+| 因素 | 取值 |
+|---|---|
+| 场景 | grid、spidermap |
+| 条件 | 10车/6000请求；20车/12000请求 |
+| 速度 | 请求设定30 km/h；实际均速和停止比例单独核验 |
+| 发包负载 | 每车平均5 Hz；车辆增多时全网请求同步增加 |
+| 时间 | 20秒预热＋120秒测量＋3.5秒排空 |
+| 种子 | 52001、52002；四个随机源按原输入固定 |
+| 策略 | 2＝RTVTDF；3＝真实冻结模型的神经策略 |
+| 新配置结果 | 共16个，其中复用上轮2个完整NN基准，新增14轮 |
+| 旧版对照 | 原quick批次对应16轮，须先验证其原始清单和输入可复用 |
+
+每个旧→新配对使用相同输入、种子、模型和指标。两个种子用于观察方向一致性，不能声称已完成论文显著性检验。
+新旧RTVTDF与NN都使用各自统一的旧/新共享hello实现，不单独给予NN更有利的无线配置。
+10→20车同时增加请求，并可能改变路线初始分布；这是两档系统负载，不能解释为纯车辆密度效应。
+交接诊断复用原NoForward固定请求集合，仅用来解释实现，不能替换主指标或按结果重新挑选请求。
+
+## 数据与运行约束
+
+- 新数据：`data/experiments/grid-spider-pilot-20261022/`。
+- 固定计划及逐条命令：该目录`plan.json`；实际进度：`state.json`。
+- 构建/验证侧证据：`build/validation/grid-spider-pilot-20261022/`。
+- 旧输入和数据：`data/experiments/retrain-quick-20261021/`，只读。
+- 复用的新方案NN基准：`data/experiments/performance-pilot-20261021/empty-cache-grid/`及`empty-cache-spidermap/`。
+- grid模型：`data/models/grid/tkan-lstm/retrain-quick-20261021-f6a90796ad9a2a7f-session/checkpoint.pt`。
+- spider模型：`data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt`。
+- 使用原`run_experiment.py --validation-only --no-build`串行运行，NN加`--require-formal-contract`。
+  设置`JOBS=4`及三个数值库线程数为1；不configure、不构建，生产源码/库/模型哈希在每轮前复核。
+- 本轮不启动完整正式批次或自动出图，不覆盖已完成结果和旧出图交接包。
+
+## 执行状态
+
+**已完成。** 2026-10-22北京时间10:06开始，14个新增运行串行用时2142.366秒（35分42秒），
+全部退出0并通过原运行器的数据闭合校验。加上2个已核验复用的新配置结果，形成16份旧→新配对、
+8份新NN对新RTVTDF的公平比较。原实验数据和旧出图交接包均保留。
+
+## 结果：神经方案自身的修改前后
+
+以下为两个种子**逐轮指标的等权算术平均**，与原跨运行汇总方式一致。
+RTT仅统计成功请求，没有将丢失请求记为0，也没有混用请求合并后的加权RTT。
+完整逐种子值、来源和诊断见[本次证据索引](records/grid-spider-pilot-20261022/README.md)。
+
+| 场景/车辆数 | ISR：旧→新 | 平均成功RTT：旧→新（ms） | 控制负载：旧→新（Mbit） | 控制负载变化 |
+|---|---:|---:|---:|---:|
+| grid / 10 | 89.8583% → 90.1000% | 316.903 → 315.317 | 141.030 → 99.559 | −29.41% |
+| grid / 20 | 83.2625% → 84.5458% | 396.304 → 382.744 | 254.566 → 178.956 | −29.70% |
+| spider / 10 | 60.7667% → 60.7417% | 301.633 → 301.385 | 107.574 → 76.388 | −28.99% |
+| spider / 20 | 50.8167% → 50.8000% | 305.699 → 304.659 | 173.095 → 121.036 | −30.08% |
+
+其余两个原指标同样保留：
+
+| 场景/车辆数 | 网络负载：旧→新（Mbit） | 额外Data应用提交次数：旧→新 |
+|---|---:|---:|
+| grid / 10 | 1581.444 → 1539.686 | 287 → 283 |
+| grid / 20 | 3139.520 → 3071.960 | 505 → 527.5 |
+| spider / 10 | 1034.376 → 1003.066 | 69 → 69 |
+| spider / 20 | 1732.631 → 1679.666 | 141 → 137 |
+
+次数中的小数来自两轮均值，不是单轮出现半个报文。额外Data沿用应用提交口径，不声称包含全部MAC实际副本。
+网络/控制负载仍为原NDN L3出口统计，按原采集区间包括排空期，均不含MAC重试或空口占用。
+
+判断：
+
+- **grid有作用，20车更明显。** 两个20车种子的NN成功率都提高，均值增加1.2833个百分点，
+  平均成功RTT降低13.560ms；但额外Data提交次数增加，不能称五项全部改善。
+  10车交付改善较小（ISR+0.2417个百分点，RTT−1.586ms），主要稳定收益仍是控制字节减少。
+- **spider有明确的减负载收益，尚无成功率改善。** 10车seed52002少成功3个请求，20车seed52001少4个，
+  另两个对应种子总体成功数相同；不能将小幅RTT下降描述为交付能力提升。
+  两档NN网络总量下降约3%，控制量下降约29%～30%。
+- 交接诊断采用同一NoForward参考集合。spider20车两个种子交接成功数分别少3、少1，
+  尽管成功RTT和共同成功请求配对RTT略降，仍不能声称交接交付改善。
+  grid20车两个种子交接成功数分别增加67、7，但第二种子的成功请求交接RTT均值略升0.520ms，
+  不能笼统写作“所有交接时延均下降”。
+
+## RTVTDF自身及公平比较
+
+共享hello优化也改善RTVTDF的负载，并非神经预测专属收益。本次其完整配对结果如下：
+
+| 场景/车辆数 | ISR：旧→新 | 平均成功RTT：旧→新（ms） | 控制负载：旧→新（Mbit） |
+|---|---:|---:|---:|
+| grid / 10 | 91.0417% → 91.1500% | 343.389 → 339.225 | 130.789 → 89.543 |
+| grid / 20 | 87.1417% → 88.2417% | 383.400 → 368.491 | 240.859 → 163.276 |
+| spider / 10 | 61.1583% → 61.1833% | 317.710 → 318.769 | 100.456 → 69.663 |
+| spider / 20 | 51.2417% → 51.2625% | 310.802 → 310.836 | 162.933 → 111.038 |
+
+新NN与新RTVTDF在四个条件均值中，**NN的ISR仍更低，控制负载仍更高，网络总量仍更低**。
+NN成功RTT在grid10车、spider10/20车更短，但grid20车反而更长（382.744 vs 368.491ms）。
+这些差别大部分在旧版就已存在；新共享优化的收益应以上述同策略旧→新配对衡量，不能归因于模型准确率提高。
+spider20车NN额外Data提交均值137，大于RTVTDF的131.5；不能说NN所有条件下副本都更少。
+RTVTDF的完整五指标与旧/新NN−RT差值均保存在证据表中。
+
+结论限于本次两档负载、两个已使用过的开发种子。不能推广为全部速度/负载适用、统计显著，
+也不能声称神经方案总体优于或不劣于RTVTDF。这里的“有效”主要指降低冗余负载，及grid较高负载时的自身交付改善。
+
+## 证据、复用与验证边界
+
+- `reuse-audit.json`：16个旧基线的224个记录产物、输入和模型核验通过；
+  两个复用overlay新结果的30个记录产物核验通过。其OBU/RSU源码、其余8个对象及编译选项与正式版本一致。
+  overlay库与生产库不是逐字节相同，按明确源码等价证据复用，不把复用计为新独立重复。
+- `new-runtime-audit.json`：新增14/14实际加载生产主库`0b52d5b97f54c078c5afeb4a288d81f32132a173c7290b832b36e6f3581dcd8e`；
+  相对旧版，可执行文件及其余148个运行依赖保持一致，只有预期主库改变；输入、模型和no-build参数符合计划。
+- 最终分析snapshot：`build/validation/grid-spider-pilot-20261022/analysis/snapshots/20261022T024325.566496Z/`。
+  全16配对原始CSV按原`summarize.py`重算，五指标逐项匹配；请求签名、实际物理移动轨迹、输入与模型均配对一致。
+- `independent-group-audit.json`：独立复核16配对、8个两种子均值、8个新NN−RT比较、4个均值差变化及24份诊断缓存身份，错误为0。
+- `execution-verification.json`：14个仿真退出码0，运行结束后16个冻结源码/库/模型/工具文件哈希不变，已无本次仿真进程。
+- 14轮记录的Git版本均为`87057a96feab620b9a526a459b0e6344e2366ac0`；
+  `source-consistency.json`另确认14轮生产代码快照SHA完全一致，本次没有变更生产源码。
+- 分析辅助脚本位于build和小型证据归档，未改生产统计器。原统计器20项行为基线通过，辅助汇总先RED后4项通过；
+  独立审查发现缓存身份核验遗漏，补充RED后5项通过，另用真实运行副本验证拒绝错误manifest/cohort缓存。
+  当前数值独立复核一致，没有将工具夹具问题冒充仿真失败或算法性能变化。
+- 准备/查询阶段曾有汇总脚本路径拼写和结束后`current=None`的只读进度查询错误，均不涉及仿真进程；
+  最终状态及退出码另行完整复核。本次没有重编、重训或改生产算法，也未重画旧论文图。
+
+原始运行和模型必须继续保留。小型证据归档便于AI接续，不包含完整原始CSV或模型权重；
+全部逐轮目录见固定计划、状态及证据索引，不能仅保留本页均值表。
+当前上层仓库的既有忽略规则包含`ns-3/docs/ai/records/*`，因此小型证据归档是本机文件，
+不会自动进入Git；迁移时需显式复制该归档以及其引用的原始数据和模型。本次保留该忽略规则。
+
+## 手动复跑当前新方案
+
+以下命令在新目录重跑方阵20车、seed52001的RTVTDF和神经策略各一轮，使用本次相同配置及模型。
+每次都会创建唯一run目录；`--no-build`复用当前已安装的新代码，不触发编译。
+它不会产生旧版对照；旧版必须使用已归档的旧运行或对应旧二进制，不能拿新库冒充旧版。
+
+```bash
+cd /home/fgfxf/ndnSIM/ns-3
+export JOBS=4 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+python3.8 tools/experiments/run_experiment.py \
+  --config data/experiments/retrain-quick-20261021/inputs/test/grid/n20-v30-k12000/52001/experiment-template.json \
+  --output-root data/experiments/grid-spider-pilot-manual-20261022 \
+  --block-id manual-grid-n20-s52001 --strategies 2,3 \
+  --model-file data/models/grid/tkan-lstm/retrain-quick-20261021-f6a90796ad9a2a7f-session/checkpoint.pt \
+  --require-formal-contract --validation-only --no-build --timeout 900 --python /usr/bin/python3.8
+```
+
+蜘蛛网对应命令：
+
+```bash
+cd /home/fgfxf/ndnSIM/ns-3
+export JOBS=4 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+python3.8 tools/experiments/run_experiment.py \
+  --config data/experiments/retrain-quick-20261021/inputs/test/spidermap/n20-v30-k12000/52001/experiment-template.json \
+  --output-root data/experiments/grid-spider-pilot-manual-20261022 \
+  --block-id manual-spidermap-n20-s52001 --strategies 2,3 \
+  --model-file data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt \
+  --require-formal-contract --validation-only --no-build --timeout 900 --python /usr/bin/python3.8
+```
+
+10车条件将输入路径中的`n20-v30-k12000`替换成`baseline`；第二种子将`52001`替换成`52002`，
+并相应修改`block-id`。输入配置决定实际种子，不能只修改block-id文字。
+同一工程一次只执行一条实验命令，避免SUMO/Gym端口竞争。

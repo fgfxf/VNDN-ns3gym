@@ -54,6 +54,14 @@ public:
                            ns3::MakeEnumAccessor (&VndnObuApp::m_cacheStrategy),
                            ns3::MakeEnumChecker (vanet::CacheStrategy_None, "None",
                                                  vanet::CacheStrategy_Participate, "Participate"))
+            .AddAttribute ("RsuForwardStrategy",
+                           "Return strategy; only NeuralNetwork uses optimized hello encoding",
+                           ns3::EnumValue (vanet::RsuForwardStrategy_NoForward),
+                           ns3::MakeEnumAccessor (&VndnObuApp::m_forwardStrategy),
+                           ns3::MakeEnumChecker (vanet::RsuForwardStrategy_NoForward, "NoForward",
+                                                 vanet::RsuForwardStrategy_VTDF, "VTDF",
+                                                 vanet::RsuForwardStrategy_RealTimeVtdf, "RealTimeVTDF",
+                                                 vanet::RsuForwardStrategy_NeuralNetwork, "NeuralNetwork"))
             .AddAttribute ("Frequency", "Normal Interest request frequency in Hz",
                            ns3::DoubleValue (40.0),
                            ns3::MakeDoubleAccessor (&VndnObuApp::m_frequency),
@@ -88,6 +96,7 @@ public:
     m_instance.reset (new vanet::VndnObu (m_traci));
     m_instance->setHandoverStrategy (m_handoverStrategy);
     m_instance->setCacheStrategy (m_cacheStrategy);
+    m_instance->setRsuForwardStrategy (m_forwardStrategy);
     m_instance->setFrequency (m_frequency);
     m_instance->setHandoverFrequencyBoost (m_handoverFrequencyBoost,
                                             m_handoverFrequencyMultiplier);
@@ -120,6 +129,7 @@ private:
   ns3::Ptr<ns3::TraciClient> m_traci;         ///< SUMO TraciClient 指针
   vanet::HandoverStrategy m_handoverStrategy = vanet::HandoverStrategy_AntiPingPong; ///< 切换策略
   vanet::CacheStrategy m_cacheStrategy = vanet::CacheStrategy_None; ///< 缓存响应策略
+  vanet::RsuForwardStrategy m_forwardStrategy = vanet::RsuForwardStrategy_NoForward;
   double m_frequency = 40.0;
   bool m_handoverFrequencyBoost = false;
   double m_handoverFrequencyMultiplier = 4.0;

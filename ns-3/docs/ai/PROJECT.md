@@ -4,6 +4,10 @@
 
 最新任务是用户已授权执行的[10小时初稿批次](QUICK_DRAFT_EXECUTION_20261021.md)：
 120秒测量、48采样、192正式、三模型和25张探索图，使用独立quick目录并复用现有二进制。
+该批次已于2026-10-21 22:29完整结束，另有9张诊断图；
+数据/模型精确位置、结果索引和重新出图/手动复跑命令见[结果归档](QUICK_DRAFT_RESULTS_20261021.md)。
+用于迁移到其他文件夹的绘图代码和三模型副本见
+[出图交接包](../../data/experiments/retrain-quick-2026102-others/README.md)，其中含独立AI约定、图源/指标对照和路径适配入口。
 旧批次保持停止。手动分步骤与中断恢复的较大实施范围见[分步恢复方案](STEPWISE_RESUME_PLAN_20261021.md)，
 不能把该计划整体当作已上线；本次训练续训与实际验证状态以quick执行记录为准。
 用户只要立即停止，不需要轮末暂停。
@@ -148,6 +152,16 @@ Nack 单列次数。控制子集包含 hello、p2p-handshake、search/find、neu
 
 ## 现有覆盖及证据边界
 
+- 2026-10-22用户随后要求仅神经策略启用hello紧凑编码与省略空缓存增量，其他策略恢复旧编码。
+  三场景将选定回程策略传给OBU；具体状态见[神经专用hello记录](NEURAL_ONLY_HELLO_20261022.md)。
+  额外优化仅在文档说明，不改对比HTML/图或统计定义。下述四策略共享优化是此前历史配置。
+- 2026-10-22的小批量实现优化见[验证记录](PERFORMANCE_PILOT_20261021.md)：OBU hello使用紧凑JSON，
+  已登记且无缓存变化时省略空增量三字段；初次完整缓存、非空增量、模型输入及hello频率保持原语义。
+  RSU识别Router已准备PIT的回程格式，避免把发送RSU身份误作待交付OBU缓存。四策略共享报文优化。
+  这些改动降低冗余并改善所测circle结果，不等于总体性能已超过RTVTDF。
+- [回程缓存测试](../../contrib/vndn-nn-rd/test/vndn-rsu-neural-return-buffer-test.cc)三例使用真实网络Face、
+  NFD及RSU，覆盖prepared Router回程一次交付、不被后续错误身份hello重放，以及两种旧OBU标签回退。
+  统一入口现为九个C++套件；此测试不以吞吐提升为通过条件。
 - [C++ 测试](../../contrib/vndn-nn-rd/test/vndn-rsu-forwarding-policy-test.cc) 注册 `vndn-rsu-forwarding-policy` 和 `vndn-neural-return-selection` 两个套件，覆盖最近 RSU、空候选、单双路径选择和候选/概率长度不匹配等行为。
 - [Python 测试](../../contrib/vndn-nn-rd/ai-training/circle/tests/test_circle_tkan.py) 覆盖窗口顺序与运行边界、模型输出形状及反向传播。
 - 新场景训练测试覆盖数据筛选、无效断点、七类窗口、checkpoint 和临时七类数据的一轮 CPU 训练；[推理测试](../../contrib/vndn-nn-rd/ai-training/tests/test_tkan_inference.py) 验证场景/标签兼容性及候选概率映射。各目录独立进程运行，避免同名训练模块相互干扰。
