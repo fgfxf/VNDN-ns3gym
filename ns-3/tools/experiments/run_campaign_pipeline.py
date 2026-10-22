@@ -23,6 +23,7 @@ import uuid
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 PROFILE = "compact-exploratory-v1"
+FIXED_MODEL_PROFILE = "quick-fixed-model-v1"
 SCENES = ("circle", "grid", "spidermap")
 SPLITS = ("train", "validation", "evaluation", "test")
 
@@ -103,6 +104,9 @@ def progress(root, now=None):
     result["sampling"] = {key: sum(result["splits"][s][key] for s in SPLITS[:3])
                           for key in ("completed", "total", "remaining")}
     result["formal"] = result["splits"]["test"]
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+        result["training_skipped"] = True
+        result["models_reused"] = len(plan.get("models", {}))
     return result
 
 
@@ -326,11 +330,29 @@ def execute(root, action, settings):
                 profile=settings.get("profile") or PROFILE))
         plan = read_plan(root)
         profile = plan.get("design_profile")
-        if profile not in (PROFILE, campaign.QUICK_PROFILE):
+        if profile not in (PROFILE, campaign.QUICK_PROFILE, FIXED_MODEL_PROFILE):
             raise ValueError("this pipeline requires a supported exploratory profile")
         if settings.get("profile") and settings["profile"] != profile:
             raise ValueError("requested profile differs from the existing frozen design")
-        if action in ("prepare", "all"):
+        fixed_models = profile == FIXED_MODEL_PROFILE
+        if fixed_models:
+            if settings.get("training_config"):
+                raise ValueError("fixed-model profile skips training; do not supply --training-config")
+            source = settings.get("model_source") or plan.get("external_models", {}).get("source_root")
+            if not source:
+                raise ValueError("fixed-model profile requires --model-source")
+            recorded_source = plan.get("external_models", {}).get("source_root")
+            if recorded_source and Path(source).expanduser().resolve() != Path(recorded_source).resolve():
+                raise ValueError("model source differs from the existing frozen design")
+            if action in ("prepare", "all"):
+                campaign.bind_external_models(root, source, settings["run_timeout"])
+                plan = read_plan(root)
+            if plan["status"] != "formal-frozen":
+                raise ValueError("fixed-model runs require three bound historical models")
+            if plan["timeouts"].get("default") != settings["run_timeout"]:
+                raise ValueError("resume run timeout must match the frozen design")
+            campaign.check_external_models(plan)
+        elif action in ("prepare", "all"):
             if not settings.get("training_config"):
                 raise ValueError("prepare requires --training-config")
             config_path = Path(settings["training_config"]).expanduser().resolve()
@@ -379,11 +401,19 @@ def execute(root, action, settings):
                     save()
             try:
                 if action in ("prepare", "all"):
-                    state["status"] = prepare_campaign(root, settings, step)
+                    if fixed_models:
+                        step("reuse-models")
+                        state["status"] = "ready-for-formal"
+                    else:
+                        state["status"] = prepare_campaign(root, settings, step)
                 if action in ("formal", "all"):
-                    # Validate the independent assessment before any final simulation.
-                    for scene in SCENES:
-                        completed_product(root, "evaluate", scene)
+                    if fixed_models:
+                        campaign.check_external_models(read_plan(root))
+                        state["status"] = "running"
+                    else:
+                        # Original profiles require their independent assessment.
+                        for scene in SCENES:
+                            completed_product(root, "evaluate", scene)
                     step("test", sample_command(root, settings, "test"))
                     state["status"] = "formal-complete"
                 if action in ("figures", "all"):
@@ -433,7 +463,11 @@ def display(report):
     print("状态: {} | 阶段: {} | 本次已用: {:.1f} 分钟 | 累计已用: {:.1f} 分钟".format(
         report["status"], report["stage"], report["session_elapsed_seconds"] / 60,
         report["elapsed_seconds"] / 60))
-    for name, key in (("采样", "sampling"), ("正式实验", "formal")):
+    if report.get("training_skipped"):
+        print("模型: {}/3 已复用 | 采样、训练: 已跳过".format(report["models_reused"]))
+    counters = (("正式实验", "formal"),) if report.get("training_skipped") else (
+        ("采样", "sampling"), ("正式实验", "formal"))
+    for name, key in counters:
         count = report[key]
         print("{}: {}/{} 完成，{} 剩余".format(name, count["completed"], count["total"], count["remaining"]))
     if current:
@@ -452,8 +486,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "formal", "figures", "all", "status", "stop"))
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--profile", choices=(PROFILE, campaign.QUICK_PROFILE))
+    parser.add_argument("--profile", choices=(PROFILE, campaign.QUICK_PROFILE, FIXED_MODEL_PROFILE))
     parser.add_argument("--training-config", type=Path)
+    parser.add_argument("--model-source", type=Path, help="historical campaign providing three frozen models")
     parser.add_argument("--run-timeout", type=float, default=1800)
     parser.add_argument("--stage-timeout", type=float, default=172800)
     parser.add_argument("--python", default=sys.executable)
@@ -481,6 +516,7 @@ def main(argv=None):
             raise ValueError("timeouts must be finite and positive")
         result = execute(root, args.action, dict(profile=args.profile,
             training_config=str(args.training_config) if args.training_config else None,
+            model_source=str(args.model_source) if args.model_source else None,
             run_timeout=args.run_timeout, stage_timeout=args.stage_timeout, python=args.python))
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0

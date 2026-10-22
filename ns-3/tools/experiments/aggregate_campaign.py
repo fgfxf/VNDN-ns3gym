@@ -30,11 +30,14 @@ MAIN_METRICS = METRICS[:5]
 SCANS = ("interest", "speed", "vehicles", "vehicles_fixed_k")
 COMPACT_PROFILE = "compact-exploratory-v1"
 QUICK_PROFILE = "quick-draft-v1"
+FIXED_MODEL_PROFILE = "quick-fixed-model-v1"
+FIXED_MODEL_SEEDS = {"circle": [23001, 23002], "grid": [23009, 23010],
+                     "spidermap": [23017, 23018]}
 COUNT_FIELDS = ("generated", "satisfied", "sum_success_rtt_ns", "network_l3_bytes",
                 "control_l3_bytes", "extra_data_app_attempts")
 
 
-def expected_figure_ids(scans):
+def expected_figure_ids(scans, include_training=True):
     """Stable numbering: the deferred fixed-K figures retain their reserved slots."""
     if set(scans) not in (set(SCANS), set(SCANS[:3])):
         raise ValueError("figures require the three primary scans and optional fixed-K scan")
@@ -44,8 +47,29 @@ def expected_figure_ids(scans):
     result.extend("F{:02d}-{}-rtt-3d".format(21 + i, scene) for i, scene in enumerate(SCENARIOS))
     result.extend("F{:02d}-{}-rtt-box".format(24 + i, scene) for i, scene in enumerate(SCENARIOS))
     result.append("F27-baseline-total-traffic")
-    result.extend("F{:02d}-{}-confusion".format(28 + i, scene) for i, scene in enumerate(SCENARIOS))
+    if include_training:
+        result.extend("F{:02d}-{}-confusion".format(28 + i, scene) for i, scene in enumerate(SCENARIOS))
     return result
+
+
+def seeds_for_scene(campaign, scene):
+    if campaign.get("design_profile") == FIXED_MODEL_PROFILE:
+        return campaign["test_seeds_by_scene"][scene]
+    return campaign["repetitions"]
+
+
+def repetition_count(campaign, scene=None):
+    """The union of scene seeds is provenance, not the per-condition sample size."""
+    if scene is not None:
+        return len(seeds_for_scene(campaign, scene))
+    counts = {len(seeds_for_scene(campaign, name)) for name in SCENARIOS}
+    if len(counts) != 1:
+        raise ValueError("Different scene repetition counts require explicit scene labels")
+    return counts.pop()
+
+
+def includes_training_figures(campaign):
+    return campaign.get("design_profile") != FIXED_MODEL_PROFILE
 
 
 def _positive_integer(value, name, minimum=0):
@@ -176,7 +200,7 @@ def request_handover(vehicle, send, deadline, events):
 def audit_factor_invariants(campaign, signatures):
     records = []
     for scene in SCENARIOS:
-        for seed in campaign["repetitions"]:
+        for seed in seeds_for_scene(campaign, scene):
             baseline = signatures[scene, campaign["baseline_condition_id"], seed]
             for scan, fields in (
                     ("interest", ("mobility_sha256", "route_family_sha256", "network_sha256")),
@@ -202,8 +226,17 @@ def aggregate_campaign(manifest_path, output_directory):
     conditions, blocks = validate_campaign(campaign)
     base = manifest_path.parent
     models, evaluations, history_hashes = {}, {}, {}
+    include_training = includes_training_figures(campaign)
+    if not include_training and (not campaign["validation_only"] or campaign.get("external_models")):
+        spec = importlib.util.spec_from_file_location(
+            "aggregate_fixed_models", Path(__file__).with_name("fixed_models.py"))
+        fixed_models = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixed_models)
+        history_hashes.update(fixed_models.check_external_models(campaign))
     for scene in SCENARIOS:
         models[scene] = checked_file(campaign["models"][scene], base, "model")
+        if not include_training:
+            continue
         evaluation_file = checked_file(campaign["model_evaluations"][scene], base, "evaluation")
         evaluations[scene] = validate_evaluation(
             summary.read_json(evaluation_file), scene, campaign["models"][scene]["sha256"])
@@ -230,7 +263,7 @@ def aggregate_campaign(manifest_path, output_directory):
             resolved_run_paths.add(resolved)
     for scene in SCENARIOS:
         for condition_id in conditions:
-            for repetition in campaign["repetitions"]:
+            for repetition in seeds_for_scene(campaign, scene):
                 block = blocks[scene, condition_id, repetition]
                 paired, signatures, paths = {}, [], {}
                 for strategy in STRATEGIES:
@@ -305,7 +338,7 @@ def aggregate_campaign(manifest_path, output_directory):
     for entry in provenance:
         checked_inputs[entry["path"]] = entry["sha256"]
     for scene in SCENARIOS:
-        for collection in ("models", "model_evaluations"):
+        for collection in (("models", "model_evaluations") if include_training else ("models",)):
             entry = campaign[collection][scene]
             checked_inputs[str(resolve_path(base, entry["path"]))] = entry["sha256"]
     checked_inputs[str(manifest_path)] = manifest_hash
@@ -322,13 +355,13 @@ def aggregate_campaign(manifest_path, output_directory):
         "baseline_condition_id": campaign["baseline_condition_id"], "scans": campaign["scans"],
         "time_bin_seconds": campaign.get("time_bin_seconds", 5),
         "design_profile": campaign.get("design_profile", "full"),
-        "figure_ids": expected_figure_ids(campaign["scans"]),
+        "figure_ids": expected_figure_ids(campaign["scans"], include_training=include_training),
         "models": campaign["models"], "model_evaluations": evaluations,
         "run_count": len(run_records), "block_count": len(blocks),
         "factor_audit": factor_audit,
         "variation_audit": [
             {"scene": scene, "condition_id": condition,
-             "seed_families": len(campaign["repetitions"]),
+             "seed_families": repetition_count(campaign, scene),
              "unique_request_cohorts": len(value["request"]),
              "unique_physical_mobility": len(value["mobility"]),
              "mobility_scope": ("one observed trajectory realization; inference is conditional"
@@ -350,6 +383,15 @@ def aggregate_campaign(manifest_path, output_directory):
             "Boxplots pool successful packets descriptively; packets are not independent runs.",
         ],
     }
+    if not include_training:
+        result.update(test_seeds_by_scene=campaign["test_seeds_by_scene"],
+                      representative_seeds_by_scene={scene: seeds_for_scene(campaign, scene)[0]
+                                                     for scene in SCENARIOS},
+                      external_models=campaign["external_models"], skip_training_figures=True)
+        result["notes"].append(
+            "Exploratory fixed-model comparison reusing training seed families; two paired runs "
+            "per scene and condition, not an independent generalization evaluation. Model weights "
+            "remain frozen; training/evaluation figures are deliberately absent.")
     if campaign.get("design_profile") == QUICK_PROFILE:
         result["notes"].append(
             "Exploratory draft with two independent paired runs per condition; show individual "
@@ -408,12 +450,12 @@ def validate_campaign(campaign):
     if not conditions or baseline not in conditions:
         raise ValueError("A canonical baseline condition is required")
     profile = campaign.get("design_profile", "full")
-    if profile not in ("full", COMPACT_PROFILE, QUICK_PROFILE):
+    if profile not in ("full", COMPACT_PROFILE, QUICK_PROFILE, FIXED_MODEL_PROFILE):
         raise ValueError("Unknown campaign design profile")
-    required_scans = SCANS[:3] if profile in (COMPACT_PROFILE, QUICK_PROFILE) else SCANS
+    required_scans = SCANS[:3] if profile in (COMPACT_PROFILE, QUICK_PROFILE, FIXED_MODEL_PROFILE) else SCANS
     if set(campaign.get("scans", {})) != set(required_scans):
         raise ValueError("All scans declared by the design profile must be present")
-    expected_figures = expected_figure_ids(campaign["scans"])
+    expected_figures = expected_figure_ids(campaign["scans"], includes_training_figures(campaign))
     if campaign.get("figure_ids", expected_figures) != expected_figures:
         raise ValueError("Figure declaration differs from the frozen scan design")
     for scan, names in campaign["scans"].items():
@@ -445,8 +487,26 @@ def validate_campaign(campaign):
     if isinstance(bin_seconds, bool) or not isinstance(bin_seconds, (int, float)) or (
             not math.isfinite(bin_seconds) or bin_seconds <= 0):
         raise ValueError("Time-bin seconds must be positive and finite")
+    if profile == FIXED_MODEL_PROFILE:
+        if campaign.get("test_seeds_by_scene") != FIXED_MODEL_SEEDS or repetitions != [
+                seed for scene in SCENARIOS for seed in FIXED_MODEL_SEEDS[scene]]:
+            raise ValueError("Fixed-model campaign requires the approved scene-specific training seeds")
+        if campaign.get("skip_training_figures") is not True or campaign.get("model_evaluations") != {}:
+            raise ValueError("Fixed-model campaign skips training figures and new model evaluations")
+        if not isinstance(campaign.get("external_models"), dict):
+            raise ValueError("Fixed-model campaign requires external model provenance")
     if not campaign["validation_only"]:
-        if profile == QUICK_PROFILE:
+        if profile == FIXED_MODEL_PROFILE:
+            parameters = {(c["vehicles"], c["speed_kmh"], c["requests"]) for c in conditions.values()}
+            expected_parameters = {(10, 30, k) for k in (1500, 3000, 6000, 9000, 12000)}
+            expected_parameters.update((10, v, 6000) for v in (15, 30, 50, 60))
+            expected_parameters.update((n, 30, n * 600) for n in (5, 10, 15, 20))
+            if (len(conditions) != 11 or parameters != expected_parameters or
+                    bootstrap["resamples"] != 10000 or
+                    [len(campaign["scans"][s]) for s in SCANS[:3]] != [5, 4, 4]):
+                raise ValueError("Fixed-model design requires eleven approved conditions, "
+                                 "5/4/4 scan points and 10000 resamples")
+        elif profile == QUICK_PROFILE:
             parameters = {(c["vehicles"], c["speed_kmh"], c["requests"]) for c in conditions.values()}
             expected_parameters = {(10, 30, 6000), (10, 30, 1500), (10, 30, 12000),
                                    (10, 10, 6000), (10, 50, 6000), (5, 30, 3000),
@@ -469,7 +529,7 @@ def validate_campaign(campaign):
         elif (len(repetitions) != 20 or len(conditions) != 17 or bootstrap["resamples"] != 10000 or
                 any(len(value) != 5 for value in campaign["scans"].values())):
             raise ValueError("Formal campaign requires 20 repetitions, 17 conditions and 10000 resamples")
-    for field in ("models", "model_evaluations"):
+    for field in (("models", "model_evaluations") if includes_training_figures(campaign) else ("models",)):
         if set(campaign.get(field, {})) != set(SCENARIOS):
             raise ValueError(field + " must cover all three scenarios")
     blocks, block_ids, run_paths = {}, set(), set()
@@ -490,7 +550,7 @@ def validate_campaign(campaign):
         blocks[key] = block
         block_ids.add(block["block_id"])
     expected = {(scene, condition, seed) for scene in SCENARIOS for condition in conditions
-                for seed in repetitions}
+                for seed in seeds_for_scene(campaign, scene)}
     if set(blocks) != expected:
         raise ValueError("Campaign matrix is not complete: missing or unexpected blocks")
     return conditions, blocks
@@ -543,7 +603,7 @@ def audit_run(path, manifest, config, metrics, campaign, block, condition, strat
     if type(manifest.get("validation_only")) is not bool or (
             manifest["validation_only"] and not campaign["validation_only"]):
         raise ValueError("Validation/test-controller run cannot enter formal results")
-    if campaign.get("design_profile") == QUICK_PROFILE and not campaign["validation_only"]:
+    if campaign.get("design_profile") in (QUICK_PROFILE, FIXED_MODEL_PROFILE) and not campaign["validation_only"]:
         window = [config.get(name) for name in
                   ("measurement_start_s", "measurement_end_s", "drain_end_s")]
         if window != [20, 140, 143.5]:

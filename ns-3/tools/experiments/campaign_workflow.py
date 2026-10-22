@@ -1,7 +1,8 @@
 #!/usr/bin/env python3.8
 """Explicit, resumable post-sampling stages; never freezes or runs simulations.
 
-Each command executes one stage. P2 must freeze the development campaign before
+Each command executes one stage. Fixed historical models permit figures only.
+P2 must freeze the development campaign before
 datasets/train. P4 must freeze all three selected models before evaluate/figures.
 Training configuration is a JSON object of CLI argument names with underscores;
 initialization_seeds is required and contains the three predeclared integers.
@@ -29,6 +30,7 @@ ROOT = HERE.parents[1]
 AI_ROOT = ROOT / "contrib/vndn-nn-rd/ai-training"
 SCENES = ("circle", "grid", "spidermap")
 SPLITS = ("train", "validation", "evaluation")
+FIXED_MODEL_PROFILE = "quick-fixed-model-v1"
 _CANCELLATION = None
 
 
@@ -354,13 +356,22 @@ def _figure_product(analysis, figures, manifest, plan):
     items = index["figures"]
     if "figure_ids" in plan:
         aggregate_tools = _module("_workflow_figure_contract", HERE / "aggregate_campaign.py")
-        expected = aggregate_tools.expected_figure_ids(plan["scans"])
+        expected = (aggregate_tools.expected_figure_ids(plan["scans"], include_training=False)
+                    if plan.get("design_profile") == FIXED_MODEL_PROFILE else
+                    aggregate_tools.expected_figure_ids(plan["scans"]))
         if plan["figure_ids"] != expected:
             raise ValueError("declared figure IDs differ from the frozen scan design")
         if len(items) != len(expected) or {item["id"] for item in items} != set(expected):
             raise ValueError("exactly {} declared numbered figures are required".format(len(expected)))
     elif len(items) != 30 or len({item["id"] for item in items}) != 30:
         raise ValueError("exactly 30 numbered figures are required")
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+        diagnostics = {"D01-circle-rtt-ecdf", "D02-grid-rtt-ecdf", "D03-spidermap-rtt-ecdf",
+                       "D04-extra-submission-decomposition", "D05-control-traffic-decomposition",
+                       "D06-mobility-coverage"}
+        if len(index["diagnostics"]) != len(diagnostics) or \
+                {item["id"] for item in index["diagnostics"]} != diagnostics:
+            raise ValueError("exactly six fixed-model non-training diagnostics are required")
     for item in items + index["diagnostics"]:
         if set(item["files"]) != {"pdf", "svg", "png"}:
             raise ValueError("each figure requires actual PDF, SVG and PNG artifacts")
@@ -429,6 +440,9 @@ def _plan_basis(plan, stage):
                  development={split: campaign.execution_identity(plan, split) for split in SPLITS})
     if "design_profile" in plan:
         basis["design_profile"] = plan["design_profile"]
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+        basis.update(external_models=plan["external_models"],
+                     test_seeds_by_scene=plan["test_seeds_by_scene"])
     if stage in ("evaluate", "figures"):
         basis.update(models=plan["models"], bootstrap=plan["bootstrap"])
     if stage == "figures":
@@ -441,6 +455,9 @@ def _plan_basis(plan, stage):
 
 
 def _check_plan(plan, stage, allow_validation_only):
+    fixed_models = plan.get("design_profile") == FIXED_MODEL_PROFILE
+    if fixed_models and stage != "figures":
+        raise ValueError("fixed-model workflow permits figures only; development stages are skipped")
     status = plan.get("status")
     if stage in ("evaluate", "figures") and status != "formal-frozen":
         raise ValueError(stage + " requires formal-frozen campaign models")
@@ -459,6 +476,10 @@ def _check_plan(plan, stage, allow_validation_only):
         raise ValueError("campaign bootstrap requires 10000 resamples and a fixed nonnegative seed")
     seen = set()
     for split, seeds in plan["seed_families"].items():
+        if fixed_models and split != "test":
+            if seeds:
+                raise ValueError("fixed-model workflow cannot contain development seeds")
+            continue
         if not seeds or any(type(seed) is not int or seed < 0 for seed in seeds):
             raise ValueError("each split needs nonnegative integer seed families")
         if len(seeds) != len(set(seeds)) or seen.intersection(seeds):
@@ -638,17 +659,22 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
             if set(plan["models"]) != set(SCENES):
                 raise ValueError("all three frozen campaign models are required")
             models = {}
-            for current in SCENES:
-                record = _completed(root, "train", current, plan)
-                dataset = Path(_completed(root, "datasets", current, plan)["products"]["dataset_manifest"])
-                path = Path(record["products"]["model_manifest"])
-                model = _model_product(path, current, plan, dataset, record["products"]["training_config"])
-                frozen = plan["models"][current]
-                if Path(frozen["path"]).resolve() != Path(model["checkpoint_path"]).resolve() or \
-                        frozen["sha256"] != model["checkpoint_sha256"]:
-                    raise ValueError("selected model differs from formal frozen campaign model")
-                _check_file(frozen["path"], frozen["sha256"])
-                models[current] = path
+            fixed_models = plan.get("design_profile") == FIXED_MODEL_PROFILE
+            external_dependencies = {}
+            if fixed_models:
+                external_dependencies = campaign.check_external_models(plan)
+            else:
+                for current in SCENES:
+                    record = _completed(root, "train", current, plan)
+                    dataset = Path(_completed(root, "datasets", current, plan)["products"]["dataset_manifest"])
+                    path = Path(record["products"]["model_manifest"])
+                    model = _model_product(path, current, plan, dataset, record["products"]["training_config"])
+                    frozen = plan["models"][current]
+                    if Path(frozen["path"]).resolve() != Path(model["checkpoint_path"]).resolve() or \
+                            frozen["sha256"] != model["checkpoint_sha256"]:
+                        raise ValueError("selected model differs from formal frozen campaign model")
+                    _check_file(frozen["path"], frozen["sha256"])
+                    models[current] = path
             if stage == "evaluate":
                 for current in selected:
                     model_path = models[current]
@@ -668,10 +694,11 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
                     products[current] = _stage(root, stage, current, plan, {}, dependencies, evaluate, verify)
             else:
                 evaluations = {}
-                for current in SCENES:
-                    path = Path(_completed(root, "evaluate", current, plan)["products"]["evaluation"])
-                    _evaluation_product(path, current, plan, models[current])
-                    evaluations[current] = dict(path=str(path), sha256=digest(path))
+                if not fixed_models:
+                    for current in SCENES:
+                        path = Path(_completed(root, "evaluate", current, plan)["products"]["evaluation"])
+                        _evaluation_product(path, current, plan, models[current])
+                        evaluations[current] = dict(path=str(path), sha256=digest(path))
                 exported = _validated_exports(root, plan, "test")
                 blocks = {}
                 for row in exported:
@@ -693,9 +720,14 @@ def execute(root, stage, scene=None, training_config=None, python=sys.executable
                 for key in ("design_profile", "figure_ids"):
                     if key in plan:
                         manifest[key] = plan[key]
+                if fixed_models:
+                    manifest.update(test_seeds_by_scene=plan["test_seeds_by_scene"],
+                                    external_models=plan["external_models"],
+                                    skip_training_figures=True)
                 dependencies = {str(Path(row["path"]) / "manifest.json"): row["manifest_sha256"]
                                 for row in exported}
                 dependencies.update({row["path"]: row["sha256"] for row in evaluations.values()})
+                dependencies.update(external_dependencies)
                 def figures(folder, number, identity):
                     source = folder / "campaign.json"
                     write_json(source, manifest)

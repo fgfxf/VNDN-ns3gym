@@ -73,14 +73,21 @@ def load_analysis(directory):
     if summary.sha256_file(result["campaign_path"]) != result["campaign_sha256"]:
         raise ValueError("Campaign manifest hash mismatch")
     for key in ("validation_only", "source_sha256", "repetitions", "bootstrap",
-                "baseline_condition_id", "conditions", "scans"):
+                "baseline_condition_id", "conditions", "scans", "test_seeds_by_scene",
+                "skip_training_figures", "external_models"):
         if result.get(key) != campaign.get(key):
             raise ValueError("Analysis disagrees with frozen campaign: " + key)
     if result.get("design_profile", "full") != campaign.get("design_profile", "full"):
         raise ValueError("Analysis design profile differs from frozen campaign")
-    if result.get("figure_ids", analysis_tools.expected_figure_ids(result["scans"])) != \
-            analysis_tools.expected_figure_ids(campaign["scans"]):
+    expected = analysis_tools.expected_figure_ids(
+        campaign["scans"], include_training=analysis_tools.includes_training_figures(campaign))
+    if result.get("figure_ids", expected) != expected:
         raise ValueError("Analysis figure declaration differs from frozen campaign")
+    if result.get("design_profile") == analysis_tools.FIXED_MODEL_PROFILE:
+        representatives = {scene: analysis_tools.seeds_for_scene(campaign, scene)[0]
+                           for scene in SCENARIOS}
+        if result.get("representative_seeds_by_scene") != representatives:
+            raise ValueError("Analysis representative seeds differ from the frozen scene seeds")
     table = list(csv_records(directory / "plot-summary.csv"))
     points = result.get("points", [])
     if len(table) != len(points):
@@ -124,8 +131,8 @@ def time_bins(records, start_ns, end_ns, bin_seconds):
 
 def _caption(result, english, chinese):
     label = " VALIDATION ONLY; synthetic small fixture." if result["validation_only"] else ""
-    if result.get("design_profile") == analysis_tools.QUICK_PROFILE:
-        count = len(result["repetitions"])
+    if result.get("design_profile") in (analysis_tools.QUICK_PROFILE, analysis_tools.FIXED_MODEL_PROFILE):
+        count = analysis_tools.repetition_count(result)
         english = ("Exploratory draft: online comparison n={} paired runs per condition; "
                    "descriptive results, no significance claim. ".format(count)) + english
         chinese = "探索初稿：在线对比每条件n={}个配对运行，仅作描述，不作显著性结论。".format(count) + chinese
@@ -138,13 +145,13 @@ def _caption(result, english, chinese):
 
 
 def save_figure(fig, output, identifier, kind, result, caption_en, caption_zh, metadata=None):
-    quick = result.get("design_profile") == analysis_tools.QUICK_PROFILE
+    quick = result.get("design_profile") in (analysis_tools.QUICK_PROFILE, analysis_tools.FIXED_MODEL_PROFILE)
     if result["validation_only"]:
         fig.text(.5, .015, "VALIDATION ONLY — NOT EXPERIMENTAL RESULTS",
                  ha="center", va="bottom", color="#A00000", fontsize=8)
     if quick:
         fig.text(.5, .04 if result["validation_only"] else .015,
-                 "EXPLORATORY DRAFT — online n={} paired runs/condition".format(len(result["repetitions"])),
+                 "EXPLORATORY DRAFT — online n={} paired runs/condition".format(analysis_tools.repetition_count(result)),
                  ha="center", va="bottom", color="#666666", fontsize=8)
     if any(getattr(axis, "name", "") == "3d" for axis in fig.axes):
         fig.subplots_adjust(left=.06, right=.90, bottom=.18, top=.90)
@@ -199,7 +206,7 @@ def _draw_points(ax, xvalues, points, strategy, descriptive=False):
 def scan_figures(result, output, points):
     figures = []
     conditions = {item["id"]: item for item in result["conditions"]}
-    compact = result.get("design_profile") in (analysis_tools.COMPACT_PROFILE, analysis_tools.QUICK_PROFILE)
+    compact = result.get("design_profile") in (analysis_tools.COMPACT_PROFILE, analysis_tools.QUICK_PROFILE, analysis_tools.FIXED_MODEL_PROFILE)
     identifier = 1
     for scan in analysis_tools.SCANS:
         if scan not in result["scans"]:
@@ -230,11 +237,11 @@ def scan_figures(result, output, points):
                 "{} versus {}. Each point uses {} complete independent paired simulation blocks; "
                 "bars are pointwise 95% whole-block bootstrap intervals. Success RTT is weighted "
                 "by satisfied requests; unavailable intervals are omitted and recorded in the table."
-                .format(METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+                .format(METRIC_LABELS[metric], AXIS_LABELS[scan], analysis_tools.repetition_count(result)))
             chinese = (
                 "{}随{}变化；每点{}个完整配对运行块，区间为整块重采样的点态95%区间。"
                 "成功RTT按成功请求数加权；不可估计区间在数表注明。".format(
-                    METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+                    METRIC_LABELS[metric], AXIS_LABELS[scan], analysis_tools.repetition_count(result)))
             if compact:
                 english = (
                     "{} versus {}. {} paired independent runs per condition; faint symbols show "
@@ -244,13 +251,13 @@ def scan_figures(result, output, points):
                     "from the performance denominator. The point estimate need not equal the mean of "
                     "the displayed per-run RTTs. Small-sample paired bootstrap intervals remain in "
                     "the tables; neither bootstrap draws nor packets are independent runs."
-                    .format(METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+                    .format(METRIC_LABELS[metric], AXIS_LABELS[scan], analysis_tools.repetition_count(result)))
                 chinese = (
                     "{}随{}变化，每条件{}个独立配对运行；淡点为各次运行，误差线为一倍样本标准差，"
                     "不是置信区间。RTT中心仍按成功数加权，SD仅描述有成功请求的各run均值，"
                     "因此中心不必等于淡点均值；零成功run仍留在性能分母。小样本配对bootstrap区间"
                     "保留于数表，重采样次数和包数不等于独立重复数。".format(
-                        METRIC_LABELS[metric], AXIS_LABELS[scan], len(result["repetitions"])))
+                        METRIC_LABELS[metric], AXIS_LABELS[scan], analysis_tools.repetition_count(result)))
             figures.append(save_figure(
                 fig, output, figure_id, "scan", result,
                 english, chinese,
@@ -300,14 +307,16 @@ def legacy_figures(result, directory, output):
     figures, diagnostics, quantiles, bin_table = [], [], [], []
     windows = _windows(directory, result["baseline_condition_id"])
     for scene_index, scene in enumerate(SCENARIOS):
+        representative_seed = result.get("representative_seeds_by_scene", {}).get(
+            scene, result["representative_seed"])
         successful, handover, representative, counts = baseline_data(
-            directory, scene, result["representative_seed"])
+            directory, scene, representative_seed)
         fig = plt.figure(figsize=(8.2, 4.6))
         ax = fig.add_subplot(111, projection="3d")
         for strategy in STRATEGIES:
             rows = time_bins(representative[strategy], *windows[scene], result["time_bin_seconds"])
             bin_table.extend(dict(row, scene=scene, strategy=strategy,
-                                  seed_family=result["representative_seed"]) for row in rows)
+                                  seed_family=representative_seed) for row in rows)
             x = [(row["bin_start_s"] + row["bin_end_s"]) / 2 for row in rows]
             z = [row["mean_success_rtt_ms"] if row["mean_success_rtt_ms"] is not None else np.nan
                  for row in rows]
@@ -326,11 +335,11 @@ def legacy_figures(result, directory, output):
             "{} baseline, prespecified seed {}. Fixed {} s send-time bins contain only successful "
             "RTT; empty-success bins remain empty. Per-bin successes and failures are in "
             "time-bin-rtt.csv. This one-run mechanism illustration is not an independent-repeat "
-            "confidence estimate.".format(SCENE_LABELS[scene], result["representative_seed"],
+            "confidence estimate.".format(SCENE_LABELS[scene], representative_seed,
                                           result["time_bin_seconds"]),
             "{}基准条件的事前指定种子{}；按发送时间固定{}秒分箱，仅平均成功RTT，"
             "无成功区间留空。各箱成功与失败数见配套表；单次示意不代表重复实验区间。".format(
-                SCENE_LABELS[scene], result["representative_seed"], result["time_bin_seconds"]),
+                SCENE_LABELS[scene], representative_seed, result["time_bin_seconds"]),
             {"scene": scene, "source_table": "time-bin-rtt.csv"}))
 
         fig, axes = plt.subplots(1, 2, figsize=(9.5, 4))
@@ -361,10 +370,10 @@ def legacy_figures(result, directory, output):
             "{} baseline: all successful RTTs from {} seeds, three recovery schemes. Left: full "
             "range; right: body zoom to 1.08 times the pooled 95th percentile. No RTT observations "
             "are removed. Packet-level pooled boxes are descriptive distributions, not independent "
-            "replication or confidence intervals.".format(SCENE_LABELS[scene], len(result["repetitions"])),
+            "replication or confidence intervals.".format(SCENE_LABELS[scene], analysis_tools.repetition_count(result)),
             "{}基准条件{}个种子的全部成功RTT；左图完整尾部，右图放大至合并P95的1.08倍。"
             "不删除样本；包级合并箱线仅描述分布，不能把包当作独立重复。".format(
-                SCENE_LABELS[scene], len(result["repetitions"])),
+                SCENE_LABELS[scene], analysis_tools.repetition_count(result)),
             {"scene": scene, "source_table": "baseline-requests.csv"}))
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 3.8))
@@ -408,7 +417,7 @@ def legacy_figures(result, directory, output):
 def traffic_figure(result, output, points):
     fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.6), sharey=True)
     baseline = result["baseline_condition_id"]
-    quick = result.get("design_profile") == analysis_tools.QUICK_PROFILE
+    quick = result.get("design_profile") in (analysis_tools.QUICK_PROFILE, analysis_tools.FIXED_MODEL_PROFILE)
     for panel, (scene, ax) in enumerate(zip(SCENARIOS, axes)):
         for strategy in STRATEGIES:
             point = points[scene, baseline, strategy, "network_mbit"]
@@ -505,7 +514,7 @@ def supplementary_diagnostics(result, directory, output):
                     selected = [row for row in details if row["scene"] == scene and
                                 row["condition_id"] == baseline and row["strategy"] == strategy]
                     values = [row.get(field, {}).get(category, 0) * scale for row in selected]
-                    if len(values) != len(result["repetitions"]):
+                    if len(values) != analysis_tools.repetition_count(result):
                         raise ValueError("Missing baseline decomposition repetitions")
                     mean = float(np.mean(values))
                     means.append(mean)
@@ -542,7 +551,7 @@ def supplementary_diagnostics(result, directory, output):
             for condition_id in result["scans"][scan]:
                 selected = [row for row in details if row["scene"] == scene and
                             row["condition_id"] == condition_id and row["strategy"] == "0"]
-                if len(selected) != len(result["repetitions"]):
+                if len(selected) != analysis_tools.repetition_count(result):
                     raise ValueError("Missing reference mobility repetitions")
                 x.append(conditions[condition_id][setting])
                 y.append(float(np.mean([row[measured] for row in selected])))
@@ -576,6 +585,9 @@ def supplementary_diagnostics(result, directory, output):
         "附全部种子的速度分位数、停车比例及交接数；四算法物理移动样本已作配对核验。",
         {"source_table": "mobility-coverage.csv"}))
     analysis_tools.write_csv(output / "mobility-coverage.csv", mobility_rows)
+
+    if not analysis_tools.includes_training_figures(result):
+        return figures
 
     for index, scene in enumerate(SCENARIOS):
         history = result["model_evaluations"][scene].get("training_history")
@@ -624,7 +636,7 @@ def supplementary_diagnostics(result, directory, output):
 
 def write_draft_index(output, result, figures):
     """Local preview of the actual rendered artifacts, with their full captions."""
-    title = "Exploratory draft / 探索初稿：25张实验图"
+    title = "Exploratory draft / 探索初稿：{}张实验图".format(len(figures))
     pieces = [
         '<!doctype html><html lang="zh-CN"><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
@@ -634,7 +646,7 @@ def write_draft_index(output, result, figures):
         'img{max-width:100%;height:auto}a{margin-right:1rem}.note{color:#666}</style>',
         '<h1>' + title + '</h1>',
         '<p>在线对比每条件 n={} 个完整配对运行。图中淡点代表各次运行，主图与总流量图的误差线'
-        '为样本标准差，不是置信区间；本初稿不作显著性结论。</p>'.format(len(result["repetitions"])),
+        '为样本标准差，不是置信区间；本初稿不作显著性结论。</p>'.format(analysis_tools.repetition_count(result)),
         '<p class="note">下列图片来自本次已完成的汇总。点击PNG预览可放大；PDF与SVG适合论文排版。'
         '各图保留英文与中文图注，完整来源见figure-index.json。</p>',
     ]
@@ -673,10 +685,12 @@ def plot_campaign(analysis_directory, output_directory):
         legacy, diagnostics = legacy_figures(result, directory, output)
         figures.extend(legacy)
         figures.append(traffic_figure(result, output, points))
-        figures.extend(confusion_figures(result, output))
+        if analysis_tools.includes_training_figures(result):
+            figures.extend(confusion_figures(result, output))
         diagnostics.extend(supplementary_diagnostics(result, directory, output))
     figures.sort(key=lambda item: item["id"])
-    expected = analysis_tools.expected_figure_ids(result["scans"])
+    expected = analysis_tools.expected_figure_ids(
+        result["scans"], include_training=analysis_tools.includes_training_figures(result))
     if len(figures) != len(expected) or {item["id"] for item in figures} != set(expected):
         raise ValueError("Rendered figures do not match the declared primary/supplementary figure IDs")
     # Revalidate frozen analysis artifacts after rendering, before marking complete.
@@ -700,11 +714,15 @@ def plot_campaign(analysis_directory, output_directory):
         "source_tables": {path.name: summary.sha256_file(path)
                           for path in output.glob("*.csv")},
     }
-    if result.get("design_profile") == analysis_tools.QUICK_PROFILE:
-        report["browse_index"] = write_draft_index(output, result, figures)
+    if result.get("design_profile") in (analysis_tools.QUICK_PROFILE, analysis_tools.FIXED_MODEL_PROFILE):
+        browse_figures = (figures + diagnostics if result.get("design_profile") ==
+                          analysis_tools.FIXED_MODEL_PROFILE else figures)
+        report["browse_index"] = write_draft_index(output, result, browse_figures)
         report["plot_configuration"]["displayed_uncertainty"] = (
             "individual paired runs and one sample standard deviation; exploratory n=2, "
             "not a confidence interval or significance claim")
+    if "representative_seeds_by_scene" in result:
+        report["plot_configuration"]["representative_seeds_by_scene"] = result["representative_seeds_by_scene"]
     analysis_tools.write_json(output / "figure-index.json", report)
     analysis_tools.write_json(output / "status.json", {"status": "complete",
                                                      "validation_only": result["validation_only"]})

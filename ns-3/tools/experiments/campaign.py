@@ -23,6 +23,9 @@ SCENES = ("circle", "grid", "spidermap")
 CANCEL_GRACE_SECONDS = 30
 COMPACT_PROFILE = "compact-exploratory-v1"
 QUICK_PROFILE = "quick-draft-v1"
+FIXED_MODEL_PROFILE = "quick-fixed-model-v1"
+FIXED_MODEL_SEEDS = {"circle": [23001, 23002], "grid": [23009, 23010],
+                     "spidermap": [23017, 23018]}
 SPARSE_PROFILES = (COMPACT_PROFILE, QUICK_PROFILE)
 SAMPLING_SPLITS = ("train", "validation", "evaluation")
 
@@ -47,13 +50,13 @@ def digest(path):
 
 
 def make_plan(campaign_id, duration=None, warmup=20, drain=3.5, profile="full"):
-    if profile not in ("full",) + SPARSE_PROFILES:
+    if profile not in ("full", FIXED_MODEL_PROFILE) + SPARSE_PROFILES:
         raise ValueError("unknown design profile")
     if duration is None:
-        duration = 120 if profile == QUICK_PROFILE else 300
+        duration = 120 if profile in (QUICK_PROFILE, FIXED_MODEL_PROFILE) else 300
     if profile == COMPACT_PROFILE and (duration, warmup, drain) != (300, 20, 3.5):
         raise ValueError("compact profile freezes measurement/warmup/drain at 300/20/3.5 seconds")
-    if profile == QUICK_PROFILE and (duration, warmup, drain) != (120, 20, 3.5):
+    if profile in (QUICK_PROFILE, FIXED_MODEL_PROFILE) and (duration, warmup, drain) != (120, 20, 3.5):
         raise ValueError("quick profile freezes measurement/warmup/drain at 120/20/3.5 seconds")
     for value in (duration, warmup, drain):
         if isinstance(value, bool) or not math.isfinite(value):
@@ -90,6 +93,14 @@ def make_plan(campaign_id, duration=None, warmup=20, drain=3.5, profile="full"):
             "speed": [condition(10, v, base) for v in (10, 30, 50)],
             "vehicles": [condition(n, 30, int(n * 5 * duration)) for n in (5, 10, 15, 20)],
         }
+    if profile == FIXED_MODEL_PROFILE:
+        conditions, by_parameters = [], {}
+        condition(10, 30, base)
+        scans = {
+            "interest": [condition(10, 30, k) for k in (1500, 3000, 6000, 9000, 12000)],
+            "speed": [condition(10, v, base) for v in (15, 30, 50, 60)],
+            "vehicles": [condition(n, 30, int(n * 5 * duration)) for n in (5, 10, 15, 20)],
+        }
     pilot = ["baseline"]
     for scan in ("interest", "speed", "vehicles"):
         pilot.extend([scans[scan][0], scans[scan][-1]])
@@ -123,7 +134,50 @@ def make_plan(campaign_id, duration=None, warmup=20, drain=3.5, profile="full"):
         }
         plan["pilot_conditions"] = ["baseline"]
         validate_sampling_plan(plan)
+    if profile == FIXED_MODEL_PROFILE:
+        plan.update(design_profile=profile, training_reuse=True,
+                    seed_policy="training-seed-reuse-exploratory",
+                    test_seeds_by_scene=copy.deepcopy(FIXED_MODEL_SEEDS),
+                    sampling_jobs={split: [] for split in SAMPLING_SPLITS},
+                    sampling_revisions=[], sampling_max_additional_jobs=0,
+                    sampling_max_additional_per_scene=0, pilot_conditions=[],
+                    figure_ids=_module("aggregate_campaign").expected_figure_ids(scans, include_training=False))
+        plan["seed_families"] = {split: [] for split in ("pilot",) + SAMPLING_SPLITS}
+        plan["seed_families"]["test"] = sorted(s for seeds in FIXED_MODEL_SEEDS.values() for s in seeds)
+        validate_sampling_plan(plan)
     return plan
+
+
+def _validate_fixed_model_plan(plan):
+    if (plan["measurement_duration"], plan["measurement_start"], plan["drain_seconds"]) != (120, 20, 3.5):
+        raise ValueError("fixed-model profile freezes the 120/20/3.5 window")
+    expected_scans = {
+        "interest": [(10, 30, k) for k in (1500, 3000, 6000, 9000, 12000)],
+        "speed": [(10, v, 6000) for v in (15, 30, 50, 60)],
+        "vehicles": [(n, 30, n * 600) for n in (5, 10, 15, 20)],
+    }
+    rows = plan["conditions"]
+    byid = {r["id"]: (r["vehicles"], r["speed_kmh"], r["requests"]) for r in rows}
+    expected = set(c for scan in expected_scans.values() for c in scan)
+    if len(rows) != 11 or len(byid) != 11 or set(byid.values()) != expected:
+        raise ValueError("fixed-model profile requires exactly eleven approved conditions")
+    actual = {name: [byid.get(cid) for cid in ids] for name, ids in plan["scans"].items()}
+    if actual != expected_scans or byid.get(plan["baseline_condition_id"]) != (10, 30, 6000):
+        raise ValueError("fixed-model scan coordinates or shared baseline changed")
+    if plan.get("test_seeds_by_scene") != FIXED_MODEL_SEEDS:
+        raise ValueError("fixed-model per-scene seed assignments changed")
+    families = {split: [] for split in ("pilot",) + SAMPLING_SPLITS}
+    families["test"] = sorted(s for seeds in FIXED_MODEL_SEEDS.values() for s in seeds)
+    if plan["seed_families"] != families:
+        raise ValueError("fixed-model profile permits only its six declared test seeds")
+    if (plan.get("sampling_jobs") != {split: [] for split in SAMPLING_SPLITS} or
+            plan.get("pilot_conditions") != [] or plan.get("sampling_revisions") != [] or
+            plan.get("sampling_max_additional_jobs") != 0 or plan.get("sampling_max_additional_per_scene") != 0):
+        raise ValueError("fixed-model profile has zero sampling, pilot, and addition jobs")
+    if plan.get("training_reuse") is not True or plan.get("seed_policy") != "training-seed-reuse-exploratory":
+        raise ValueError("fixed-model training-seed reuse must be explicit")
+    if plan.get("figure_ids") != _module("aggregate_campaign").expected_figure_ids(plan["scans"], include_training=False):
+        raise ValueError("fixed-model profile requires twenty-two non-training figures")
 
 
 def _compact_initial_jobs(conditions, profile=COMPACT_PROFILE):
@@ -144,8 +198,11 @@ def _compact_initial_jobs(conditions, profile=COMPACT_PROFILE):
 def validate_sampling_plan(plan):
     """Validate sparse rows rather than multiplying their seed union by conditions."""
     profile = plan.get("design_profile", "full")
-    if profile not in ("full",) + SPARSE_PROFILES:
+    if profile not in ("full", FIXED_MODEL_PROFILE) + SPARSE_PROFILES:
         raise ValueError("unknown design profile")
+    if profile == FIXED_MODEL_PROFILE:
+        _validate_fixed_model_plan(plan)
+        return
     if profile not in SPARSE_PROFILES:
         return
     quick = profile == QUICK_PROFILE
@@ -377,12 +434,15 @@ def jobs_for(plan, split):
             block = "{}-{}-{}-s{}".format(split, row["scene"], row["condition_id"], row["seed_family"])
             jobs.append(dict(row, job_id=block + "-a0", block_id=block, split=split, strategy=0))
         return jobs
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE and split != "test":
+        return []
     conditions = (plan["pilot_conditions"] if split == "pilot" else
                   [item["id"] for item in plan["conditions"]])
     jobs = []
     for scene in SCENES:
         for cid in conditions:
-            for seed in plan["seed_families"][split]:
+            for seed in (plan["test_seeds_by_scene"][scene] if plan.get("design_profile") == FIXED_MODEL_PROFILE
+                         else plan["seed_families"][split]):
                 block = "{}-{}-{}-s{}".format(split, scene, cid, seed)
                 for strategy in (range(4) if split == "test" else (0,)):
                     jobs.append(dict(job_id=block + "-a" + str(strategy), block_id=block,
@@ -394,6 +454,11 @@ def jobs_for(plan, split):
         jobs.sort(key=lambda job: (plan["seed_families"][split].index(job["seed_family"]),
                                    ordered_conditions.index(job["condition_id"]),
                                    SCENES.index(job["scene"]), job["strategy"]))
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE and split == "test":
+        baseline = plan["baseline_condition_id"]
+        ordered = [baseline] + [cid for cid in conditions if cid != baseline]
+        jobs.sort(key=lambda job: (plan["test_seeds_by_scene"][job["scene"]].index(job["seed_family"]),
+                                   ordered.index(job["condition_id"]), SCENES.index(job["scene"]), job["strategy"]))
     return jobs
 
 
@@ -475,6 +540,10 @@ def execution_identity(plan, split):
         value["figure_ids"] = plan["figure_ids"]
         if split in SAMPLING_SPLITS:
             value["sampling_jobs"] = plan["sampling_jobs"][split]
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+        value.update(design_profile=FIXED_MODEL_PROFILE, test_seeds_by_scene=plan["test_seeds_by_scene"],
+                     seed_policy=plan["seed_policy"], external_models=plan.get("external_models"),
+                     figure_ids=plan["figure_ids"])
     if split == "pilot":
         value["pilot_conditions"] = plan["pilot_conditions"]
     if split == "test":
@@ -731,6 +800,8 @@ def _execute_locked(root, split, *, scenes, conditions, seeds, max_jobs, max_att
         raise ValueError("development design must be frozen after pilot")
     if split == "test" and plan.get("status") != "formal-frozen":
         raise ValueError("models and runtime must be frozen before final testing")
+    if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+        check_external_models(plan)
     selected = [j for j in jobs_for(plan, split) if
                 (not scenes or j["scene"] in scenes) and
                 (not conditions or j["condition_id"] in conditions) and
@@ -819,11 +890,48 @@ def _export_locked(root, split):
     return entries
 
 
+def check_external_models(plan):
+    return _module("fixed_models").check_external_models(plan)
+
+
+def bind_external_models(root, model_source, timeout):
+    root, model_source = Path(root).resolve(), Path(model_source).resolve()
+    with (root / "plan/campaign.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        plan = runner.summary.read_json(root / "plan/design.json")
+        validate_sampling_plan(plan)
+        if plan.get("design_profile") != FIXED_MODEL_PROFILE:
+            raise ValueError("external models require the fixed-model profile")
+        if isinstance(timeout, bool) or not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be finite and positive")
+        source = runner.source_snapshot(ROOT)["sha256"]
+        if plan.get("status") == "formal-frozen":
+            if plan["source_sha256"] != source:
+                raise ValueError("source changed since external model binding")
+            if (plan["external_models"]["source_root"] != str(model_source) or
+                    plan["timeouts"].get("default") != timeout):
+                raise ValueError("external model source or timeout differs from frozen binding")
+            check_external_models(plan)
+            return plan
+        if plan.get("status") != "candidate-unfrozen" or list((root / "plan").glob("state-*.json")):
+            raise ValueError("external models must be bound before any campaign execution")
+        binding = _module("fixed_models").create_binding(plan, model_source, source)
+        plan.update(source_sha256=source, models={s: binding["scenes"][s]["checkpoint"] for s in SCENES},
+                    external_models=binding, status="formal-frozen")
+        plan["timeouts"]["default"] = timeout
+        plan.setdefault("freeze_history", []).append(dict(phase="formal-external-models", utc=stamp(), source_sha256=source))
+        check_external_models(plan)
+        runner.write_json(root / "plan/design.json", plan)
+        return plan
+
+
 def freeze(root, phase, models, timeout):
     with (root / "plan/campaign.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         plan = runner.summary.read_json(root / "plan/design.json")
         validate_sampling_plan(plan)
+        if plan.get("design_profile") == FIXED_MODEL_PROFILE:
+            raise ValueError("fixed-model profile requires bind_external_models, not local model freeze")
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be finite and positive")
         for value in models:
@@ -869,7 +977,7 @@ def main(argv=None):
                         help="measurement duration; defaults to 120 for quick-draft-v1, otherwise 300")
     parser.add_argument("--warmup", type=float, default=20)
     parser.add_argument("--drain", type=float, default=3.5)
-    parser.add_argument("--profile", choices=("full",) + SPARSE_PROFILES, default="full")
+    parser.add_argument("--profile", choices=("full", FIXED_MODEL_PROFILE) + SPARSE_PROFILES, default="full")
     parser.add_argument("--additions", type=Path, help="JSON list of explicit split/scene/condition_id/seed_family jobs")
     parser.add_argument("--reason", help="coverage deficiency that requires bounded sampling additions")
     parser.add_argument("--no-build", action="store_true", help="run existing binaries without invoking a build")

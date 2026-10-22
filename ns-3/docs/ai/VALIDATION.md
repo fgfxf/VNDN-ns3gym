@@ -3,6 +3,12 @@
 开发规则见 [工作区 AGENTS.md](../../../AGENTS.md)，项目结构见 [PROJECT.md](PROJECT.md)。
 本文件中的命令除特别说明外均在 `/home/fgfxf/ndnSIM/ns-3` 执行。
 
+固定模型264轮quick的验收见[执行记录](QUICK_FIXED_MODEL_EXECUTION_20261022.md)。
+新增`test_fixed_model_{campaign,pipeline,workflow,figures}.py`自动进入第五组Python回归，
+覆盖场景特异种子、零采样、历史模型契约、恢复、完整矩阵及无训练图。
+264个合成run的实际汇总和28图渲染仅验证工具，不能当作264轮真实实验结果。
+本次只改Python，统一入口使用已核验的现有C++程序`--skip-build`，不触发waf。
+
 2026-10-21用户要求的独立绘图交接包位于`data/experiments/retrain-quick-2026102-others/`。
 包内原统计/绘图52项回归、迁移入口13项测试通过；从实际用户归档解压到新路径后，
 禁止读取原工程，完成check、34图重画及192轮重汇总/再绘验证。详细证据见

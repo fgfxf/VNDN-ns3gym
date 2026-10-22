@@ -1016,3 +1016,41 @@ driver退出130。进程核查无本次runner/ns-3/SUMO残留；旧无关SUMO110
 - 结论：正式实现和所述部署/回归验收完成。18轮探索性能仍是circle改善、grid小幅改善、spider小幅退化；
   用户接受采用不改变负向结果，两开发种子不能证明泛化或统计显著性。额外机制只记Markdown，未改对比图/HTML。
   未重训、未出新论文图、未启动完整实验队列；新源码后续性能须使用新数据，旧结果保留原版本解释。
+
+## 2026-10-22：固定昨日模型的264轮quick扩展实验
+
+- 用户完成grill确认后明确“确认并执行”：Interest1500/3000/6000/9000/12000、速度15/30/50/60、
+  车辆5/10/15/20；20秒预热+120秒测量+3.5秒排空，11条件×3场景×4策略×2种子=264轮。
+  circle23001/23002、grid23009/23010、spidermap23017/23018固定，明确复用训练种子进行探索对比。
+  复用昨日三模型、固定阈值，不重新采样/训练，不生成训练图；444分钟是目标，允许完成整批约8小时。
+- 起始HEAD `c64023a4af55b0f47fa01898a1a86352aae28889`且工作区干净；保留原实验和三模型。
+  新目录`data/experiments/quick-fixed-model-20261022`，旧批次不恢复，不向旧结果续写。
+- 新增`quick-fixed-model-v1`独立profile，修改`campaign.py`、`run_campaign_pipeline.py`、
+  `campaign_workflow.py`、`aggregate_campaign.py`、`plot_campaign.py`，新增`fixed_models.py`来源核验。
+  历史训练source与当前运行source分别绑定，核对模型manifest/dataset来源/契约与13项文件依赖，
+  不改历史checkpoint或解除旧profile隔离规则。新profile直接模型复用→test→figures。
+  保留每轮校验与完成复用、立即停止、累计与当前轮时间；n按各场景2seed计算，不把union6当重复数。
+- 原五指标公式不变；图集22编号图+6诊断图，取消混淆矩阵/学习曲线；RTT三维图取场景首个指定seed。
+  机制说明仍只记Markdown，不在比较HTML/图里添加额外优化说明。三场景默认策略和底层均未修改。
+- 测试先行：原实验工具228项基线通过；新增campaign10/pipeline7/workflow9/figures7共33项行为测试。
+  旧实现因unknown profile/不接受空development splits等目标行为缺失而有效RED，最小实现后GREEN。
+  duration为float导致请求数类型错误、代表seed篡改可能生成空图另有有效RED并修复。
+  首次figure fixture seed未同步的准备错误保留，不计有效RED。分项日志在本次build目录。
+- 真实264个合成run原始CSV经完整汇总/绘图，28图的84个PDF/SVG/PNG实际生成，验证全5/4/4点、
+  每条件2seed、缺轮/错seed/模型篡改拒绝。这是工具验证，非真实性能结果。
+  实际三个历史模型通过当前控制器formal loader及13依赖核验（0.870秒），新旧源码分别记录。
+  真实make_plan/workflow/aggregate契约预检264jobs/66blocks/11conditions通过；未把占位run引用作为运行验收。
+- 修改后`export JOBS=4`及`python3.8 tools/validate.py --skip-build`退出0：45 C++＋324 Python全通过，
+  无跳过。报告`build/validation/20261022T081555.483901Z-cb6a7d7a/report.json`。
+  三场景程序、模块库、waf配置缓存SHA未变，C++源差异为空；没有configure、waf构建或训练。
+- 2026-10-22北京时间16:19:56以独立后台会话启动`all`，PID8901，身份与精确argv在新批次`plan/launch.json`。
+  全部源码先封存，首12基准轮计入264；自动串行运行并最终出图，进度约每10秒写控制台。
+  实验已进入running/test，首轮circle/NoForward/23001/基准；本条不宣称264轮或真实图已完成。
+  `--run-timeout 900`限制单轮，`--stage-timeout 7200`用于汇总/绘图子命令，不是8小时仿真总时限。
+- 新增[执行记录](QUICK_FIXED_MODEL_EXECUTION_20261022.md)，同步AGENTS/PROJECT/VALIDATION；
+  记录模型与数据位置、启动/查看/立即停止/恢复/重新出图命令。现有同轮两次attempt上限保留并明确说明。
+  运行期间不得修改封存代码或并发启动仿真/统一测试。后续实际结果以状态与完整manifest为准。
+- 启动后首个circle基准四策略真实运行均complete；每轮6000请求终态闭合、共享输入一致、使用正式f51运行库。
+  NN加载昨日circle checkpoint，5935条Python/C++动作逐条一致且全部接受；未采样/训练。
+  只读审计`first-block-audit.json`已归档。北京时间16:28:25为5/264完成、第6轮grid/策略1运行中，
+  不把终态闭合解释成100%交付，也不把首组验收解释成性能优势或整批完成。

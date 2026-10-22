@@ -2,6 +2,12 @@
 
 更新日期：2026-10-22。供后续 AI 修改前建立上下文；开发与验证约束以适用的 `AGENTS.md` 为准。
 
+用户已授权[固定模型quick扩展](QUICK_FIXED_MODEL_EXECUTION_20261022.md)：
+新增`quick-fixed-model-v1`，11条件×3场景×4策略×2场景指定训练采样种子=264轮。
+复用昨日三模型，跳过采样/训练/离线评估，生成22编号图＋6诊断图。
+`fixed_models.py`分别核对历史训练来源与当前运行源码，`campaign`绑定模型后由pipeline直接运行test和figures。
+这是训练种子复用的探索性比较；旧profile的隔离及同源校验不变，进度和实际状态见执行记录。
+
 2026-10-22用户确认三个场景均采用神经专用无损hello编码，并接受spider开发小批量的小幅退化。
 正式源码及默认模块库已更新，验收证据见[正式合入记录](NEURAL_WIRE_INSTALL_20261022.md)。
 策略3发送`VNH1 + CBOR [1,[六维原值],NextRsu,cacheObject]`；RSU校验后恢复原JSON对象再更新状态。
