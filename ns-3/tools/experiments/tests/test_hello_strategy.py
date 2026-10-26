@@ -269,7 +269,7 @@ class HelloStrategyBehaviorTest(unittest.TestCase):
             "PARSE": section(rsu, "  nlohmann::json j;", "\n  // 从 VndnTag", rsu_start),
             "STATE": section(rsu, "  // 更新车辆最后回复时间戳", "\n  // 补救 Data", rsu_start),
             "CACHE": section(rsu, '  if (j.contains ("CsUpdate"))',
-                             "\n}\n\nvoid\nVndnRsu::OnTimeout", rsu_start),
+                             "\n  // Passive table occupancy observation", rsu_start),
             "HELPER": '#include "vndn-hello-wire.h"' if helper.exists() else "",
         }
         cpp = PROBE

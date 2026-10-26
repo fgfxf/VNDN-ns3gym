@@ -145,10 +145,16 @@ def _coverage_families(edges, connections, sources):
 
 def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
                     measurement_start=20.0, measurement_duration=300.0,
-                    drain_seconds=3.5, seed=1, ns3_root=None):
+                    drain_seconds=3.5, seed=1, ns3_root=None,
+                    hello_interval_ms=None, resource_observations=None):
     """Return paths to a generated experiment template and its input summary."""
     if scenario not in SCENARIOS:
         raise ValueError("scenario must be circle, grid or spidermap")
+    if hello_interval_ms is not None and (type(hello_interval_ms) is not int or
+            not 1 <= hello_interval_ms <= 2147483647):
+        raise ValueError("hello_interval_ms must be an integer in [1, 2147483647]")
+    if resource_observations is not None and type(resource_observations) is not bool:
+        raise ValueError("resource_observations must be a boolean")
     vehicles = _positive_integer(vehicles, "vehicles")
     requests = _positive_integer(requests, "requests")
     seed = _positive_integer(seed, "seed")
@@ -296,6 +302,14 @@ def generate_inputs(*, scenario, output_dir, vehicles, speed_kmh, requests,
                         "Routes are closed and extended; this is a new experimental mobility input.",
                         "Planned road coverage does not guarantee runtime RSU class coverage."],
     }
+    # Omit new options when absent: legacy input files keep their old meaning.
+    if hello_interval_ms is not None:
+        config["hello_interval_ms"] = hello_interval_ms
+        summary.update(hello_interval_ms=hello_interval_ms, rsu_timeout_ms=2 * hello_interval_ms,
+                       obu_neighbor_timeout_ms=2000)
+    if resource_observations is not None:
+        config["resource_observations"] = resource_observations
+        summary["resource_observations"] = resource_observations
     output.mkdir(parents=True, exist_ok=False)
     try:
         shutil.copyfile(source / net_name, output / "network.net.xml")
@@ -326,6 +340,8 @@ def main(argv=None):
     parser.add_argument("--drain-seconds", type=float, default=3.5)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ns3-root", type=Path)
+    parser.add_argument("--hello-interval-ms", type=int)
+    parser.add_argument("--resource-observations", action="store_true", default=None)
     arguments = parser.parse_args(argv)
     try:
         result = generate_inputs(**vars(arguments))

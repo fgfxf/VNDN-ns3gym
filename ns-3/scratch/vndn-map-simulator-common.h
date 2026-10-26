@@ -296,6 +296,7 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
       recording.scenario = experiment->scenario;
       recording.runId = experiment->runId;
       recording.trainingSnapshots = experiment->trainingSnapshots;
+      recording.resourceObservations = experiment->resourceObservations;
       recording.startNs = experiment->measurementStartNs;
       recording.endNs = experiment->measurementEndNs;
       recording.drainEndNs = experiment->drainEndNs;
@@ -417,6 +418,8 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   rsuHelper.SetAttribute ("SumoClient", PointerValue (sumoClient));
   rsuHelper.SetAttribute ("RsuForwardStrategy", EnumValue (rsuForwardStrategy));
   rsuHelper.SetAttribute ("OpenGymPort", UintegerValue (openGymPort));
+  if (experiment)
+    rsuHelper.SetAttribute ("HelloIntervalMs", UintegerValue (experiment->helloIntervalMs));
   for (uint32_t rsuIndex = 0; rsuIndex < nRsus; ++rsuIndex)
     {
       nodePool.Get (usedNodeCounter)->GetObject<MobilityModel> ()->SetPosition (

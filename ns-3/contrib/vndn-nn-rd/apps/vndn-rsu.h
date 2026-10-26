@@ -81,7 +81,14 @@ public:
   void
   setOpenGymPort (uint16_t openGymPort);
 
+  /** Configure hello cadence before Start; departure detection remains 2T. */
+  void
+  setHelloIntervalMs (uint32_t intervalMs);
+
 private:
+  /** Passive counts only; never mutates, expires or allocates protocol entries. */
+  void RecordResourceState (const std::string &event);
+
   /**
    * \brief 遍历节点上的 NetDevice，区分 p2p 与无线接口并注册前缀。
    *        同时记录无线设备地址与 faceId，供后续业务使用。

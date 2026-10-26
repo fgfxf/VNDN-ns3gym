@@ -2,6 +2,8 @@
 #include "ns3/vndn-experiment-recorder.h"
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+#include <sys/stat.h>
 
 namespace {
 using vanet::VndnExperimentRecorder;
@@ -142,6 +144,74 @@ public:
   }
 };
 
+class ResourceObservationTest : public ns3::TestCase
+{
+public:
+  ResourceObservationTest ()
+    : TestCase ("Resource observations retain warmup, changed states and endpoint holds without changing requests") {}
+  void DoRun () override
+  {
+    auto config = MakeConfig ();
+    config.outputDirectory = CreateTempDirFilename ("");
+    config.resourceObservations = true;
+    VndnExperimentRecorder recorder (config);
+    const std::array<uint64_t, 10> empty = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    const std::array<uint64_t, 10> occupied = {{1, 1, 2, 2, 2, 1, 1, 1, 10, 10}};
+    const std::array<uint64_t, 10> expired = {{0, 0, 0, 0, 0, 1, 1, 1, 10, 10}};
+    recorder.RecordRsuState (0, "START", 0, empty);
+    recorder.RecordRsuState (900000000, "CHANGE", 0, occupied);
+    recorder.RecordRsuState (1000000000, "CHANGE", 0, occupied);
+    recorder.RecordRsuState (1500000000, "CHANGE", 0, expired);
+    recorder.RecordRsuState (5500000000, "STOP", 0, expired);
+    recorder.RecordHelloPayload (500000000, 2, 0, "registration", 80, 110, 2, 0, 0);
+    recorder.RecordHelloPayload (1100000000, 2, 0, "delta", 95, 125, 3, 2, 1);
+    recorder.RecordHelloPayload (1200000000, 2, 0, "unchanged", 50, 80, 3, 0, 0);
+    bool rejected = false;
+    try { recorder.RecordHelloPayload (1300000000, 2, 0, "delta", 95, 70, 3, 2, 1); }
+    catch (const std::invalid_argument &) { rejected = true; }
+    NS_TEST_EXPECT_MSG_EQ (rejected, true, "Impossible encoded lengths cannot enter raw observations");
+    recorder.RecordGenerated (1000000000, "/a", "car", 2, 17, 0);
+    recorder.RecordGenerated (1500000000, "/b", "car", 2, 23, 0);
+    recorder.RecordTerminal (1100000000, "/a", "DATA", 0);
+    recorder.RecordTerminal (4500000000, "/b", "TIMEOUT", 0);
+    NS_TEST_EXPECT_MSG_EQ (recorder.Finalize (config.drainEndNs), true,
+                           "Resource observations do not modify the request cohort");
+    const auto read = [&] (const std::string &filename) {
+      std::ifstream input (config.outputDirectory + "/" + filename);
+      std::ostringstream result;
+      result << input.rdbuf ();
+      return result.str ();
+    };
+    const std::string states = read ("rsu-state.csv");
+    NS_TEST_EXPECT_MSG_NE (states.find ("900000000,CHANGE,0,1,1,2,2,2,1,1,1,10,10"),
+                           std::string::npos, "Warmup state provides the true measurement-start occupancy");
+    NS_TEST_EXPECT_MSG_EQ (states.find ("1000000000,CHANGE"), std::string::npos,
+                           "Unchanged counts do not create spurious state transitions");
+    NS_TEST_EXPECT_MSG_NE (states.find ("1500000000,CHANGE,0,0,0,0,0,0,1,1,1,10,10"),
+                           std::string::npos, "Departure does not pretend retained history/MAC fields were cleared");
+    NS_TEST_EXPECT_MSG_NE (states.find ("5500000000,STOP,0,0,0,0,0,0,1,1,1,10,10"),
+                           std::string::npos, "Unchanged endpoint is still explicit for interval closure");
+    NS_TEST_EXPECT_MSG_NE (read ("hello-payloads.csv").find ("500000000,2,0,registration,80,110,2,0,0"),
+                           std::string::npos, "Warmup registration retains content and complete Data lengths");
+    const std::string marker = read ("recorder-complete.json");
+    NS_TEST_EXPECT_MSG_NE (marker.find ("\"rsu_state_rows\":4"), std::string::npos,
+                           "Completion counts actual emitted state rows");
+    NS_TEST_EXPECT_MSG_NE (marker.find ("\"hello_payload_rows\":3"), std::string::npos,
+                           "Rejected observations cannot inflate the completed payload count");
+    auto disabled = MakeConfig ();
+    disabled.outputDirectory = CreateTempDirFilename ("disabled");
+    mkdir (disabled.outputDirectory.c_str (), 0755);
+    VndnExperimentRecorder without (disabled);
+    without.RecordRsuState (0, "START", 0, empty);
+    without.RecordHelloPayload (0, 2, 0, "registration", 80, 110, 2, 0, 0);
+    without.Finalize (disabled.drainEndNs);
+    NS_TEST_EXPECT_MSG_EQ (std::ifstream (disabled.outputDirectory + "/rsu-state.csv").good (),
+                           false, "Default-disabled state collection creates no extra file");
+    NS_TEST_EXPECT_MSG_EQ (std::ifstream (disabled.outputDirectory + "/hello-payloads.csv").good (),
+                           false, "Default-disabled payload collection creates no extra file");
+  }
+};
+
 class ExperimentRecorderSuite : public ns3::TestSuite
 {
 public:
@@ -151,6 +221,7 @@ public:
     AddTestCase (new IncompleteLedgerTest, ns3::TestCase::QUICK);
     AddTestCase (new DataAttemptTest, ns3::TestCase::QUICK);
     AddTestCase (new CsvLifecycleTest, ns3::TestCase::QUICK);
+    AddTestCase (new ResourceObservationTest, ns3::TestCase::QUICK);
   }
 } g_experimentRecorderSuite;
 } // namespace

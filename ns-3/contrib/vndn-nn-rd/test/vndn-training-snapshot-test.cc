@@ -224,6 +224,7 @@ private:
     config.scenario = "circle";
     config.runId = "network-fixture";
     config.trainingSnapshots = enabled;
+    config.resourceObservations = enabled;
     config.startNs = 1000000;
     config.endNs = 240000000;
     config.drainEndNs = 3240000000ULL;
@@ -319,6 +320,114 @@ private:
   }
 };
 
+class ConfigurableHelloPeriodTest : public ns3::TestCase
+{
+public:
+  ConfigurableHelloPeriodTest ()
+    : TestCase ("All approved hello periods reach the real RSU scheduler without changing the default") {}
+
+private:
+  void DoRun () override
+  {
+    for (uint32_t period : {20U, 40U, 80U, 160U})
+      {
+        ns3::NodeContainer nodes;
+        nodes.Create (2);
+        ns3::SimpleNetDeviceHelper simple;
+        auto devices = simple.Install (nodes);
+        ns3::ndn::StackHelper stack;
+        stack.Install (nodes);
+        ns3::ndn::StrategyChoiceHelper::Install (nodes, "/",
+                                                 "/localhost/nfd/strategy/vndn-multicast");
+        auto face = nodes.Get (1)->GetObject<ns3::ndn::L3Protocol> ()->
+            getFaceByNetDevice (devices.Get (1));
+        uint64_t vehicleMac = 0;
+        devices.Get (1)->GetAddress ().CopyAllTo (
+            reinterpret_cast<uint8_t *> (&vehicleMac), sizeof (vehicleMac));
+        Recorder::Config config;
+        config.outputDirectory = CreateTempDirFilename ("period-" + std::to_string (period));
+        mkdir (config.outputDirectory.c_str (), 0755);
+        config.resourceObservations = true;
+        config.startNs = 0;
+        config.endNs = 5 * period * 1000000ULL;
+        config.drainEndNs = config.endNs + 3000000000ULL;
+        Recorder recorder (config);
+        Recorder::SetActive (&recorder);
+        std::vector<uint64_t> times;
+        ndn::util::signal::ScopedConnection connection (face->afterReceiveInterest.connect (
+            [&times, face, vehicleMac] (const ndn::Interest &interest, const nfd::EndpointId &) {
+              if (interest.getName () == ndn::Name ("/vndn/control/hello"))
+                {
+                  times.push_back (ns3::Simulator::Now ().GetNanoSeconds ());
+                  if (times.size () == 1)
+                    {
+                      const std::string content = Json ({{"LocateX", 1.25}, {"NextRsu", 0},
+                          {"CsUpdate", false}, {"CsList", Json::array ({"/a", "/b"})}}).dump ();
+                      ndn::Data data (interest.getName ());
+                      data.setContent (reinterpret_cast<const uint8_t *> (content.data ()), content.size ());
+                      data.setTag (std::make_shared<ndn::lp::VndnTag> (1, vehicleMac, 0));
+                      ns3::ndn::StackHelper::getKeyChain ().sign (data);
+                      face->sendData (data, 0);
+                    }
+                }
+            }));
+        auto app = ns3::CreateObject<ns3::VndnRsuApp> ();
+        NS_TEST_EXPECT_MSG_EQ (app->SetAttributeFailSafe (
+            "HelloIntervalMs", ns3::UintegerValue (period)), true,
+            "Period must be configurable on the actual RSU application");
+        NS_TEST_EXPECT_MSG_EQ (app->SetAttributeFailSafe (
+            "HelloIntervalMs", ns3::UintegerValue (0)), false,
+            "Zero period must not create an infinite scheduling loop");
+        NS_TEST_EXPECT_MSG_EQ (app->SetAttributeFailSafe (
+            "HelloIntervalMs", ns3::UintegerValue (2147483648ULL)), false,
+            "Reject periods whose doubled timeout overflows");
+        nodes.Get (0)->AddApplication (app);
+        app->SetStartTime (ns3::Seconds (0));
+        app->SetStopTime (ns3::MilliSeconds (5 * period + 1));
+        ns3::Simulator::Stop (ns3::NanoSeconds (config.drainEndNs));
+        ns3::Simulator::Run ();
+        NS_TEST_EXPECT_MSG_EQ (times.size (), 5,
+                               "Five real hello packets must arrive in five configured periods");
+        for (size_t i = 1; i < times.size (); ++i)
+          NS_TEST_EXPECT_MSG_EQ (times[i] - times[i - 1], period * 1000000ULL,
+                                 "The actual scheduler interval equals the requested period");
+        NS_TEST_EXPECT_MSG_EQ (recorder.Finalize (ns3::Simulator::Now ().GetNanoSeconds ()), true,
+                               "The resource-only fixture closes its empty request plan");
+        std::ifstream stateInput (config.outputDirectory + "/rsu-state.csv");
+        size_t registrations = 0, expirations = 0;
+        for (std::string line; std::getline (stateInput, line);)
+          {
+            std::istringstream columns (line);
+            std::vector<std::string> row;
+            for (std::string cell; std::getline (columns, cell, ',');) row.push_back (cell);
+            if (row.size () != 13 || row[1] != "CHANGE") continue;
+            if (row[3] == "1")
+              {
+                ++registrations;
+                NS_TEST_EXPECT_MSG_EQ (row[4], "1", "Actual hello registers one cache vehicle");
+                NS_TEST_EXPECT_MSG_EQ (row[5], "2", "Two cache names are counted from the real registration");
+                NS_TEST_EXPECT_MSG_EQ (row[6], row[7], "Both views describe the same cache associations");
+              }
+            else if (row[3] == "0")
+              {
+                ++expirations;
+                NS_TEST_EXPECT_MSG_EQ (std::stoull (row[0]), 4 * period * 1000000ULL,
+                                       "Strict age > 2T retains equality at 3T and removes at 4T");
+                NS_TEST_EXPECT_MSG_EQ (row[4], "0", "Expiration removes vehicle cache rows");
+                NS_TEST_EXPECT_MSG_EQ (row[5], "0", "Expiration removes empty reverse-name rows");
+                NS_TEST_EXPECT_MSG_EQ (row[8], "1", "MAC remains as in the existing implementation");
+                NS_TEST_EXPECT_MSG_EQ (row[11], "1", "Last real history remains after presence expiration");
+              }
+          }
+        NS_TEST_EXPECT_MSG_EQ (registrations, 1, "Observe the actual hello state insertion once");
+        NS_TEST_EXPECT_MSG_EQ (expirations, 1, "Observe exactly one actual presence expiration");
+        Recorder::SetActive (nullptr);
+        connection.disconnect ();
+        ns3::Simulator::Destroy ();
+      }
+  }
+};
+
 class NeuralDecisionLedgerTest : public ns3::TestCase
 {
 public:
@@ -379,6 +488,7 @@ public:
     AddTestCase (new TrainingSnapshotDisabledTest, TestCase::QUICK);
     AddTestCase (new TrainingSnapshotNetworkTest, TestCase::QUICK);
     AddTestCase (new NeuralDecisionLedgerTest, TestCase::QUICK);
+    AddTestCase (new ConfigurableHelloPeriodTest, TestCase::QUICK);
   }
 };
 static TrainingSnapshotSuite g_suite;

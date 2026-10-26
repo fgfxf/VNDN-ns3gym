@@ -91,9 +91,14 @@ def prepare_inputs(config_path):
     template = summary.read_json(config_path)
     if template.get("schema_version") != 1 or template.get("scenario") not in SCENARIOS:
         raise ValueError("Unsupported experiment schema/scenario")
-    for field in ("training_snapshots", "validation_only", "require_formal_contract"):
+    for field in ("training_snapshots", "validation_only", "require_formal_contract",
+                  "resource_observations"):
         if field in template and type(template[field]) is not bool:
             raise ValueError(field + " must be a JSON boolean")
+    if "hello_interval_ms" in template and (
+            type(template["hello_interval_ms"]) is not int or
+            not 1 <= template["hello_interval_ms"] <= 2147483647):
+        raise ValueError("hello_interval_ms must be an integer in [1, 2147483647]")
     if not isinstance(template.get("seeds"), dict):
         raise ValueError("Missing explicit seed tuple")
     for key in ("rng_seed", "rng_run", "sumo_seed", "srand_seed"):
@@ -244,6 +249,48 @@ def write_metrics(run, metrics):
         writer = csv.DictWriter(stream, fieldnames=list(flat))
         writer.writeheader()
         writer.writerow(flat)
+
+
+RESOURCE_HEADERS = {
+    "rsu-state.csv": "time_ns,event,rsu_id,present_vehicles,cache_vehicle_entries,cache_name_entries,cache_edges,reverse_cache_edges,mac_entries,next_rsu_entries,history_vehicles,history_records,history_timestamp_records",
+    "hello-payloads.csv": "time_ns,obu_node_id,rsu_id,category,content_bytes,wire_bytes,cache_items,added_items,removed_items",
+}
+
+
+def validate_resource_outputs(run, config, completion):
+    """Require opt-in observer outputs and the actual C++ deployment settings."""
+    effective = summary.read_json(run / "raw/effective-experiment-config.json")
+    if "hello_interval_ms" in config or config.get("resource_observations"):
+        interval = config.get("hello_interval_ms", 20)
+        for field, expected in (("hello_interval_ms", interval),
+                                ("rsu_timeout_ms", 2 * interval),
+                                ("obu_neighbor_timeout_ms", 2000)):
+            if type(effective.get(field)) is not int or effective[field] != expected:
+                raise ValueError("C++ effective config mismatch: " + field)
+    if not config.get("resource_observations", False):
+        return []
+    if effective.get("resource_observations") is not True or (
+            completion.get("resource_observations") is not True):
+        raise ValueError("Enabled resource observations missing from C++ completion")
+    artifacts = []
+    for name, count_field in (("rsu-state.csv", "rsu_state_rows"),
+                              ("hello-payloads.csv", "hello_payload_rows")):
+        path = run / "raw" / name
+        if not path.is_file():
+            raise ValueError("Missing enabled resource output: " + name)
+        with path.open(newline="") as stream:
+            reader = csv.DictReader(stream)
+            if reader.fieldnames != RESOURCE_HEADERS[name].split(","):
+                raise ValueError("Invalid resource CSV header: " + name)
+            count = 0
+            for row in reader:
+                if None in row or any(value is None or value == "" for value in row.values()):
+                    raise ValueError("Incomplete resource CSV row: " + name)
+                count += 1
+        if type(completion.get(count_field)) is not int or completion[count_field] != count:
+            raise ValueError("Resource row count differs from completion ledger: " + name)
+        artifacts.append("raw/" + name)
+    return artifacts
 
 
 def binary_evidence(root, target):
@@ -406,6 +453,7 @@ def execute_run(args, root, template, input_hashes, strategy, source):
         artifact_names = ["experiment.json", "run-metrics.json", "run-metrics.csv"]
         artifact_names += ["raw/" + name for name in summary.RAW_FILES]
         completion = summary.read_json(run / "raw/recorder-complete.json")
+        artifact_names += validate_resource_outputs(run, effective, completion)
         if (run / "raw/data-rx.csv").is_file():
             artifact_names.append("raw/data-rx.csv")
         if effective["training_snapshots"]:

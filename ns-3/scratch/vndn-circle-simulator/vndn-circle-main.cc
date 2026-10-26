@@ -256,6 +256,7 @@ int main(int argc,char *argv[]){
         recording.scenario = experiment->scenario;
         recording.runId = experiment->runId;
         recording.trainingSnapshots = experiment->trainingSnapshots;
+        recording.resourceObservations = experiment->resourceObservations;
         recording.startNs = experiment->measurementStartNs;
         recording.endNs = experiment->measurementEndNs;
         recording.drainEndNs = experiment->drainEndNs;
@@ -404,6 +405,8 @@ int main(int argc,char *argv[]){
     rsuApp.SetAttribute("SumoClient",(ns3::PointerValue)(sumoClient));
     rsuApp.SetAttribute("RsuForwardStrategy",ns3::EnumValue(rsuForwardStrategy));
     rsuApp.SetAttribute("OpenGymPort",ns3::UintegerValue(openGymPort));
+    if (experiment)
+      rsuApp.SetAttribute ("HelloIntervalMs", ns3::UintegerValue (experiment->helloIntervalMs));
 
     ns3::Ptr<ns3::MobilityModel> rsuNode0 = nodePool.Get(0) ->GetObject<ns3::MobilityModel>();
     rsuNode0->SetPosition(ns3::Vector(-20,70,20));

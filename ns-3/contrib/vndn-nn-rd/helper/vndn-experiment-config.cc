@@ -265,6 +265,15 @@ LoadExperimentConfig (const std::string &path, const std::string &expectedScenar
         throw std::runtime_error ("training_snapshots must be a JSON boolean");
       result.trainingSnapshots = data.at ("training_snapshots").get<bool> ();
     }
+  if (data.count ("hello_interval_ms") != 0)
+    result.helloIntervalMs = Integer (data.at ("hello_interval_ms"), "hello_interval_ms", 1,
+                                      std::numeric_limits<uint32_t>::max () / 2);
+  if (data.count ("resource_observations") != 0)
+    {
+      if (!data.at ("resource_observations").is_boolean ())
+        throw std::runtime_error ("resource_observations must be a JSON boolean");
+      result.resourceObservations = data.at ("resource_observations").get<bool> ();
+    }
   result.sumoConfigPath = ExistingFile (base, data.at ("sumo_config").get<std::string> ());
   result.routeFilePath = ExistingFile (base, data.at ("route_file").get<std::string> ());
   result.requestPlanPath = ExistingFile (base, data.at ("request_plan").get<std::string> ());
@@ -336,6 +345,10 @@ SaveEffectiveExperimentConfig (const ExperimentConfig &config, uint32_t strategy
                    {"seeds", {{"rng_seed", config.rngSeed}, {"rng_run", config.rngRun},
                               {"sumo_seed", config.sumoSeed}, {"srand_seed", config.srandSeed}}},
                    {"strategy", strategy}, {"training_snapshots", config.trainingSnapshots},
+                   {"hello_interval_ms", config.helloIntervalMs},
+                   {"rsu_timeout_ms", 2 * config.helloIntervalMs},
+                   {"obu_neighbor_timeout_ms", 2000},
+                   {"resource_observations", config.resourceObservations},
                    {"vehicle_ids", config.vehicleIds},
                    {"expected_requests", count}});
   MakeDirectories (config.outputDirectory + "/ai-training");

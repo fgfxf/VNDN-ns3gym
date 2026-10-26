@@ -337,6 +337,8 @@ VndnRsu::OnSyncSignalData (const ndn::Interest &interest, const ndn::Data &data)
                         << " 当前缓存数=" << m_vehicleToCs[obuNodeId].size ());
         }
     }
+  // Passive table occupancy observation, after all original state updates.
+  RecordResourceState ("CHANGE");
 }
 
 void
@@ -392,6 +394,8 @@ VndnRsu::SendSyncSignal ()
           ++it;
         }
     }
+
+  RecordResourceState ("CHANGE");
 
   // 构造 /vndn/control/hello 兴趣包，作为基站同步信号广播给附近车辆
   std::shared_ptr<ndn::Name> name = std::make_shared<ndn::Name> ("/vndn/control/hello");
@@ -1329,6 +1333,7 @@ VndnRsu::Start ()
 {
   m_face.processEvents ();
   m_active = true;
+  RecordResourceState ("START");
   NS_LOG_DEBUG ("RSU 启动...");
   InitializeOpenGym ();
   // 启动周期性同步信号广播
@@ -1343,6 +1348,7 @@ VndnRsu::Start ()
 void
 VndnRsu::Stop ()
 {
+  RecordResourceState ("STOP");
   NS_LOG_INFO ("RSU " << m_thisNode->GetId () << " 关闭");
   m_sendSyncSignal.cancel ();
   m_p2pHandshakeEvent.Cancel ();
@@ -1364,6 +1370,33 @@ VndnRsu::Stop ()
     }
   m_face.shutdown ();
   m_active = false;
+}
+
+void
+VndnRsu::setHelloIntervalMs (uint32_t intervalMs)
+{
+  if (m_active || intervalMs == 0 || intervalMs > std::numeric_limits<uint32_t>::max () / 2)
+    throw std::invalid_argument ("Hello interval must be a positive non-overflowing value set before Start");
+  m_syncSignalIntervalMs = intervalMs;
+  m_vehicleTimeoutMs = 2 * intervalMs;
+}
+
+void
+VndnRsu::RecordResourceState (const std::string &event)
+{
+  auto *recorder = VndnExperimentRecorder::GetActive ();
+  if (recorder == nullptr || !recorder->GetConfig ().resourceObservations)
+    return;
+  uint64_t edges = 0, reverseEdges = 0, records = 0, timestamps = 0;
+  for (const auto &entry : m_vehicleToCs) edges += entry.second.size ();
+  for (const auto &entry : m_csToVehicles) reverseEdges += entry.second.size ();
+  for (const auto &entry : m_vehicleObservationHistory) records += entry.second.size ();
+  for (const auto &entry : m_vehicleObservationReceiveTimes) timestamps += entry.second.size ();
+  recorder->RecordRsuState (
+      ns3::Simulator::Now ().GetNanoSeconds (), event, m_thisNode->GetId (),
+      {{m_vehicleLastReplyMs.size (), m_vehicleToCs.size (), m_csToVehicles.size (),
+        edges, reverseEdges, m_vehicleMac.size (), m_vehicleNextRsu.size (),
+        m_vehicleObservationHistory.size (), records, timestamps}});
 }
 
 } // namespace vanet

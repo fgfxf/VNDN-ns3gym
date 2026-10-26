@@ -57,7 +57,12 @@ public:
                 "Shared ns3-gym port used by the NeuralNetwork return strategy; 0 disables it",
                 ns3::UintegerValue (0),
                 ns3::MakeUintegerAccessor (&VndnRsuApp::m_openGymPort),
-                ns3::MakeUintegerChecker<uint16_t> (0, 65535));
+                ns3::MakeUintegerChecker<uint16_t> (0, 65535))
+            .AddAttribute (
+                "HelloIntervalMs", "RSU hello interval in milliseconds; departure timeout is twice this",
+                ns3::UintegerValue (20),
+                ns3::MakeUintegerAccessor (&VndnRsuApp::m_helloIntervalMs),
+                ns3::MakeUintegerChecker<uint32_t> (1, 2147483647U));
     return tid;
   }
 
@@ -70,6 +75,7 @@ public:
     m_instance.reset (new vanet::VndnRsu (m_traci));
     m_instance->setRsuForwardStrategy (m_forwardStrategy);
     m_instance->setOpenGymPort (m_openGymPort);
+    m_instance->setHelloIntervalMs (m_helloIntervalMs);
     m_instance->Start ();
   }
 
@@ -92,6 +98,7 @@ private:
   vanet::RsuForwardStrategy m_forwardStrategy =
       vanet::RsuForwardStrategy_NoForward;
   uint16_t m_openGymPort = 0;
+  uint32_t m_helloIntervalMs = 20;
 };
 
 } // namespace ns3

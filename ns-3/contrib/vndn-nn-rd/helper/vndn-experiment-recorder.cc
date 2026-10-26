@@ -38,6 +38,8 @@ VndnExperimentRecorder::VndnExperimentRecorder (const Config &config) : m_config
        (config.scenario != "circle" && config.scenario != "grid" &&
         config.scenario != "spidermap")))
     throw std::invalid_argument ("Training snapshots require an output directory, run and scenario");
+  if (config.resourceObservations && config.outputDirectory.empty ())
+    throw std::invalid_argument ("Resource observations require an output directory");
   for (const auto &vehicle : config.requestPlan)
     {
       std::set<uint64_t> sequences;
@@ -65,6 +67,16 @@ VndnExperimentRecorder::VndnExperimentRecorder (const Config &config) : m_config
       open (m_neuralOutput, "neural-decisions.jsonl");
       if (config.trainingSnapshots)
         open (m_trainingOutput, "training-observations.jsonl");
+      if (config.resourceObservations)
+        {
+          open (m_stateOutput, "rsu-state.csv");
+          open (m_helloOutput, "hello-payloads.csv");
+          m_stateOutput << "time_ns,event,rsu_id,present_vehicles,cache_vehicle_entries,"
+                           "cache_name_entries,cache_edges,reverse_cache_edges,mac_entries,"
+                           "next_rsu_entries,history_vehicles,history_records,history_timestamp_records\n";
+          m_helloOutput << "time_ns,obu_node_id,rsu_id,category,content_bytes,wire_bytes,"
+                           "cache_items,added_items,removed_items\n";
+        }
       m_requestOutput << "time_ns,event,request_id,name,vehicle_id,node_id,sequence,"
                          "send_ns,deadline_ns,rsu_id\n";
       m_mobilityOutput << "time_ns,event,vehicle_id,node_id,x,y,speed_mps,rsu_id,"
@@ -286,6 +298,42 @@ VndnExperimentRecorder::RecordNeuralDecision (
     m_neuralOutput << row.dump () << '\n';
 }
 
+void
+VndnExperimentRecorder::RecordRsuState (uint64_t nowNs, const std::string &event,
+    uint32_t rsuId, const std::array<uint64_t, 10> &counts)
+{
+  if (!m_config.resourceObservations) return;
+  if (m_finalized) throw std::logic_error ("Resource state after recorder finalization");
+  if (event != "START" && event != "CHANGE" && event != "STOP")
+    throw std::invalid_argument ("Unknown RSU resource event");
+  const auto previous = m_lastRsuState.find (rsuId);
+  if (event == "CHANGE" && previous != m_lastRsuState.end () && previous->second == counts)
+    return;
+  m_lastRsuState[rsuId] = counts;
+  m_stateOutput << nowNs << ',' << event << ',' << rsuId;
+  for (const auto count : counts) m_stateOutput << ',' << count;
+  m_stateOutput << '\n';
+  ++m_stateRows;
+}
+
+void
+VndnExperimentRecorder::RecordHelloPayload (uint64_t nowNs, uint32_t obuNodeId,
+    int64_t rsuId, const std::string &category, uint64_t contentBytes,
+    uint64_t wireBytes, uint64_t cacheItems, uint64_t addedItems, uint64_t removedItems)
+{
+  if (!m_config.resourceObservations) return;
+  if (m_finalized) throw std::logic_error ("Hello observation after recorder finalization");
+  if (category != "registration" && category != "delta" &&
+      category != "unchanged" && category != "cache_disabled")
+    throw std::invalid_argument ("Unknown hello payload category");
+  if (wireBytes < contentBytes)
+    throw std::invalid_argument ("Encoded Data cannot be smaller than its content");
+  m_helloOutput << nowNs << ',' << obuNodeId << ',' << rsuId << ',' << category << ','
+                << contentBytes << ',' << wireBytes << ',' << cacheItems << ','
+                << addedItems << ',' << removedItems << '\n';
+  ++m_helloRows;
+}
+
 uint64_t VndnExperimentRecorder::GetGeneratedCount () const { return m_requests.size (); }
 uint64_t VndnExperimentRecorder::GetTerminalCount () const { return m_terminalCount; }
 uint64_t VndnExperimentRecorder::GetExtraAttemptCount () const { return m_attemptCount; }
@@ -305,7 +353,7 @@ VndnExperimentRecorder::Finalize (uint64_t nowNs)
   m_complete = nowNs >= m_config.drainEndNs && m_terminalCount == m_requests.size () &&
                m_requests.size () == planned;
   for (auto *stream : {&m_requestOutput, &m_mobilityOutput, &m_attemptOutput,
-                       &m_trainingOutput, &m_neuralOutput})
+                       &m_trainingOutput, &m_neuralOutput, &m_stateOutput, &m_helloOutput})
     if (stream->is_open ())
       {
         stream->flush ();
@@ -328,6 +376,9 @@ VndnExperimentRecorder::Finalize (uint64_t nowNs)
              << ",\"training_snapshot_eligible\":" << m_trainingEligible
              << ",\"training_snapshot_excluded\":" << m_trainingRows - m_trainingEligible
              << ",\"neural_decision_rows\":" << m_neuralDecisions
+             << ",\"resource_observations\":" << (m_config.resourceObservations ? "true" : "false")
+             << ",\"rsu_state_rows\":" << m_stateRows
+             << ",\"hello_payload_rows\":" << m_helloRows
              << "}\n";
       marker.close ();
       if (std::rename (temporary.c_str (), path.c_str ()) != 0)

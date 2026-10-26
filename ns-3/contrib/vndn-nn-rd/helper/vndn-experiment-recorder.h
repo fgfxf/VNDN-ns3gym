@@ -27,6 +27,7 @@ public:
     std::string scenario;
     std::string runId;
     bool trainingSnapshots = false;
+    bool resourceObservations = false;
     uint64_t startNs = 0;
     uint64_t endNs = 0;
     uint64_t drainEndNs = 0;
@@ -80,6 +81,14 @@ public:
       const std::vector<uint32_t> &candidateRsuIds, const std::vector<float> &probabilities,
       const std::vector<uint32_t> &selectedRsuIds, double probabilityGap,
       double minSecondProbability, const std::string &actionStatus);
+  /** Counts are post-event values, held until the next row; START/STOP always persist. */
+  void RecordRsuState (uint64_t nowNs, const std::string &event, uint32_t rsuId,
+                       const std::array<uint64_t, 10> &counts);
+  /** Encoded application submission, not a received or MAC-transmitted packet. */
+  void RecordHelloPayload (uint64_t nowNs, uint32_t obuNodeId, int64_t rsuId,
+                           const std::string &category, uint64_t contentBytes,
+                           uint64_t wireBytes, uint64_t cacheItems,
+                           uint64_t addedItems, uint64_t removedItems);
   uint64_t GetGeneratedCount () const;
   uint64_t GetTerminalCount () const;
   uint64_t GetExtraAttemptCount () const;
@@ -98,6 +107,11 @@ private:
   std::ofstream m_attemptOutput;
   std::ofstream m_trainingOutput;
   std::ofstream m_neuralOutput;
+  std::ofstream m_stateOutput;
+  std::ofstream m_helloOutput;
+  std::map<uint32_t, std::array<uint64_t, 10>> m_lastRsuState;
+  uint64_t m_stateRows = 0;
+  uint64_t m_helloRows = 0;
   std::map<std::tuple<std::string, uint32_t, uint32_t>, uint64_t> m_firstTrainingEvents;
   uint64_t m_trainingRows = 0;
   uint64_t m_trainingEligible = 0;

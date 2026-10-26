@@ -340,6 +340,22 @@ VndnObu::OnSyncSignalInterest (const ndn::Interest &interest)
   signature.setValue (::ndn::makeNonNegativeIntegerBlock (::ndn::tlv::SignatureValue, 0));
   data->setSignature (signature);
   data->wireEncode ();
+  auto *resourceRecorder = VndnExperimentRecorder::GetActive ();
+  if (resourceRecorder != nullptr && resourceRecorder->GetConfig ().resourceObservations)
+    {
+      const uint64_t added = j.contains ("CsAdded") ? j["CsAdded"].size () : 0;
+      const uint64_t removed = j.contains ("CsRemoved") ? j["CsRemoved"].size () : 0;
+      const bool registration = j.contains ("CsUpdate") && !j["CsUpdate"].get<bool> ();
+      const std::string category = m_cacheStrategy != CacheStrategy_Participate
+                                       ? "cache_disabled"
+                                       : registration ? "registration"
+                                       : (added != 0 || removed != 0) ? "delta" : "unchanged";
+      resourceRecorder->RecordHelloPayload (
+          ns3::Simulator::Now ().GetNanoSeconds (), m_thisNode->GetId (), m_currentBsNodeId,
+          category, strContent.size (), data->wireEncode ().size (),
+          m_cacheStrategy == CacheStrategy_Participate ? m_lastCsNames.size () : 0,
+          added, removed);
+    }
   m_face.put (*data);
 
   NS_LOG_DEBUG ("OBU 响应驻留基站同步信号: " << interest.getName ()

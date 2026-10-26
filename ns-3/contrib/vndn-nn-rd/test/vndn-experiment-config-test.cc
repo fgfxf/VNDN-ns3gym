@@ -131,6 +131,29 @@ private:
         NS_TEST_EXPECT_MSG_EQ (Rejects (bad, plan), true,
                                "A passive training switch must be a JSON boolean");
       }
+    for (const Json &invalid : {Json (0), Json (-1), Json (true), Json (20.5),
+                                Json ("20"), Json (2147483648ULL), Json (nullptr)})
+      {
+        bad = configuration;
+        bad["hello_interval_ms"] = invalid;
+        NS_TEST_EXPECT_MSG_EQ (Rejects (bad, plan), true,
+                               "Hello period must be an integer whose doubled timeout fits uint32");
+      }
+    for (const Json &invalid : {Json (1), Json ("true"), Json (nullptr)})
+      {
+        bad = configuration;
+        bad["resource_observations"] = invalid;
+        NS_TEST_EXPECT_MSG_EQ (Rejects (bad, plan), true,
+                               "Passive resource recording must be an explicit JSON boolean");
+      }
+    for (const uint32_t interval : {20U, 40U, 80U, 160U, 2147483647U})
+      {
+        bad = configuration;
+        bad["hello_interval_ms"] = interval;
+        bad["resource_observations"] = true;
+        NS_TEST_EXPECT_MSG_EQ (Rejects (bad, plan), false,
+                               "All four approved periods accept identical valid experimental inputs");
+      }
     Write ("other.rou.xml", "<routes><vehicle id=\"other\"/></routes>");
     bad = configuration;
     bad["route_file"] = "other.rou.xml";
@@ -161,6 +184,35 @@ private:
     rmdir ((resultDirectory + "/ai-training").c_str ());
     rmdir (resultDirectory.c_str ());
 
+    Write ("routes.rou.xml",
+           "<routes><vehicle id=\"car-b\" depart=\"0\"><route edges=\"a\"/></vehicle>"
+           "<vehicle id=\"car-a\" depart=\"0\"><route edges=\"a\"/></vehicle></routes>");
+    for (uint32_t interval : {20U, 40U, 80U, 160U})
+      {
+        Json configured = configuration;
+        configured["hello_interval_ms"] = interval;
+        configured["resource_observations"] = true;
+        configured["output_dir"] = "period-" + std::to_string (interval);
+        Write ("experiment.json", configured.dump ());
+        Write ("requests.json", plan.dump ());
+        const auto current = vanet::LoadExperimentConfig (m_directory + "/experiment.json", "circle");
+        NS_TEST_EXPECT_MSG_EQ (current.helloIntervalMs, interval, "The selected period survives JSON parsing");
+        NS_TEST_EXPECT_MSG_EQ (current.resourceObservations, true, "Resource observation is enabled explicitly");
+        vanet::SaveEffectiveExperimentConfig (current, 3);
+        std::ifstream input (current.outputDirectory + "/effective-experiment-config.json");
+        Json evidence;
+        input >> evidence;
+        NS_TEST_EXPECT_MSG_EQ (evidence.at ("hello_interval_ms").get<uint32_t> (), interval,
+                               "Effective metadata names the actual selected period");
+        NS_TEST_EXPECT_MSG_EQ (evidence.at ("rsu_timeout_ms").get<uint32_t> (), interval * 2,
+                               "Effective timeout remains exactly two selected periods");
+        NS_TEST_EXPECT_MSG_EQ (evidence.at ("resource_observations").get<bool> (), true,
+                               "Enabled passive evidence is independently identifiable");
+        unlink ((current.outputDirectory + "/effective-experiment-config.json").c_str ());
+        rmdir ((current.outputDirectory + "/ai-training").c_str ());
+        rmdir (current.outputDirectory.c_str ());
+      }
+
     vanet::SaveEffectiveExperimentConfig (loaded, 2);
     Json effective;
     std::ifstream effectiveInput (resultDirectory + "/effective-experiment-config.json");
@@ -171,6 +223,14 @@ private:
                            "The evidence preserves the exact request budget");
     NS_TEST_EXPECT_MSG_EQ (effective.value ("training_snapshots", false), true,
                            "Effective evidence must preserve enabled passive training snapshots");
+    NS_TEST_EXPECT_MSG_EQ (effective.value ("hello_interval_ms", 0U), 20U,
+                           "Missing optional period preserves the actual 20ms default");
+    NS_TEST_EXPECT_MSG_EQ (effective.value ("rsu_timeout_ms", 0U), 40U,
+                           "Default RSU timeout is twice the hello period");
+    NS_TEST_EXPECT_MSG_EQ (effective.value ("obu_neighbor_timeout_ms", 0U), 2000U,
+                           "Vehicle neighbour expiry remains independently fixed at two seconds");
+    NS_TEST_EXPECT_MSG_EQ (effective.value ("resource_observations", true), false,
+                           "Default resource observation remains disabled");
     vanet::SaveExperimentCompletion (loaded, true, loaded.drainEndNs + 1);
     Json completion;
     std::ifstream completionInput (resultDirectory + "/simulation-result.json");
