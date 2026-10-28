@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "unchanged_csv_sha256": {
+    "run-funnel.csv": "8d80629679898f26cdcee7d4e2729b42d1fc09c983ecf423a31fcfd70c560788",
+    "vehicle-funnel.csv": "572261ee62db794b11dc372d84e5d4c251042099b3c9d2583614bd93157e7c32",
+    "time-bin-funnel.csv": "7466659b2cffabd0bb9f5c0158360e217da59ccf730264a707a6fbae52c2f641"
+  },
+  "unchanged_run_records": 16,
+  "all_existing_run_fields_unchanged": true
+}

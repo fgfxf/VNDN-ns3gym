@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "request_csv": "k9000-s23001-a1-requests.csv",
+      "requests": 9000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k9000-s23001-a3-requests.csv",
+      "requests": 9000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k9000-s23002-a1-requests.csv",
+      "requests": 9000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k9000-s23002-a3-requests.csv",
+      "requests": 9000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k12000-s23001-a1-requests.csv",
+      "requests": 12000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k12000-s23001-a3-requests.csv",
+      "requests": 12000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k12000-s23002-a1-requests.csv",
+      "requests": 12000,
+      "status": "PASS"
+    },
+    {
+      "request_csv": "k12000-s23002-a3-requests.csv",
+      "requests": 12000,
+      "status": "PASS"
+    }
+  ],
+  "requests": 84000,
+  "status": "PASS"
+}

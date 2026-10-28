@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "cohort_runs": 120,
+  "generated_requests": 756000,
+  "per_vehicle_rows": 1200,
+  "time_bin_rows": 720,
+  "preserved_figure": "F01-interest-isr_percent",
+  "preserved_source_tables": 25
+}

@@ -1,0 +1,1481 @@
+{
+  "schema_version": 1,
+  "source_details": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/workflow/figures/all/attempt-001/analysis/run-details.json",
+  "source_details_sha256": "ab4104eb572e02235daa2e9ebefdfb59464cca7301e88f7f1d8033c612e01347",
+  "script_sha256": "ed378dce2b599800c7dbf8bdb0b4c863a51ac543065b067e6275153c46cdd926",
+  "runs": [
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23009,
+      "strategy": "0",
+      "generated": 1500,
+      "satisfied": 1031,
+      "isr_percent": 68.73333333333333,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1397,
+        "server_data_out": 1397,
+        "any_rsu_complete_data_rx": 1397,
+        "source_rsu_complete_data_rx": 1397,
+        "rsu_wireless_data_out": 1397,
+        "target_obu_complete_data_rx": 1031,
+        "satisfied": 1031
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1397,
+        "server_data_out": 1397,
+        "rsu_wireless_data_out": 1397,
+        "any_rsu_complete_data_rx": 1397,
+        "source_rsu_complete_data_rx": 1397,
+        "target_obu_complete_data_rx": 1031
+      },
+      "failed_first_unobserved_stage": {
+        "target_obu_complete_data_rx": 366,
+        "rsu_upstream_interest_out_proxy": 103
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 469,
+        "rsu_upstream_interest_out_proxy": 366,
+        "server_data_out": 366,
+        "any_rsu_complete_data_rx": 366,
+        "source_rsu_complete_data_rx": 366,
+        "rsu_wireless_data_out": 366
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 102645
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/request-events.csv": {
+          "sha256": "611bf220eeb9a439b7543590f4acafb46fec62f2a29fea73059b9a2adccdc90c",
+          "bytes": 321326
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/packet-l3.csv": {
+          "sha256": "923cb329909e669722bf21438384a573f08fd490f00254b3ac669492e85e5a0d",
+          "bytes": 6606388
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/data-rx.csv": {
+          "sha256": "509559196aa1bfab2c9e5de347c2614411e37e404b81e3137abf0a12a3e31b4d",
+          "bytes": 256701
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/mobility-events.csv": {
+          "sha256": "0627f570dc861a74f5fce2f8a1afb2903672bd406ea2b00a1060f6df4af080d6",
+          "bytes": 1161481
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1031,
+        "TIMEOUT": 469
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23009,
+      "strategy": "1",
+      "generated": 1500,
+      "satisfied": 1303,
+      "isr_percent": 86.86666666666666,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1388,
+        "server_data_out": 1388,
+        "any_rsu_complete_data_rx": 1388,
+        "source_rsu_complete_data_rx": 1388,
+        "rsu_wireless_data_out": 1329,
+        "target_obu_complete_data_rx": 1329,
+        "satisfied": 1303
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2776,
+        "server_data_out": 1388,
+        "rsu_wireless_data_out": 1329,
+        "any_rsu_complete_data_rx": 2776,
+        "source_rsu_complete_data_rx": 2776,
+        "target_obu_complete_data_rx": 1329
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_wireless_data_out": 59,
+        "received_but_not_satisfied": 26,
+        "rsu_upstream_interest_out_proxy": 112
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 197,
+        "rsu_upstream_interest_out_proxy": 85,
+        "server_data_out": 85,
+        "any_rsu_complete_data_rx": 85,
+        "source_rsu_complete_data_rx": 85,
+        "rsu_wireless_data_out": 26,
+        "target_obu_complete_data_rx": 26
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 26,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3002.466887,
+        "first_complete_rx_max_delay_ms": 82632.772784
+      },
+      "direction_event_counts": {
+        "OUT": 111179
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/request-events.csv": {
+          "sha256": "449c8b74a64b64cd03b4537647f9afa7124e9e6e9dd72f073e70cbbe7cc2e405",
+          "bytes": 320497
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/packet-l3.csv": {
+          "sha256": "dda87f78c7c37fec25539d7012eaa3eedff0e83316fe027cc40fe6c3a669f524",
+          "bytes": 7343345
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/data-rx.csv": {
+          "sha256": "306c70aa1f729b7cab93fbe29bf61bca57d0dc58ab96705a5ebe55cbedf232c1",
+          "bytes": 283319
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/mobility-events.csv": {
+          "sha256": "f0e54c4a9ad20673e561c43dbde920bd9951d30febe74f760eb3f133772efad2",
+          "bytes": 1163072
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1303,
+        "TIMEOUT": 197
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23009,
+      "strategy": "2",
+      "generated": 1500,
+      "satisfied": 1373,
+      "isr_percent": 91.53333333333333,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1387,
+        "server_data_out": 1387,
+        "any_rsu_complete_data_rx": 1387,
+        "source_rsu_complete_data_rx": 1387,
+        "rsu_wireless_data_out": 1379,
+        "target_obu_complete_data_rx": 1376,
+        "satisfied": 1373
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2774,
+        "server_data_out": 1387,
+        "rsu_wireless_data_out": 1379,
+        "any_rsu_complete_data_rx": 2774,
+        "source_rsu_complete_data_rx": 2774,
+        "target_obu_complete_data_rx": 1376
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 113,
+        "target_obu_complete_data_rx": 3,
+        "received_but_not_satisfied": 3,
+        "rsu_wireless_data_out": 8
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 127,
+        "rsu_upstream_interest_out_proxy": 14,
+        "server_data_out": 14,
+        "any_rsu_complete_data_rx": 14,
+        "source_rsu_complete_data_rx": 14,
+        "rsu_wireless_data_out": 6,
+        "target_obu_complete_data_rx": 3
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 3,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3010.481526,
+        "first_complete_rx_max_delay_ms": 3472.147476
+      },
+      "direction_event_counts": {
+        "OUT": 104884
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/request-events.csv": {
+          "sha256": "dc0a15321f3d1dc1e911459fd4fedb0bfb12fb6a9df47ae7c1b2c08acea13405",
+          "bytes": 320286
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/packet-l3.csv": {
+          "sha256": "b9457675e69fca3b02f374806d43c40d1873b974dfbe98925916da69ae75ea6e",
+          "bytes": 6797034
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/data-rx.csv": {
+          "sha256": "4c65e9a6de8418ed375e9190ebb1644b70cdd1432a6d37e9e6905be23c31ec3f",
+          "bytes": 285569
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/mobility-events.csv": {
+          "sha256": "4299f327f961834576e73df60f66077d63e06a539736369346f27509cdbaf2bf",
+          "bytes": 1162870
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1373,
+        "TIMEOUT": 127
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23009,
+      "strategy": "3",
+      "generated": 1500,
+      "satisfied": 1381,
+      "isr_percent": 92.06666666666666,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1399,
+        "server_data_out": 1399,
+        "any_rsu_complete_data_rx": 1399,
+        "source_rsu_complete_data_rx": 1396,
+        "rsu_wireless_data_out": 1399,
+        "target_obu_complete_data_rx": 1381,
+        "satisfied": 1381
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2798,
+        "server_data_out": 1399,
+        "rsu_wireless_data_out": 1439,
+        "any_rsu_complete_data_rx": 1439,
+        "source_rsu_complete_data_rx": 1396,
+        "target_obu_complete_data_rx": 1399
+      },
+      "failed_first_unobserved_stage": {
+        "target_obu_complete_data_rx": 18,
+        "rsu_upstream_interest_out_proxy": 101
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 119,
+        "rsu_upstream_interest_out_proxy": 18,
+        "server_data_out": 18,
+        "any_rsu_complete_data_rx": 18,
+        "source_rsu_complete_data_rx": 18,
+        "rsu_wireless_data_out": 18
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 107253
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/request-events.csv": {
+          "sha256": "0e90d872c8cf9f658dd60003b0d9d87d5b6d58d36bf3a37f11fee0e5c14141dc",
+          "bytes": 320261
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/packet-l3.csv": {
+          "sha256": "9531c036a59ab2b8586abe6580ab1bd2f91522d6c5027f7ebde90d2bdea96f41",
+          "bytes": 6964813
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/data-rx.csv": {
+          "sha256": "983d0ec8bab6592cd1da3c2ad4288a5489d87f5b2a1e1c08db275bdb188fd314",
+          "bytes": 219138
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/mobility-events.csv": {
+          "sha256": "57ca386ca8275eb8095ced966e4ba8b3ceb7c19081fe788097173299a1ff388d",
+          "bytes": 1161067
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/neural-decisions.jsonl": {
+          "sha256": "56bfaa5bbab4a7171db5b896b9132d01e2796d6e0e0f43ecafed621fc4109b11",
+          "bytes": 831236
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1381,
+        "TIMEOUT": 119
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23010,
+      "strategy": "0",
+      "generated": 1500,
+      "satisfied": 1004,
+      "isr_percent": 66.93333333333334,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1410,
+        "server_data_out": 1410,
+        "any_rsu_complete_data_rx": 1410,
+        "source_rsu_complete_data_rx": 1410,
+        "rsu_wireless_data_out": 1410,
+        "target_obu_complete_data_rx": 1004,
+        "satisfied": 1004
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1410,
+        "server_data_out": 1410,
+        "rsu_wireless_data_out": 1410,
+        "any_rsu_complete_data_rx": 1410,
+        "source_rsu_complete_data_rx": 1410,
+        "target_obu_complete_data_rx": 1004
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 90,
+        "target_obu_complete_data_rx": 406
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 496,
+        "rsu_upstream_interest_out_proxy": 406,
+        "server_data_out": 406,
+        "any_rsu_complete_data_rx": 406,
+        "source_rsu_complete_data_rx": 406,
+        "rsu_wireless_data_out": 406
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 100645
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/request-events.csv": {
+          "sha256": "5fd099d68e4d0f1222fd4f159957c8cf80f238ca0fc5f4334429ff0307f72818",
+          "bytes": 321403
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/packet-l3.csv": {
+          "sha256": "6cecadb3c7e223a1ab05ec4f68c45d91bf1da60a340a2622a0768f5e7ec8fe37",
+          "bytes": 6482816
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/data-rx.csv": {
+          "sha256": "dd5835fc8c6e9f87ff3e3c77a192a805903b695ae7405449466fe1d71b1fe079",
+          "bytes": 276871
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/mobility-events.csv": {
+          "sha256": "6f5bd59e5c796fbf015a901b7114ec595b9742dc11790a23a61241f6549b4745",
+          "bytes": 1159504
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1004,
+        "TIMEOUT": 496
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23010,
+      "strategy": "1",
+      "generated": 1500,
+      "satisfied": 1243,
+      "isr_percent": 82.86666666666666,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1394,
+        "server_data_out": 1394,
+        "any_rsu_complete_data_rx": 1394,
+        "source_rsu_complete_data_rx": 1394,
+        "rsu_wireless_data_out": 1281,
+        "target_obu_complete_data_rx": 1280,
+        "satisfied": 1243
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2788,
+        "server_data_out": 1394,
+        "rsu_wireless_data_out": 1281,
+        "any_rsu_complete_data_rx": 2788,
+        "source_rsu_complete_data_rx": 2788,
+        "target_obu_complete_data_rx": 1280
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 106,
+        "rsu_wireless_data_out": 113,
+        "received_but_not_satisfied": 37,
+        "target_obu_complete_data_rx": 1
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 257,
+        "rsu_upstream_interest_out_proxy": 151,
+        "server_data_out": 151,
+        "any_rsu_complete_data_rx": 151,
+        "source_rsu_complete_data_rx": 151,
+        "rsu_wireless_data_out": 38,
+        "target_obu_complete_data_rx": 37
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 37,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3002.481015,
+        "first_complete_rx_max_delay_ms": 98647.902438
+      },
+      "direction_event_counts": {
+        "OUT": 110435
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/request-events.csv": {
+          "sha256": "0504472e11615df8819a9d86db6294dbfed89c2d5169806a14221957403232af",
+          "bytes": 320679
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/packet-l3.csv": {
+          "sha256": "68a190a90980ab36b5ed2025e408122bdba92b4ca7d4251f2cd0df71d26e176e",
+          "bytes": 7348463
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/data-rx.csv": {
+          "sha256": "8dd5ab16ed2cc06a1dc135fd912398630c9ba03dcd06f5bfcdeac7cd716d672b",
+          "bytes": 281779
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/mobility-events.csv": {
+          "sha256": "1dfea175614f027ce9c4bfd652801f1444cd2421c972bbe1bd7ce230ec5cc106",
+          "bytes": 1161698
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1243,
+        "TIMEOUT": 257
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23010,
+      "strategy": "2",
+      "generated": 1500,
+      "satisfied": 1375,
+      "isr_percent": 91.66666666666667,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1401,
+        "server_data_out": 1401,
+        "any_rsu_complete_data_rx": 1401,
+        "source_rsu_complete_data_rx": 1401,
+        "rsu_wireless_data_out": 1391,
+        "target_obu_complete_data_rx": 1385,
+        "satisfied": 1375
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2802,
+        "server_data_out": 1401,
+        "rsu_wireless_data_out": 1391,
+        "any_rsu_complete_data_rx": 2802,
+        "source_rsu_complete_data_rx": 2802,
+        "target_obu_complete_data_rx": 1385
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 99,
+        "received_but_not_satisfied": 10,
+        "target_obu_complete_data_rx": 6,
+        "rsu_wireless_data_out": 10
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 125,
+        "rsu_upstream_interest_out_proxy": 26,
+        "server_data_out": 26,
+        "any_rsu_complete_data_rx": 26,
+        "source_rsu_complete_data_rx": 26,
+        "rsu_wireless_data_out": 16,
+        "target_obu_complete_data_rx": 10
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 10,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3266.374867,
+        "first_complete_rx_max_delay_ms": 95094.615853
+      },
+      "direction_event_counts": {
+        "OUT": 102953
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/request-events.csv": {
+          "sha256": "8ae834b67d66391b9514b1431098e868e80e972ddfe00d1f3796cd7ba26dcd82",
+          "bytes": 320282
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/packet-l3.csv": {
+          "sha256": "b297f3c14f1774bd81eb76e16980e52e5c0b22e5b3a0a531bdc41bd605984ae5",
+          "bytes": 6680033
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/data-rx.csv": {
+          "sha256": "b78e867cd5a003513451d2d2ff40590f077da11b69192c42e344ff00dd8ddb5a",
+          "bytes": 288375
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/mobility-events.csv": {
+          "sha256": "c9c12a1984660e22e57ce07b93834068280f60ff8bb2bcc4db57a504ea81e673",
+          "bytes": 1161601
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1375,
+        "TIMEOUT": 125
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k1500",
+      "seed": 23010,
+      "strategy": "3",
+      "generated": 1500,
+      "satisfied": 1382,
+      "isr_percent": 92.13333333333334,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 1413,
+        "server_data_out": 1413,
+        "any_rsu_complete_data_rx": 1413,
+        "source_rsu_complete_data_rx": 1412,
+        "rsu_wireless_data_out": 1413,
+        "target_obu_complete_data_rx": 1382,
+        "satisfied": 1382
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 1500,
+        "rsu_upstream_interest_out_proxy": 2826,
+        "server_data_out": 1413,
+        "rsu_wireless_data_out": 1471,
+        "any_rsu_complete_data_rx": 1471,
+        "source_rsu_complete_data_rx": 1412,
+        "target_obu_complete_data_rx": 1400
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 87,
+        "target_obu_complete_data_rx": 31
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 118,
+        "rsu_upstream_interest_out_proxy": 31,
+        "server_data_out": 31,
+        "any_rsu_complete_data_rx": 31,
+        "source_rsu_complete_data_rx": 31,
+        "rsu_wireless_data_out": 31
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 105527
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/request-events.csv": {
+          "sha256": "42e4c6679387bcd02c8d5038c687e8d26c0a93eb2209b8438b855cd5037ee3de",
+          "bytes": 320260
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/packet-l3.csv": {
+          "sha256": "122668d91f166c30419502cde6cc2c71eb55dfa89fec0256a924c1d97b4a914b",
+          "bytes": 6862810
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/data-rx.csv": {
+          "sha256": "ca3b8e7eb41a6e243453396ed334a153e97d859d1a26d8063f9171c3aa187955",
+          "bytes": 221667
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/mobility-events.csv": {
+          "sha256": "f1f77461c3203f248f71b8c1240a51b772a8f0a5bd0c7036504765ab7f6bac01",
+          "bytes": 1158810
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/neural-decisions.jsonl": {
+          "sha256": "25daca9678c439111368f0eac90d5d8bc89a215e4972414f36bf4949d949b98d",
+          "bytes": 839544
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 1382,
+        "TIMEOUT": 118
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23009,
+      "strategy": "0",
+      "generated": 12000,
+      "satisfied": 7716,
+      "isr_percent": 64.3,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11163,
+        "server_data_out": 11163,
+        "any_rsu_complete_data_rx": 11163,
+        "source_rsu_complete_data_rx": 11163,
+        "rsu_wireless_data_out": 11163,
+        "target_obu_complete_data_rx": 7716,
+        "satisfied": 7716
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11163,
+        "server_data_out": 11163,
+        "rsu_wireless_data_out": 11163,
+        "any_rsu_complete_data_rx": 11163,
+        "source_rsu_complete_data_rx": 11163,
+        "target_obu_complete_data_rx": 7716
+      },
+      "failed_first_unobserved_stage": {
+        "target_obu_complete_data_rx": 3447,
+        "rsu_upstream_interest_out_proxy": 837
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 4284,
+        "rsu_upstream_interest_out_proxy": 3447,
+        "server_data_out": 3447,
+        "any_rsu_complete_data_rx": 3447,
+        "source_rsu_complete_data_rx": 3447,
+        "rsu_wireless_data_out": 3447
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 162177
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/request-events.csv": {
+          "sha256": "eb9623f781169a256ab1989564c71bfb127e17ffc70a6764ae487970c16a0f2e",
+          "bytes": 2674498
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/packet-l3.csv": {
+          "sha256": "5f56c8587849a458012254ca0ccc0307a4dd5040494c3e173b81fbee2f0368cd",
+          "bytes": 11446671
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/data-rx.csv": {
+          "sha256": "ebcf033c4bb8eebeda38a1a5e37e09d8ce8de698ded0134412a9dd59c3fbd6dd",
+          "bytes": 2080171
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/mobility-events.csv": {
+          "sha256": "152599cef7405f5f8347b8a1aa8806dd77f85bc08df25269437b48bb08111dfc",
+          "bytes": 1161776
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 7716,
+        "TIMEOUT": 4284
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23009,
+      "strategy": "1",
+      "generated": 12000,
+      "satisfied": 9983,
+      "isr_percent": 83.19166666666666,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11164,
+        "server_data_out": 11164,
+        "any_rsu_complete_data_rx": 11164,
+        "source_rsu_complete_data_rx": 11164,
+        "rsu_wireless_data_out": 10408,
+        "target_obu_complete_data_rx": 10336,
+        "satisfied": 9983
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22328,
+        "server_data_out": 11164,
+        "rsu_wireless_data_out": 10408,
+        "any_rsu_complete_data_rx": 22328,
+        "source_rsu_complete_data_rx": 22328,
+        "target_obu_complete_data_rx": 10336
+      },
+      "failed_first_unobserved_stage": {
+        "received_but_not_satisfied": 353,
+        "target_obu_complete_data_rx": 72,
+        "rsu_wireless_data_out": 756,
+        "rsu_upstream_interest_out_proxy": 836
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 2017,
+        "rsu_upstream_interest_out_proxy": 1181,
+        "server_data_out": 1181,
+        "any_rsu_complete_data_rx": 1181,
+        "source_rsu_complete_data_rx": 1181,
+        "rsu_wireless_data_out": 425,
+        "target_obu_complete_data_rx": 353
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 353,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3004.114703,
+        "first_complete_rx_max_delay_ms": 98512.173026
+      },
+      "direction_event_counts": {
+        "OUT": 226252
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/request-events.csv": {
+          "sha256": "b57483bf56a4d2bbd0b835c048da4770f4c7443b51189d0d8c945645d778e90f",
+          "bytes": 2667629
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/packet-l3.csv": {
+          "sha256": "a4c0206560bef911a412c3cc1cfae0c34398957cabb0c38392fc2851873f699c",
+          "bytes": 17041570
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/data-rx.csv": {
+          "sha256": "78429c9a367805cf835007105878dec5bdb3643202b551036b98753e09df7d92",
+          "bytes": 2379067
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/mobility-events.csv": {
+          "sha256": "902d56d295a70d4a84c5ee4e42e3e17e6d1607390d60bbce4213e310f89e2a6a",
+          "bytes": 1162662
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 9983,
+        "TIMEOUT": 2017
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23009,
+      "strategy": "2",
+      "generated": 12000,
+      "satisfied": 10806,
+      "isr_percent": 90.05,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11159,
+        "server_data_out": 11159,
+        "any_rsu_complete_data_rx": 11159,
+        "source_rsu_complete_data_rx": 11159,
+        "rsu_wireless_data_out": 11114,
+        "target_obu_complete_data_rx": 10839,
+        "satisfied": 10806
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22318,
+        "server_data_out": 11159,
+        "rsu_wireless_data_out": 11114,
+        "any_rsu_complete_data_rx": 22318,
+        "source_rsu_complete_data_rx": 22318,
+        "target_obu_complete_data_rx": 10839
+      },
+      "failed_first_unobserved_stage": {
+        "target_obu_complete_data_rx": 275,
+        "rsu_upstream_interest_out_proxy": 841,
+        "received_but_not_satisfied": 33,
+        "rsu_wireless_data_out": 45
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 1194,
+        "rsu_upstream_interest_out_proxy": 353,
+        "server_data_out": 353,
+        "any_rsu_complete_data_rx": 353,
+        "source_rsu_complete_data_rx": 353,
+        "rsu_wireless_data_out": 308,
+        "target_obu_complete_data_rx": 33
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 33,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3060.090686,
+        "first_complete_rx_max_delay_ms": 42585.710379
+      },
+      "direction_event_counts": {
+        "OUT": 184945
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/request-events.csv": {
+          "sha256": "b16d961fe4f09f4ea98c8615c9afc5f671004fb6abf8ece1cce9d2c87531f5bc",
+          "bytes": 2665141
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/packet-l3.csv": {
+          "sha256": "a76e264f512a26a69c5525b10f79eb1d3779674b598c5a3e89de5cfe19b4a4e3",
+          "bytes": 13327034
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/data-rx.csv": {
+          "sha256": "87751bb081b2935d984086294dab1e811a4edb09b36241f93693c1eb5a6dcb93",
+          "bytes": 2405716
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/mobility-events.csv": {
+          "sha256": "affba0b9c38ccc40447df48d39a9ffb9d4c43b256e1a4c3845e6a40d0092c375",
+          "bytes": 1161879
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 10806,
+        "TIMEOUT": 1194
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23009,
+      "strategy": "3",
+      "generated": 12000,
+      "satisfied": 10611,
+      "isr_percent": 88.425,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11179,
+        "server_data_out": 11179,
+        "any_rsu_complete_data_rx": 11179,
+        "source_rsu_complete_data_rx": 11119,
+        "rsu_wireless_data_out": 11179,
+        "target_obu_complete_data_rx": 10611,
+        "satisfied": 10611
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22358,
+        "server_data_out": 11179,
+        "rsu_wireless_data_out": 11762,
+        "any_rsu_complete_data_rx": 11762,
+        "source_rsu_complete_data_rx": 11119,
+        "target_obu_complete_data_rx": 10741
+      },
+      "failed_first_unobserved_stage": {
+        "target_obu_complete_data_rx": 568,
+        "rsu_upstream_interest_out_proxy": 821
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 1389,
+        "rsu_upstream_interest_out_proxy": 568,
+        "server_data_out": 568,
+        "any_rsu_complete_data_rx": 568,
+        "source_rsu_complete_data_rx": 554,
+        "rsu_wireless_data_out": 568
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 197363
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/request-events.csv": {
+          "sha256": "bdbc9748cdbb99b07572b56aafb85b340f66ff5918b9b023e02eb0937ab6afc2",
+          "bytes": 2665710
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/packet-l3.csv": {
+          "sha256": "07d5482945f37b3fd6a8b07678f3ec358a3b65988100e859a12627bc83d97730",
+          "bytes": 14655773
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/data-rx.csv": {
+          "sha256": "21006246a8bcd71faa1818f354aaa5f82e9ad9609544d1c0d88a0cd6ce8aec46",
+          "bytes": 1832858
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/mobility-events.csv": {
+          "sha256": "68a5fc44f9b296eacbbf7258210fa431299cbb9d8a7a3975734dd72e8a9eab03",
+          "bytes": 1161172
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/neural-decisions.jsonl": {
+          "sha256": "dadcaa4b14b29d1dde01764c9b0e57f5ee87a0fa575c9af8a9c90e6a0a9d9d88",
+          "bytes": 6689698
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 10611,
+        "TIMEOUT": 1389
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23010,
+      "strategy": "0",
+      "generated": 12000,
+      "satisfied": 6743,
+      "isr_percent": 56.19166666666667,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11260,
+        "server_data_out": 11260,
+        "any_rsu_complete_data_rx": 11260,
+        "source_rsu_complete_data_rx": 11260,
+        "rsu_wireless_data_out": 11260,
+        "target_obu_complete_data_rx": 6743,
+        "satisfied": 6743
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11260,
+        "server_data_out": 11260,
+        "rsu_wireless_data_out": 11260,
+        "any_rsu_complete_data_rx": 11260,
+        "source_rsu_complete_data_rx": 11260,
+        "target_obu_complete_data_rx": 6743
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 740,
+        "target_obu_complete_data_rx": 4517
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 5257,
+        "rsu_upstream_interest_out_proxy": 4517,
+        "server_data_out": 4517,
+        "any_rsu_complete_data_rx": 4517,
+        "source_rsu_complete_data_rx": 4517,
+        "rsu_wireless_data_out": 4517
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 161411
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/request-events.csv": {
+          "sha256": "9768be5a39fb46a8f3d9c628eec5bf05e06836e1c6d8d0b834c767bda97b0294",
+          "bytes": 2677412
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/packet-l3.csv": {
+          "sha256": "35e0b6df84f60268f8ab7af84f141ceed217277723fe7d3e7ff6882c8dfffa1b",
+          "bytes": 11407327
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/data-rx.csv": {
+          "sha256": "7c8e6c88c2e7e120dd9f186ba431b7b94ed38a17ea4ab8827fa449afad5a6769",
+          "bytes": 2071978
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/mobility-events.csv": {
+          "sha256": "0f4596f751ea93f2132cea81b222b4bbf6a094b4ac88bfe0beb308fa53c66559",
+          "bytes": 1159109
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 6743,
+        "TIMEOUT": 5257
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23010,
+      "strategy": "1",
+      "generated": 12000,
+      "satisfied": 9434,
+      "isr_percent": 78.61666666666666,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11198,
+        "server_data_out": 11198,
+        "any_rsu_complete_data_rx": 11198,
+        "source_rsu_complete_data_rx": 11198,
+        "rsu_wireless_data_out": 9994,
+        "target_obu_complete_data_rx": 9758,
+        "satisfied": 9434
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22396,
+        "server_data_out": 11198,
+        "rsu_wireless_data_out": 9994,
+        "any_rsu_complete_data_rx": 22396,
+        "source_rsu_complete_data_rx": 22396,
+        "target_obu_complete_data_rx": 9758
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 802,
+        "received_but_not_satisfied": 324,
+        "rsu_wireless_data_out": 1204,
+        "target_obu_complete_data_rx": 236
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 2566,
+        "rsu_upstream_interest_out_proxy": 1764,
+        "server_data_out": 1764,
+        "any_rsu_complete_data_rx": 1764,
+        "source_rsu_complete_data_rx": 1764,
+        "rsu_wireless_data_out": 560,
+        "target_obu_complete_data_rx": 324
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 324,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3019.893446,
+        "first_complete_rx_max_delay_ms": 65803.952448
+      },
+      "direction_event_counts": {
+        "OUT": 235262
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/request-events.csv": {
+          "sha256": "3fb53b9723584be877ca9f3f428683b900ca1df5b1473725a04ee1e80d3d4417",
+          "bytes": 2669251
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/packet-l3.csv": {
+          "sha256": "5e9b668824f8f1b58754c443af907e3bb14a39faff2fc659114f02f07a9e996c",
+          "bytes": 17885552
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/data-rx.csv": {
+          "sha256": "1c9f6ddd0b69708eb12d6a813a5355f98d37cab1517a5f4a0810c48f8b8ae998",
+          "bytes": 2352118
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/mobility-events.csv": {
+          "sha256": "f2979c436e04d0ded80985dd0748a5cf28277d17a47df6b49ede1d9b7a56ac54",
+          "bytes": 1160803
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 9434,
+        "TIMEOUT": 2566
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23010,
+      "strategy": "2",
+      "generated": 12000,
+      "satisfied": 9977,
+      "isr_percent": 83.14166666666667,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11229,
+        "server_data_out": 11229,
+        "any_rsu_complete_data_rx": 11229,
+        "source_rsu_complete_data_rx": 11229,
+        "rsu_wireless_data_out": 11171,
+        "target_obu_complete_data_rx": 10025,
+        "satisfied": 9977
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22458,
+        "server_data_out": 11229,
+        "rsu_wireless_data_out": 11171,
+        "any_rsu_complete_data_rx": 22458,
+        "source_rsu_complete_data_rx": 22458,
+        "target_obu_complete_data_rx": 10025
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 771,
+        "target_obu_complete_data_rx": 1146,
+        "received_but_not_satisfied": 48,
+        "rsu_wireless_data_out": 58
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 2023,
+        "rsu_upstream_interest_out_proxy": 1252,
+        "server_data_out": 1252,
+        "any_rsu_complete_data_rx": 1252,
+        "source_rsu_complete_data_rx": 1252,
+        "rsu_wireless_data_out": 1194,
+        "target_obu_complete_data_rx": 48
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 48,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": 3017.162739,
+        "first_complete_rx_max_delay_ms": 38319.798272
+      },
+      "direction_event_counts": {
+        "OUT": 183314
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/request-events.csv": {
+          "sha256": "bb738af24dd673c9b90813091c7ecbf9ab6c16f837c75cc2dcf6f276c296d3df",
+          "bytes": 2667622
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/packet-l3.csv": {
+          "sha256": "2a6e047191590413d1c7dc09a805ca9da7a63c007568b720943444129cbda0bd",
+          "bytes": 13241804
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/data-rx.csv": {
+          "sha256": "5833a5826f9a8c892f35d518fc353f9dde88c2b0fe621abf165eebed0c8eee34",
+          "bytes": 2371543
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/mobility-events.csv": {
+          "sha256": "6d0c979653c5497853e893d627a92e5f22167733555022c71a373be6045d25c6",
+          "bytes": 1159603
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/neural-decisions.jsonl": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 9977,
+        "TIMEOUT": 2023
+      }
+    },
+    {
+      "scene": "grid",
+      "condition": "n10-v30-k12000",
+      "seed": 23010,
+      "strategy": "3",
+      "generated": 12000,
+      "satisfied": 9370,
+      "isr_percent": 78.08333333333333,
+      "unique_requests_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 11238,
+        "server_data_out": 11238,
+        "any_rsu_complete_data_rx": 11238,
+        "source_rsu_complete_data_rx": 11178,
+        "rsu_wireless_data_out": 11238,
+        "target_obu_complete_data_rx": 9370,
+        "satisfied": 9370
+      },
+      "packet_events_by_stage": {
+        "obu_interest_out": 12000,
+        "rsu_upstream_interest_out_proxy": 22476,
+        "server_data_out": 11238,
+        "rsu_wireless_data_out": 11922,
+        "any_rsu_complete_data_rx": 11922,
+        "source_rsu_complete_data_rx": 11178,
+        "target_obu_complete_data_rx": 9454
+      },
+      "failed_first_unobserved_stage": {
+        "rsu_upstream_interest_out_proxy": 762,
+        "target_obu_complete_data_rx": 1868
+      },
+      "failed_requests_observed_by_stage": {
+        "obu_interest_out": 2630,
+        "rsu_upstream_interest_out_proxy": 1868,
+        "server_data_out": 1868,
+        "any_rsu_complete_data_rx": 1868,
+        "rsu_wireless_data_out": 1868,
+        "source_rsu_complete_data_rx": 1847
+      },
+      "non_nested_stage_counts": {
+        "obu_interest_out->rsu_upstream_interest_out_proxy": 0,
+        "rsu_upstream_interest_out_proxy->server_data_out": 0,
+        "server_data_out->any_rsu_complete_data_rx": 0,
+        "any_rsu_complete_data_rx->rsu_wireless_data_out": 0,
+        "rsu_wireless_data_out->target_obu_complete_data_rx": 0,
+        "target_obu_complete_data_rx->satisfied": 0
+      },
+      "complete_rx_but_unsatisfied": {
+        "count": 0,
+        "first_complete_rx_at_or_before_deadline": 0,
+        "first_complete_rx_min_delay_ms": null,
+        "first_complete_rx_max_delay_ms": null
+      },
+      "direction_event_counts": {
+        "OUT": 194748
+      },
+      "unmatched_business_out_events": {},
+      "rsu_wireless_faces": [
+        257
+      ],
+      "run_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d",
+      "input_fingerprints": {
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/request-events.csv": {
+          "sha256": "427e74f83da15d7cf3709c8104c8001e7894143eaf50bbf76f83d2a6deba8440",
+          "bytes": 2669444
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/packet-l3.csv": {
+          "sha256": "aa1f5cd79525e2abe6eb86d021bf94f22b834f39ba534713cfa4763df2ef59d5",
+          "bytes": 14513374
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/data-rx.csv": {
+          "sha256": "70994048984e32ad111eb91ee44decbe03f6b9f55ab18315f8e438706abdef49",
+          "bytes": 1773291
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/mobility-events.csv": {
+          "sha256": "aa7b4a416839baaaa47e0a2b009d11470ada1d5a18f9a34adc0950ebdf42dbbe",
+          "bytes": 1159100
+        },
+        "data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/neural-decisions.jsonl": {
+          "sha256": "42cc07f9e4dd95ef335809e31b190beb2d696735e598cc4cb897c095ab8979ea",
+          "bytes": 6724957
+        }
+      },
+      "all_inputs_match_sealed_manifest": true,
+      "diagnostic_counts": {},
+      "terminal_counts": {
+        "DATA": 9370,
+        "TIMEOUT": 2630
+      }
+    }
+  ],
+  "definitions": {
+    "counts": "Unique generated business request names per stage; event counts separate.",
+    "rsu_interest": "No Interest RX collector exists. RSU upstream OUT proves forwarding, absence does not prove absence of reception.",
+    "data_rx": "Saved network-face complete Data ingress; does not alone imply application satisfaction.",
+    "hello": "Only OBU hello response DATA OUT observed after 20s; no per-hello input trace or MAC target in saved CSV.",
+    "radio": "No MAC attempts, retry reasons, signal samples or airtime counters: loss mechanism not proven by L3 absence.",
+    "freshness": "No observed OBU hello DATA response in preceding 2s; only requests >=22s used to avoid left censoring.",
+    "source_rsu": "GENERATED.rsu_id; may be stale, is not proof of current coverage.",
+    "failures": "Earliest unobserved stage for failed requests is descriptive, not a causal attribution."
+  }
+}

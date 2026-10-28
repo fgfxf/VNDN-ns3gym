@@ -1,0 +1,379 @@
+{
+  "schema_version": 1,
+  "created_date": "2026-10-28",
+  "timezone": "Asia/Shanghai",
+  "paths_relative_to": "ns-3 (source records only; plotting scripts do not access these paths)",
+  "figure_count": 14,
+  "new_simulation_runs": 0,
+  "new_training_runs": 0,
+  "primary_campaign": "quick-fixed-model-20261022",
+  "primary_repetitions_per_condition_strategy": 2,
+  "supplement_campaign": "paper-figures-followup-20261026",
+  "supplement_seeds": [
+    84001,
+    84002,
+    84003
+  ],
+  "fixed_model_training_campaign": "retrain-quick-20261021",
+  "fixed_model_sha256": {
+    "circle": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba",
+    "grid": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4",
+    "spidermap": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+  },
+  "initial_sources": {
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/accuracy-summary.csv": {
+      "sha256": "a555c61750bbb5342aa38403e2cc76100f5c2ebece882a1baeb0e8eec9d456e2",
+      "bytes": 8499
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/hello-size-points.csv": {
+      "sha256": "606d96a8cf19b1bf3ae9cc4a41babc2311794646c671f801a8c410b1e5d0ef42",
+      "bytes": 10877
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/inference-processes.csv": {
+      "sha256": "1cd19d7eedf34684a46c14c1ade5590111458e31c5868591adedb58025445683",
+      "bytes": 10557
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json": {
+      "sha256": "7e390e67d5aa079e693d340c465c557966313ede8af01d3a703a313e27c5fd3e",
+      "bytes": 1932028
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/plot-summary.csv": {
+      "sha256": "e86579301ee79141d16a93d50274c1da7c51700d0c306101f738aebc74aedeeb",
+      "bytes": 168900
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/state-summary.csv": {
+      "sha256": "abcee7d2c9fa41a3eabf202626359f4839109105c85c2d88be3f540d1bf252eb",
+      "bytes": 164451
+    },
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/time-bin-rtt.csv": {
+      "sha256": "a04408c513a2ceb31ab10ad94dc33d83a4a907604ea1a0db463d3e91a74ceb18",
+      "bytes": 20183
+    }
+  },
+  "style_reference": "data/experiments/paper-editable-20261028",
+  "figures": [
+    {
+      "figure_id": "01_信标周期预测准确率",
+      "script": "01_信标周期预测准确率.py",
+      "initial_script_sha256": "0737ad0e52ae194bb05617754e24985d3ec2b3234b7754982734e8003d74605b",
+      "embedded_data_sha256": "6d2479de0980ee6ad70a31642a5fbd02c8a3ea9a5f1f4a4f8151954788497d1a",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/accuracy-summary.csv"
+      ],
+      "outputs": {
+        "png": {
+          "file": "01_信标周期预测准确率.png",
+          "initial_sha256": "edd0439cd8b302a6acd3043ec0dca91e548505efd60e26a739c66303950b6ec2"
+        },
+        "svg": {
+          "file": "01_信标周期预测准确率.svg",
+          "initial_sha256": "8050c8429d72edf3fe3b5f1304563c6fe0c855986f933e6674cb34b77c7b7efa"
+        },
+        "pdf": {
+          "file": "01_信标周期预测准确率.pdf",
+          "initial_sha256": "dbd35f76175f9e18d9270862c55eee99332e2d1927b25ba7a902dc6b226c550b"
+        }
+      }
+    },
+    {
+      "figure_id": "02_状态表规模",
+      "script": "02_状态表规模.py",
+      "initial_script_sha256": "2da1be5227b83e1a508a32d721f3f619b7714eb2178a0e22e53430b0efd2e7bb",
+      "embedded_data_sha256": "981c55428c7c3a3216b6481ed4316fbdf28a14ad77cd5065f42b92091536b36a",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/state-summary.csv"
+      ],
+      "outputs": {
+        "png": {
+          "file": "02_状态表规模.png",
+          "initial_sha256": "0fe78dfbdd36e64024cd2740d70caf9cef4e0029ec8b58e13a8a6ad374f72bff"
+        },
+        "svg": {
+          "file": "02_状态表规模.svg",
+          "initial_sha256": "2fce05487267e0631dd136692af371889097f5f890dd394ea28cf33becf21986"
+        },
+        "pdf": {
+          "file": "02_状态表规模.pdf",
+          "initial_sha256": "ec3fbc19c8f8c45f177fe1f22d6b3faaae9e73b344ba52c042189dbeba5c61d1"
+        }
+      }
+    },
+    {
+      "figure_id": "03_注册与更新报文大小",
+      "script": "03_注册与更新报文大小.py",
+      "initial_script_sha256": "247598ca9b5beb8e149ad12c49193af28833bd2033b68f64b3b212b9e6c80dcb",
+      "embedded_data_sha256": "f5f7923a594fae767ffd2066ee2fd6dcaec12314b1b16c5158687083f9111968",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/hello-size-points.csv"
+      ],
+      "outputs": {
+        "png": {
+          "file": "03_注册与更新报文大小.png",
+          "initial_sha256": "47d1ff1ff9b99b116a8fe666e926ba3f2f0b0b0c71efa819dfbfa9da2ab5aad9"
+        },
+        "svg": {
+          "file": "03_注册与更新报文大小.svg",
+          "initial_sha256": "443fd82352a4dace08204d00a18f6bf29c5fe0f70afcdb0b6ce3c73d04682c1f"
+        },
+        "pdf": {
+          "file": "03_注册与更新报文大小.pdf",
+          "initial_sha256": "c28d95b564f490a1cf590c0e6ac97d9dadd2abedc09be52fe20bbe935549e93e"
+        }
+      }
+    },
+    {
+      "figure_id": "04_TKAN推理时延",
+      "script": "04_TKAN推理时延.py",
+      "initial_script_sha256": "71c9612934f17407ff579cadfeda6b07f6b579096480078ec9cb7983f9cc9d8c",
+      "embedded_data_sha256": "ddeefaac50bae18613449d6f5f84d1f2556ca48c0a53163521e28ffd3c541649",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/inference-processes.csv"
+      ],
+      "outputs": {
+        "png": {
+          "file": "04_TKAN推理时延.png",
+          "initial_sha256": "13e066604062d5b4af1943ff05cbaf6c6ade87d762dbdb53e5b461f020dabd5d"
+        },
+        "svg": {
+          "file": "04_TKAN推理时延.svg",
+          "initial_sha256": "b450afa61940bf37bdf1c78ae17d5274b597697e55182372bfaf464120dc667f"
+        },
+        "pdf": {
+          "file": "04_TKAN推理时延.pdf",
+          "initial_sha256": "fe1f2b7e99e6824651d22850812bffd01959338506d4203fd48ed09947f34e79"
+        }
+      }
+    },
+    {
+      "figure_id": "05_三场景RTT时间变化",
+      "script": "05_三场景RTT时间变化.py",
+      "initial_script_sha256": "efb01373853638d0d67d26486367dbabe04b06f44163808623f8649800b3dc50",
+      "embedded_data_sha256": "d5e86755623000ec030c05601b1b64dd29c5fe0e034d04d1953ec6cfbb4a7019",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/time-bin-rtt.csv"
+      ],
+      "outputs": {
+        "png": {
+          "file": "05_三场景RTT时间变化.png",
+          "initial_sha256": "da1d357c7d6c4909a294714521910527f8a04f84f7dc5341e4646f5a64017792"
+        },
+        "svg": {
+          "file": "05_三场景RTT时间变化.svg",
+          "initial_sha256": "4e7b48e978449638c49d3102e2d9f14ee2d06137b3b73421a80884e30f80d7c9"
+        },
+        "pdf": {
+          "file": "05_三场景RTT时间变化.pdf",
+          "initial_sha256": "5f5b02f2f29815d5eac2892554b966e921c2519448b373416da9b56b92ef3669"
+        }
+      }
+    },
+    {
+      "figure_id": "06_车速_圆圈",
+      "script": "06_车速_圆圈.py",
+      "initial_script_sha256": "e6099807ce05e653ca79dccfa90daf4b4a89c00f23bb71f26763c23a00cdff48",
+      "embedded_data_sha256": "6663dccc43ba762a76b2d56b35b21fa9416a998ea40537c007cd468d2ae6e903",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "06_车速_圆圈.png",
+          "initial_sha256": "0f92238e6dfda804f1fef8dbe91fc61be8bdced925d710993f8c26723795b31f"
+        },
+        "svg": {
+          "file": "06_车速_圆圈.svg",
+          "initial_sha256": "0fa4d24ac0cc82c496db71cc12e0dfb6a0d94799aea62807dfc299af07dd45d1"
+        },
+        "pdf": {
+          "file": "06_车速_圆圈.pdf",
+          "initial_sha256": "c22d08f2978151c496ac56663c01138fefc6b7c192bdb381d724bf8b4e256451"
+        }
+      }
+    },
+    {
+      "figure_id": "07_车速_方阵",
+      "script": "07_车速_方阵.py",
+      "initial_script_sha256": "e27135e93b92a97048b4fb2bea23896ab9edc73848ae0a2a1d3e64843378ddba",
+      "embedded_data_sha256": "5bb3f5cf52de3f20de5a1fa8ae2ea52f7d799d26c0d9eb41f128736e0851611a",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "07_车速_方阵.png",
+          "initial_sha256": "17105a8c48f849e395809dd996717f314c05cf0cf1871afcb32382ff74f12f25"
+        },
+        "svg": {
+          "file": "07_车速_方阵.svg",
+          "initial_sha256": "b3446f65aa676fc78138a54a4ab9ce8518c60bfe2e6bddc66d0cc7e9f79c9fee"
+        },
+        "pdf": {
+          "file": "07_车速_方阵.pdf",
+          "initial_sha256": "7ad1af4e9fcb0df1d36cbea5c75ce40afcf8129ba30a46200fd8afd74e901524"
+        }
+      }
+    },
+    {
+      "figure_id": "08_车速_蜘蛛网",
+      "script": "08_车速_蜘蛛网.py",
+      "initial_script_sha256": "4d6f49b0500c352724847de600d33b3b8be2e0b80cf545880365d8e8d390eaae",
+      "embedded_data_sha256": "47cef11fd282dcfee9eefb6b78d86fb6416ea600c4325685a9bb2e75cd50ffe9",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "08_车速_蜘蛛网.png",
+          "initial_sha256": "5ebd7fddd1a306b0eca5bf26972d6f92502b3bb567b17c42e9e85dab23c86655"
+        },
+        "svg": {
+          "file": "08_车速_蜘蛛网.svg",
+          "initial_sha256": "cb04b642c075f6959c41530b6d02c0fd6348f257adb22b5f33907b6eda1433a3"
+        },
+        "pdf": {
+          "file": "08_车速_蜘蛛网.pdf",
+          "initial_sha256": "9a25ce6aa695b6cc0eebf912a476caf52e6b25ddf84305aa6612e96611c8a3b3"
+        }
+      }
+    },
+    {
+      "figure_id": "09_消费者数量_圆圈",
+      "script": "09_消费者数量_圆圈.py",
+      "initial_script_sha256": "4649e188e905230faf143c0e02593f7f9182f748825fa4d12b90e080c67da851",
+      "embedded_data_sha256": "baec6a576658a19246fb8c9eb657818a80b789680350203d6dadacb8c7d56eaf",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "09_消费者数量_圆圈.png",
+          "initial_sha256": "d68988abde891617a2ac7c75061e3937c2f84962c688f6a0ea4ec4c9771a80e6"
+        },
+        "svg": {
+          "file": "09_消费者数量_圆圈.svg",
+          "initial_sha256": "97ab31e238d8c3c9dc0291e029dec7bd5b8545eef78dbf093104c4b3b8de3865"
+        },
+        "pdf": {
+          "file": "09_消费者数量_圆圈.pdf",
+          "initial_sha256": "2ffde79aa7abe17c2d369d2e8ce730850615aec88edf76b1341a7a4336e5807c"
+        }
+      }
+    },
+    {
+      "figure_id": "10_消费者数量_方阵",
+      "script": "10_消费者数量_方阵.py",
+      "initial_script_sha256": "45c51a86ad4af85bd4d78d35d16c181aaeb5cabc9c5b68b642696d7113da608d",
+      "embedded_data_sha256": "7458c89f01f1083883c15207e4611cfeb60f6e4e82980a20bff92e6c0bbbed25",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "10_消费者数量_方阵.png",
+          "initial_sha256": "c5a87be8f983d4bc3d0032717c575f2ca93470e76803d9a02bb9dbe89a9bc052"
+        },
+        "svg": {
+          "file": "10_消费者数量_方阵.svg",
+          "initial_sha256": "af60541ba2f0f2ebaa0850c215d17445232d5b45b2ce85b32034c8d9483fc635"
+        },
+        "pdf": {
+          "file": "10_消费者数量_方阵.pdf",
+          "initial_sha256": "43c2a1b091fa1cf65d1a4d941c32896765fd6a22f3551e40a3c15eb043933aaf"
+        }
+      }
+    },
+    {
+      "figure_id": "11_消费者数量_蜘蛛网",
+      "script": "11_消费者数量_蜘蛛网.py",
+      "initial_script_sha256": "fc4f962e5f4b6930a6ab739b36afdc5ad15bc65c37536c625ecc727655d30ee2",
+      "embedded_data_sha256": "5f955442bb0c6e2ed209058953ecf2ad20f94d89899e0d0473fcd87a8d2bd816",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "11_消费者数量_蜘蛛网.png",
+          "initial_sha256": "9907b9a360dde9f9e6207b6fa38d42c9060b5914cf36dda5da6479337a537eff"
+        },
+        "svg": {
+          "file": "11_消费者数量_蜘蛛网.svg",
+          "initial_sha256": "aef17ee5b33e90213b3edb0617c0cde6f287431f2031c26ee25fed29d3c452e7"
+        },
+        "pdf": {
+          "file": "11_消费者数量_蜘蛛网.pdf",
+          "initial_sha256": "1d0cfaff09853531c6b8a4e914cefdf217b02e6ad59355eb314573509f10181f"
+        }
+      }
+    },
+    {
+      "figure_id": "12_请求速率_圆圈",
+      "script": "12_请求速率_圆圈.py",
+      "initial_script_sha256": "7e64ead98adb669870faefb93909216685732dab43a9677a937103cc76a1475e",
+      "embedded_data_sha256": "3c6555310ccd6a8fd982b4dd4c3101a8ea4c329275a028e95ad37642e62ee2fe",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "12_请求速率_圆圈.png",
+          "initial_sha256": "c372b049dc6e85bfddc11553e8b0bd78c411b1eaa421c9aa300f8dd97f7775e1"
+        },
+        "svg": {
+          "file": "12_请求速率_圆圈.svg",
+          "initial_sha256": "e57db1e9f4443396ff7d94dcea8429972971e3c475b5eba672c841cddf685005"
+        },
+        "pdf": {
+          "file": "12_请求速率_圆圈.pdf",
+          "initial_sha256": "c177c73c5e1cb64f6d23f0aca5483053309324901eda465149f556364e7cc0d7"
+        }
+      }
+    },
+    {
+      "figure_id": "13_请求速率_方阵",
+      "script": "13_请求速率_方阵.py",
+      "initial_script_sha256": "8a04788cd7446da10600867b7932a8cfdbe87f9ca8e2601911d3c40f07f66a22",
+      "embedded_data_sha256": "0207b94e8625b4eb692f82e7e9cf34cb05121edd3aabacbc617f49bbd1cfc177",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "13_请求速率_方阵.png",
+          "initial_sha256": "630f086eaf7383d5807dfba9f3d7453353e28dda91e85dc9058e012dd937bb58"
+        },
+        "svg": {
+          "file": "13_请求速率_方阵.svg",
+          "initial_sha256": "c91a91d2c23895fc66880dec24b196d9745d2264f1a784065981d078b2e4ca5d"
+        },
+        "pdf": {
+          "file": "13_请求速率_方阵.pdf",
+          "initial_sha256": "2086fe62f2b0224c94df2d8d29059c6bb3b293a417ce8b302fa3897e3d00e8cc"
+        }
+      }
+    },
+    {
+      "figure_id": "14_请求速率_蜘蛛网",
+      "script": "14_请求速率_蜘蛛网.py",
+      "initial_script_sha256": "802533d6a1f76db8a56e36cdc8480bb2306dc6bdc53842a6d71e1f600151ef88",
+      "embedded_data_sha256": "51774e38dbe92b24da6596e270ef812c5a66a3aa86b01e74157ea44b4ba71bdd",
+      "sources": [
+        "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json"
+      ],
+      "outputs": {
+        "png": {
+          "file": "14_请求速率_蜘蛛网.png",
+          "initial_sha256": "7c17cf8e24fc2d14acf552b9d1f17f5cbd3437959932f88b5c247b3af95c5d1d"
+        },
+        "svg": {
+          "file": "14_请求速率_蜘蛛网.svg",
+          "initial_sha256": "0528c74ae16a2eaa3e285675ece5c4d97ab0da221c9344095c3c80b296ec8d27"
+        },
+        "pdf": {
+          "file": "14_请求速率_蜘蛛网.pdf",
+          "initial_sha256": "dc00a06bedb53dee5649c8048e18c4694c7215805cd84db9a01d13544b16471f"
+        }
+      }
+    }
+  ],
+  "editing": "This is the initial source/output snapshot. Manual edits are allowed; plotting never rewrites or enforces this record."
+}

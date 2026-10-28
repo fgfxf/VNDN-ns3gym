@@ -1,0 +1,1333 @@
+{
+  "scope": "grid/spider F01, 40 completed runs each",
+  "caveat": "Recorded samples, not exact request instants. Within sensitivity distance is necessary, not sufficient, for reception. No fading/interference/MAC inference.",
+  "constants": {
+    "frequency_hz": 5150000000.0,
+    "min_distance_m": 50.0,
+    "rsu_z_m": 12.0,
+    "obu_z_m": 1.5,
+    "antenna_above_z_m": 1.5
+  },
+  "radio": {
+    "grid": {
+      "tx_dbm": 12.0,
+      "sensitivity_dbm": -69.8,
+      "max_distance_3d_m": 56.99064994345669,
+      "max_distance_horizontal_m": 56.01503531175911,
+      "rsu_xy": [
+        [
+          80.0,
+          0.0
+        ],
+        [
+          160.0,
+          0.0
+        ],
+        [
+          240.0,
+          0.0
+        ],
+        [
+          40.0,
+          69.28
+        ],
+        [
+          120.0,
+          69.28
+        ],
+        [
+          200.0,
+          69.28
+        ],
+        [
+          280.0,
+          69.28
+        ]
+      ]
+    },
+    "spidermap": {
+      "tx_dbm": 13.0,
+      "sensitivity_dbm": -69.8,
+      "max_distance_3d_m": 63.94456095922152,
+      "max_distance_horizontal_m": 63.076595312901894,
+      "rsu_xy": [
+        [
+          150.0,
+          270.0
+        ],
+        [
+          250.0,
+          270.0
+        ],
+        [
+          100.0,
+          192.0
+        ],
+        [
+          200.0,
+          192.0
+        ],
+        [
+          300.0,
+          192.0
+        ],
+        [
+          150.0,
+          100.0
+        ],
+        [
+          250.0,
+          100.0
+        ]
+      ]
+    }
+  },
+  "source_checks": {
+    "contrib/ndn4ivc/helper/wifi-setup-helper.cc": {
+      "matches_each_observed_run_git_revision": {
+        "c258be6c0cc165d5f3e99ff264cd56da1de2f256": true,
+        "c64023a4af55b0f47fa01898a1a86352aae28889": true
+      },
+      "sha256": "b801f80e1e961176a7cb4680bc84610ccabe808a658d026a543503ae03fe4ce3",
+      "note": "These dependencies are outside old source.tar.gz scope; git revision equality is weaker than full historical binary provenance."
+    },
+    "contrib/ndn4ivc/helper/wifi-setup-helper.h": {
+      "matches_each_observed_run_git_revision": {
+        "c258be6c0cc165d5f3e99ff264cd56da1de2f256": true,
+        "c64023a4af55b0f47fa01898a1a86352aae28889": true
+      },
+      "sha256": "ccf011afa7531c8321ff2e47944a979e635ae3bc881ba0185f82ccee18b61e05",
+      "note": "These dependencies are outside old source.tar.gz scope; git revision equality is weaker than full historical binary provenance."
+    },
+    "src/propagation/model/propagation-loss-model.cc": {
+      "matches_each_observed_run_git_revision": {
+        "c258be6c0cc165d5f3e99ff264cd56da1de2f256": true,
+        "c64023a4af55b0f47fa01898a1a86352aae28889": true
+      },
+      "sha256": "68116593476d01a3dae5bca8613b28c4e7d91db459582bcf3b63296d7aeda2e9",
+      "note": "These dependencies are outside old source.tar.gz scope; git revision equality is weaker than full historical binary provenance."
+    },
+    "src/traci/model/traci-client.cc": {
+      "matches_each_observed_run_git_revision": {
+        "c258be6c0cc165d5f3e99ff264cd56da1de2f256": true,
+        "c64023a4af55b0f47fa01898a1a86352aae28889": true
+      },
+      "sha256": "0fc180f0b8a616ce62a4f44c1275eb7dd7101cb8bbc14d6cf9d6a97c77d8750e",
+      "note": "These dependencies are outside old source.tar.gz scope; git revision equality is weaker than full historical binary provenance."
+    }
+  },
+  "trajectory_groups": {
+    "grid/seed23009": {
+      "hash": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "all_20_runs_identical": true
+    },
+    "grid/seed23010": {
+      "hash": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "all_20_runs_identical": true
+    },
+    "spidermap/seed23017": {
+      "hash": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "all_20_runs_identical": true
+    },
+    "spidermap/seed23018": {
+      "hash": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "all_20_runs_identical": true
+    }
+  },
+  "runs": [
+    {
+      "run_id": "20261022T082647.597615Z-8361c190",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23009,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a0/attempt-001/runs/20261022T082647.597615Z-8361c190/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11198,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T082822.758235Z-cd488a00",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23009,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a1/attempt-001/runs/20261022T082822.758235Z-cd488a00/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11156,
+      "selected_outside_any_inside": 46,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T082958.821362Z-fc76bc74",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23009,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a2/attempt-001/runs/20261022T082958.821362Z-fc76bc74/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11176,
+      "selected_outside_any_inside": 26,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T083144.874513Z-2820f5cd",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23009,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a3/attempt-001/runs/20261022T083144.874513Z-2820f5cd/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T121457.564872Z-11f5f7c3",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23010,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23010-a0/attempt-001/runs/20261022T121457.564872Z-11f5f7c3/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11300,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T121633.332217Z-405a6cd6",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23010,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23010-a1/attempt-001/runs/20261022T121633.332217Z-405a6cd6/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11242,
+      "selected_outside_any_inside": 61,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T121810.075450Z-ee54be69",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23010,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23010-a2/attempt-001/runs/20261022T121810.075450Z-ee54be69/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11269,
+      "selected_outside_any_inside": 34,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T121946.619982Z-920a4c92",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23010,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23010-a3/attempt-001/runs/20261022T121946.619982Z-920a4c92/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11291,
+      "selected_outside_any_inside": 12,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T094338.983110Z-9bb68bf2",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23009,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a0/attempt-001/runs/20261022T094338.983110Z-9bb68bf2/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11166,
+      "selected_outside_any_inside": 36,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T094520.724756Z-4049ff74",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23009,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a1/attempt-001/runs/20261022T094520.724756Z-4049ff74/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11170,
+      "selected_outside_any_inside": 32,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T094705.231390Z-1c98b4a3",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23009,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a2/attempt-001/runs/20261022T094705.231390Z-1c98b4a3/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11177,
+      "selected_outside_any_inside": 25,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T094849.618257Z-9939fd28",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23009,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23009-a3/attempt-001/runs/20261022T094849.618257Z-9939fd28/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T133019.443068Z-20f753fb",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23010,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a0/attempt-001/runs/20261022T133019.443068Z-20f753fb/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11281,
+      "selected_outside_any_inside": 22,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T133201.459942Z-c7af57c4",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23010,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a1/attempt-001/runs/20261022T133201.459942Z-c7af57c4/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11232,
+      "selected_outside_any_inside": 71,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T133347.249616Z-938b21da",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23010,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a2/attempt-001/runs/20261022T133347.249616Z-938b21da/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11291,
+      "selected_outside_any_inside": 12,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T133531.501647Z-556a7b9d",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23010,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k12000-s23010-a3/attempt-001/runs/20261022T133531.501647Z-556a7b9d/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11300,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T084559.975130Z-3f50f711",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23009,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a0/attempt-001/runs/20261022T084559.975130Z-3f50f711/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11182,
+      "selected_outside_any_inside": 20,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T084728.521656Z-d458a745",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23009,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a1/attempt-001/runs/20261022T084728.521656Z-d458a745/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11128,
+      "selected_outside_any_inside": 74,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T084856.203357Z-9349cf8b",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23009,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a2/attempt-001/runs/20261022T084856.203357Z-9349cf8b/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11117,
+      "selected_outside_any_inside": 85,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T085024.629346Z-e8d0050e",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23009,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23009-a3/attempt-001/runs/20261022T085024.629346Z-e8d0050e/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T123336.803082Z-42e6913e",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23010,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a0/attempt-001/runs/20261022T123336.803082Z-42e6913e/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11272,
+      "selected_outside_any_inside": 31,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T123503.956787Z-524989bf",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23010,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a1/attempt-001/runs/20261022T123503.956787Z-524989bf/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11154,
+      "selected_outside_any_inside": 149,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T123631.706215Z-c7401f03",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23010,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a2/attempt-001/runs/20261022T123631.706215Z-c7401f03/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11211,
+      "selected_outside_any_inside": 92,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T123801.192188Z-03c652c8",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23010,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k1500-s23010-a3/attempt-001/runs/20261022T123801.192188Z-03c652c8/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11300,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T090358.825147Z-4e8ca2d0",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23009,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23009-a0/attempt-001/runs/20261022T090358.825147Z-4e8ca2d0/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11188,
+      "selected_outside_any_inside": 14,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T090529.793170Z-195da8a3",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23009,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23009-a1/attempt-001/runs/20261022T090529.793170Z-195da8a3/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11117,
+      "selected_outside_any_inside": 85,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T090700.207084Z-f0aab1c1",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23009,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23009-a2/attempt-001/runs/20261022T090700.207084Z-f0aab1c1/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11151,
+      "selected_outside_any_inside": 51,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T090832.313587Z-84e4698d",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23009,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23009-a3/attempt-001/runs/20261022T090832.313587Z-84e4698d/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T125121.550454Z-fad28c80",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23010,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23010-a0/attempt-001/runs/20261022T125121.550454Z-fad28c80/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11271,
+      "selected_outside_any_inside": 32,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T125252.092908Z-9a327ca4",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23010,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23010-a1/attempt-001/runs/20261022T125252.092908Z-9a327ca4/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11176,
+      "selected_outside_any_inside": 127,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T125422.299900Z-29e58367",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23010,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23010-a2/attempt-001/runs/20261022T125422.299900Z-29e58367/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 104,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T125553.682149Z-bec51ec1",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23010,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k3000-s23010-a3/attempt-001/runs/20261022T125553.682149Z-bec51ec1/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11294,
+      "selected_outside_any_inside": 9,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T092258.538161Z-3d13866b",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23009,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23009-a0/attempt-001/runs/20261022T092258.538161Z-3d13866b/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11192,
+      "selected_outside_any_inside": 10,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T092435.564709Z-e909fecc",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23009,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23009-a1/attempt-001/runs/20261022T092435.564709Z-e909fecc/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11123,
+      "selected_outside_any_inside": 79,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T092619.467153Z-36032bcb",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23009,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23009-a2/attempt-001/runs/20261022T092619.467153Z-36032bcb/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11186,
+      "selected_outside_any_inside": 16,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T092801.793863Z-8d5ee0c4",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23009,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23009-a3/attempt-001/runs/20261022T092801.793863Z-8d5ee0c4/raw/mobility-events.csv",
+      "trajectory_sha256": "bb994db6179ed86a016b47ff6ec7cb1094fbe2e9ed8c05dad3c0179656c9b827",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11202,
+      "selected_rsu_within_sensitivity": 11199,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 93.35
+    },
+    {
+      "run_id": "20261022T131000.158753Z-bb0c9644",
+      "scene": "grid",
+      "strategy": 0,
+      "seed": 23010,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23010-a0/attempt-001/runs/20261022T131000.158753Z-bb0c9644/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11290,
+      "selected_outside_any_inside": 13,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T131137.550946Z-61e64e00",
+      "scene": "grid",
+      "strategy": 1,
+      "seed": 23010,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23010-a1/attempt-001/runs/20261022T131137.550946Z-61e64e00/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11267,
+      "selected_outside_any_inside": 36,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T131318.117626Z-0e4941f4",
+      "scene": "grid",
+      "strategy": 2,
+      "seed": 23010,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23010-a2/attempt-001/runs/20261022T131318.117626Z-0e4941f4/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11290,
+      "selected_outside_any_inside": 13,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T131458.257147Z-0589af0f",
+      "scene": "grid",
+      "strategy": 3,
+      "seed": 23010,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-grid-n10-v30-k9000-s23010-a3/attempt-001/runs/20261022T131458.257147Z-0589af0f/raw/mobility-events.csv",
+      "trajectory_sha256": "ff2c0ba46406571c7ccd3eb09542f13eb803acd4690757d0a4cccef5ad524d22",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 11303,
+      "selected_rsu_within_sensitivity": 11300,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 94.19166666666666
+    },
+    {
+      "run_id": "20261022T083337.758056Z-a55bc9f9",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23017,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a0/attempt-001/runs/20261022T083337.758056Z-a55bc9f9/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7270,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T083504.695304Z-b52225f5",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23017,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a1/attempt-001/runs/20261022T083504.695304Z-b52225f5/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7269,
+      "selected_outside_any_inside": 8,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T083633.555891Z-376c5c74",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23017,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a2/attempt-001/runs/20261022T083633.555891Z-376c5c74/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7273,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T083801.029529Z-ce752a5e",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23017,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a3/attempt-001/runs/20261022T083801.029529Z-ce752a5e/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7273,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T122135.696358Z-6fa87f2e",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23018,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23018-a0/attempt-001/runs/20261022T122135.696358Z-6fa87f2e/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6300,
+      "selected_outside_any_inside": 15,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T122257.911378Z-a9b688e7",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23018,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23018-a1/attempt-001/runs/20261022T122257.911378Z-a9b688e7/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6289,
+      "selected_outside_any_inside": 26,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T122421.032125Z-1814b355",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23018,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23018-a2/attempt-001/runs/20261022T122421.032125Z-1814b355/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6306,
+      "selected_outside_any_inside": 9,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T122545.282022Z-200e4d29",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23018,
+      "requests": 6000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23018-a3/attempt-001/runs/20261022T122545.282022Z-200e4d29/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6308,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T095059.693781Z-956b18f2",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23017,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23017-a0/attempt-001/runs/20261022T095059.693781Z-956b18f2/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7271,
+      "selected_outside_any_inside": 6,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T095231.531096Z-9f09a3d4",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23017,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23017-a1/attempt-001/runs/20261022T095231.531096Z-9f09a3d4/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7271,
+      "selected_outside_any_inside": 6,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T095406.091552Z-29599577",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23017,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23017-a2/attempt-001/runs/20261022T095406.091552Z-29599577/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7269,
+      "unassociated_any_inside": 2,
+      "selected_outside_any_inside": 6,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T095540.098258Z-4a32b958",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23017,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23017-a3/attempt-001/runs/20261022T095540.098258Z-4a32b958/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7272,
+      "unassociated_any_inside": 2,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T133740.444685Z-dc1f35a4",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23018,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23018-a0/attempt-001/runs/20261022T133740.444685Z-dc1f35a4/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6310,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T133908.349243Z-4bfc8c02",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23018,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23018-a1/attempt-001/runs/20261022T133908.349243Z-4bfc8c02/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6310,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T134038.344639Z-aaf60b67",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23018,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23018-a2/attempt-001/runs/20261022T134038.344639Z-aaf60b67/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6311,
+      "selected_outside_any_inside": 3,
+      "unassociated_any_inside": 1,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T134207.598127Z-d4679034",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23018,
+      "requests": 12000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k12000-s23018-a3/attempt-001/runs/20261022T134207.598127Z-d4679034/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6312,
+      "selected_outside_any_inside": 2,
+      "unassociated_any_inside": 1,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T085155.861657Z-c1d026c1",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23017,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23017-a0/attempt-001/runs/20261022T085155.861657Z-c1d026c1/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7266,
+      "selected_outside_any_inside": 11,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T085317.390628Z-1a37ccd1",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23017,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23017-a1/attempt-001/runs/20261022T085317.390628Z-1a37ccd1/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7265,
+      "selected_outside_any_inside": 12,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T085439.850319Z-99cbe83d",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23017,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23017-a2/attempt-001/runs/20261022T085439.850319Z-99cbe83d/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7267,
+      "selected_outside_any_inside": 10,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T085600.725935Z-fc054c8c",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23017,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23017-a3/attempt-001/runs/20261022T085600.725935Z-fc054c8c/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7273,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T123933.382980Z-bf6fba3a",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23018,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23018-a0/attempt-001/runs/20261022T123933.382980Z-bf6fba3a/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6308,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T124052.068072Z-26f4ebf1",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23018,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23018-a1/attempt-001/runs/20261022T124052.068072Z-26f4ebf1/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6295,
+      "selected_outside_any_inside": 20,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T124211.049380Z-cc00575c",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23018,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23018-a2/attempt-001/runs/20261022T124211.049380Z-cc00575c/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6295,
+      "selected_outside_any_inside": 20,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T124329.368247Z-de71929e",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23018,
+      "requests": 1500,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k1500-s23018-a3/attempt-001/runs/20261022T124329.368247Z-de71929e/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6313,
+      "selected_outside_any_inside": 2,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T091010.551877Z-4790e7bf",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23017,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23017-a0/attempt-001/runs/20261022T091010.551877Z-4790e7bf/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7270,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T091134.337826Z-e94b3f2f",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23017,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23017-a1/attempt-001/runs/20261022T091134.337826Z-e94b3f2f/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7268,
+      "selected_outside_any_inside": 9,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T091258.413697Z-6252b153",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23017,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23017-a2/attempt-001/runs/20261022T091258.413697Z-6252b153/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7270,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T091423.221950Z-131f7796",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23017,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23017-a3/attempt-001/runs/20261022T091423.221950Z-131f7796/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7273,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T125731.400082Z-8016aafa",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23018,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23018-a0/attempt-001/runs/20261022T125731.400082Z-8016aafa/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6308,
+      "selected_outside_any_inside": 7,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T125851.353656Z-a6ec018d",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23018,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23018-a1/attempt-001/runs/20261022T125851.353656Z-a6ec018d/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6293,
+      "selected_outside_any_inside": 22,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T130011.196777Z-30d52899",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23018,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23018-a2/attempt-001/runs/20261022T130011.196777Z-30d52899/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6311,
+      "selected_outside_any_inside": 4,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T130132.021047Z-585ffcfb",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23018,
+      "requests": 3000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k3000-s23018-a3/attempt-001/runs/20261022T130132.021047Z-585ffcfb/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6310,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T093001.695590Z-f823c128",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23017,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23017-a0/attempt-001/runs/20261022T093001.695590Z-f823c128/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7274,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T093131.678608Z-b639b3a5",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23017,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23017-a1/attempt-001/runs/20261022T093131.678608Z-b639b3a5/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7272,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T093302.562043Z-39b2b896",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23017,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23017-a2/attempt-001/runs/20261022T093302.562043Z-39b2b896/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7270,
+      "unassociated_any_inside": 2,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T093433.975092Z-7ce91d5f",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23017,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23017-a3/attempt-001/runs/20261022T093433.975092Z-7ce91d5f/raw/mobility-events.csv",
+      "trajectory_sha256": "13c7e0681004456a4ec82279348c3c1daf73e5a38fd1b9e1156f1730b4281e7e",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 7277,
+      "selected_rsu_within_sensitivity": 7273,
+      "unassociated_any_inside": 1,
+      "selected_outside_any_inside": 3,
+      "geometric_coverage_sample_percent": 60.64166666666667
+    },
+    {
+      "run_id": "20261022T131658.301858Z-e9874e6a",
+      "scene": "spidermap",
+      "strategy": 0,
+      "seed": 23018,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23018-a0/attempt-001/runs/20261022T131658.301858Z-e9874e6a/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6310,
+      "selected_outside_any_inside": 5,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T131823.762444Z-a1eb430d",
+      "scene": "spidermap",
+      "strategy": 1,
+      "seed": 23018,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23018-a1/attempt-001/runs/20261022T131823.762444Z-a1eb430d/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6300,
+      "selected_outside_any_inside": 15,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T131951.420100Z-86c8eaa6",
+      "scene": "spidermap",
+      "strategy": 2,
+      "seed": 23018,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23018-a2/attempt-001/runs/20261022T131951.420100Z-86c8eaa6/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6313,
+      "selected_outside_any_inside": 2,
+      "geometric_coverage_sample_percent": 52.625
+    },
+    {
+      "run_id": "20261022T132118.249833Z-ecc6f3c0",
+      "scene": "spidermap",
+      "strategy": 3,
+      "seed": 23018,
+      "requests": 9000,
+      "mobility_path": "/home/fgfxf/ndnSIM/ns-3/data/experiments/quick-fixed-model-20261022/runs/test-spidermap-n10-v30-k9000-s23018-a3/attempt-001/runs/20261022T132118.249833Z-ecc6f3c0/raw/mobility-events.csv",
+      "trajectory_sha256": "b3cd623a1aa137d2f92fc05d8439adf9f9dea2d155024ee99b6ff56110a5a086",
+      "samples": 12000,
+      "any_rsu_within_sensitivity": 6315,
+      "selected_rsu_within_sensitivity": 6312,
+      "selected_outside_any_inside": 2,
+      "unassociated_any_inside": 1,
+      "geometric_coverage_sample_percent": 52.625
+    }
+  ],
+  "example_all_window_outside_sensitivity": {
+    "run_id": "20261022T124329.368247Z-de71929e",
+    "scene": "spidermap",
+    "seed": 23018,
+    "strategy": 3,
+    "requests": 1500,
+    "vehicle": "exp-00001",
+    "samples": 1200,
+    "nearest_rsu_horizontal_min_m": 74.8106679961771,
+    "nearest_rsu_horizontal_max_m": 106.7307761618843,
+    "samples_within_sensitivity": 0
+  },
+  "run_source_revisions": {
+    "c64023a4af55b0f47fa01898a1a86352aae28889": 3,
+    "c258be6c0cc165d5f3e99ff264cd56da1de2f256": 77
+  },
+  "run_source_fingerprints": {
+    "0ce9bfb660d97adb89ab0d37e1622c49d49f2088dea0e81a816536fc9df669f3": 80
+  },
+  "sealed_source_tar_checks": {
+    "scratch/vndn-spidermap-simulator/vndn-spidermap-main.cc": {
+      "matches_current": true,
+      "sha256": "f87cb56214f84a5d833306d804359907de94646fe465a223816bb147ca07d494"
+    },
+    "scratch/vndn-grid-simulator/vndn-grid-main.cc": {
+      "matches_current": true,
+      "sha256": "a6470c3d166a28148a5fa0e7fd36e2cae3523bc8295b9409c40eb30418325ec7"
+    },
+    "contrib/vndn-nn-rd/helper/vndn-utils-helper.cc": {
+      "matches_current": true,
+      "sha256": "4f4c3d77498fc68e6cd3e9a59b64248117c0734f1a4844038e2543b39b22ec2f"
+    },
+    "contrib/vndn-nn-rd/traces/fgfxf-spider-map/settings.xml": {
+      "matches_current": true,
+      "sha256": "9749101cc080781e1426b4b3d6d46cdcae058fb6316f4276970b1bb6ccb54b9d"
+    },
+    "contrib/vndn-nn-rd/traces/grid-vanet-test/settings.xml": {
+      "matches_current": true,
+      "sha256": "9cba247f0d3785f4006b4e31d7bbfdd370927da4e8cb183824f3d01ca8f25a93"
+    }
+  },
+  "coverage_summary": {
+    "grid/seed23009": {
+      "sample_percent": 93.35,
+      "runs": 20
+    },
+    "grid/seed23010": {
+      "sample_percent": 94.19166666666666,
+      "runs": 20
+    },
+    "spidermap/seed23017": {
+      "sample_percent": 60.64166666666667,
+      "runs": 20
+    },
+    "spidermap/seed23018": {
+      "sample_percent": 52.625,
+      "runs": 20
+    },
+    "grid/seed_mean": {
+      "sample_percent": 93.77083333333333,
+      "seed_count": 2
+    },
+    "spidermap/seed_mean": {
+      "sample_percent": 56.63333333333334,
+      "seed_count": 2
+    }
+  }
+}

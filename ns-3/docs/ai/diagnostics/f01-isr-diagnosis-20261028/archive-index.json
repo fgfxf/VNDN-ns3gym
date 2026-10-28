@@ -1,0 +1,263 @@
+{
+  "date": "2026-10-28",
+  "project_root": "/home/fgfxf/ndnSIM/ns-3",
+  "purpose": "Read-only F01 diagnosis; generated snapshots, not new experiments",
+  "files": [
+    {
+      "path": "association/geometry-audit.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/association/geometry-audit.json",
+      "bytes": 60083,
+      "sha256": "04e16e2a05508dca442a47195f0d9ea0732eaa49759eec654d3e3748864083bf"
+    },
+    {
+      "path": "association/geometry-per-vehicle.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/association/geometry-per-vehicle.csv",
+      "bytes": 40068,
+      "sha256": "8ba8578c6969cc82d902a230b03208c9b723c2da3bab8502a3005fa1038c8315"
+    },
+    {
+      "path": "association/geometry_audit.py",
+      "source": "build/validation/f01-isr-diagnosis-20261028/association/geometry_audit.py",
+      "bytes": 9914,
+      "sha256": "18a07aa20cf3857d3dbf013fef412eddbcfa77fbb5f7475ee4db5c0b5610de16"
+    },
+    {
+      "path": "association/源码与覆盖核查.md",
+      "source": "build/validation/f01-isr-diagnosis-20261028/association/源码与覆盖核查.md",
+      "bytes": 7589,
+      "sha256": "61f3a315b8764687418f13cf798589b5df159a99068af62cce8034a4862509c7"
+    },
+    {
+      "path": "circle/analyze.py",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/analyze.py",
+      "bytes": 12170,
+      "sha256": "f9f8ebde61e02549f9adf7b872b85a3b3021e4fc689357c1ceceffb590a6ea0b"
+    },
+    {
+      "path": "circle/derived-verification.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/derived-verification.json",
+      "bytes": 974,
+      "sha256": "fe9fc5c8aae119c3aa03765f1c09514663fcd65904528c861f6d1e43a69c7c03"
+    },
+    {
+      "path": "circle/execution.log",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/execution.log",
+      "bytes": 3091,
+      "sha256": "d855080f559c65703a8d789c76c844e72107dfd000083dd2092fc229cb186813"
+    },
+    {
+      "path": "circle/funnel-report.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/funnel-report.json",
+      "bytes": 66459,
+      "sha256": "a778fb4aa4a8fbb6bdc25a0846814bde4944f4d6dbc2b91915dd4000c02574f1"
+    },
+    {
+      "path": "circle/summary.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/summary.csv",
+      "bytes": 1392,
+      "sha256": "4b6360a29057d415107ceb2a1e084633c9ccd0b273e3bf9bbb48416eaa53707f"
+    },
+    {
+      "path": "circle/verify_and_summarize.py",
+      "source": "build/validation/f01-isr-diagnosis-20261028/circle/verify_and_summarize.py",
+      "bytes": 2851,
+      "sha256": "6dd3cae9fc4ce73ed8982328dc130190493042fd67eb87b9b65194ac6a330494"
+    },
+    {
+      "path": "grid/analysis.log",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/analysis.log",
+      "bytes": 4429,
+      "sha256": "6a7e2ee1bd730189646a951eae590de2f3c870551765d84a7d07cc5a36c3ea8c"
+    },
+    {
+      "path": "grid/combined-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/combined-funnel.csv",
+      "bytes": 744,
+      "sha256": "ae8f835d71fa248129067d90ceeac666b025d07a5ea01bf0d8fb7005b304e58e"
+    },
+    {
+      "path": "grid/grid-funnel.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/grid-funnel.json",
+      "bytes": 65592,
+      "sha256": "1a4ec6b4f1cc48d4f0aa76cd9185e300d6ab49db4af1db88da2090d5c65c678e"
+    },
+    {
+      "path": "grid/run-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/run-funnel.csv",
+      "bytes": 1720,
+      "sha256": "3d00269d5dd48704053a58592c081ba0c2c6f9bd1d48dbf98079d064844e566a"
+    },
+    {
+      "path": "grid/time-bin-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/time-bin-funnel.csv",
+      "bytes": 15727,
+      "sha256": "c3aa165a890194a8d978fa3d43a7719ebe97822d1ed76216d35c44651132b69f"
+    },
+    {
+      "path": "grid/vehicle-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/vehicle-funnel.csv",
+      "bytes": 27336,
+      "sha256": "a24c6fb8ccdd7c0caed2cfd32a0b39e7235795e6bfa02200245ca2f75878cae7"
+    },
+    {
+      "path": "grid/诊断说明.md",
+      "source": "build/validation/f01-isr-diagnosis-20261028/grid/诊断说明.md",
+      "bytes": 3112,
+      "sha256": "72dae96a7b9a6cd114692a416923b86d7ead9ec8aec8022e2afaf1b6d5e135c3"
+    },
+    {
+      "path": "overview/audit_saved_requests.py",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/audit_saved_requests.py",
+      "bytes": 8506,
+      "sha256": "b133393b292cec9fb3c8e9ebefddcebf87eebde41330211d50f0a9ce8c853a7d"
+    },
+    {
+      "path": "overview/f01-points.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/f01-points.csv",
+      "bytes": 4153,
+      "sha256": "cb2e8093b2ac6c6c840c0e877aade3ba82258e627841b4402224af9c9450ca74"
+    },
+    {
+      "path": "overview/independent-verification.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/independent-verification.json",
+      "bytes": 212,
+      "sha256": "96eb99c445c37a8ce333d712dcb2a65cf7e6e86ce16ed1b0387d17f4367bdc6f"
+    },
+    {
+      "path": "overview/overview-report.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/overview-report.json",
+      "bytes": 161328,
+      "sha256": "e2a52bb2ea3cc68bb444ef598649f45c3ecaa79bfeeb1e8071cd750eeec3532e"
+    },
+    {
+      "path": "overview/per-vehicle.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/per-vehicle.csv",
+      "bytes": 79943,
+      "sha256": "112d7eb0f57ae9ab5d03c8d5b8b6253da67ffba8cd6187e560ec0a88eb5c86c5"
+    },
+    {
+      "path": "overview/run-overview.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/run-overview.csv",
+      "bytes": 37328,
+      "sha256": "946e2915ab9ea875ce279db1a864f020070b119b58517a4c7fbc75071cb70833"
+    },
+    {
+      "path": "overview/run.log",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/run.log",
+      "bytes": 378,
+      "sha256": "1a2a037e556320a5ed9dd632802dbf7555898e571d34940ecb0d5b1fd740ee41"
+    },
+    {
+      "path": "overview/time-bins-20s.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/overview/time-bins-20s.csv",
+      "bytes": 39042,
+      "sha256": "54a4382efdbdc0c08ca7547f05d7ff49308e470162a7a17d4e1ba35d5ff2bfbd"
+    },
+    {
+      "path": "spider/analysis.log",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/analysis.log",
+      "bytes": 4328,
+      "sha256": "02b4ea3c3f72d3247ff913d529212de048aade0635a57f217d92d8c75091d9f9"
+    },
+    {
+      "path": "spider/diagnose_saved_spider.py",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/diagnose_saved_spider.py",
+      "bytes": 14046,
+      "sha256": "ed378dce2b599800c7dbf8bdb0b4c863a51ac543065b067e6275153c46cdd926"
+    },
+    {
+      "path": "spider/regression-baseline.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/regression-baseline.json",
+      "bytes": 51327,
+      "sha256": "e364aaa29dc5239ed08fe5ab698001281a28e9de1e50955870f3059e4ce965ed"
+    },
+    {
+      "path": "spider/regression-check.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/regression-check.json",
+      "bytes": 412,
+      "sha256": "2e28592bcbef47fae19e7ccf0b496cb9e9022c314ed55324c9f5316b29b5d4e0"
+    },
+    {
+      "path": "spider/run-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/run-funnel.csv",
+      "bytes": 1694,
+      "sha256": "8d80629679898f26cdcee7d4e2729b42d1fc09c983ecf423a31fcfd70c560788"
+    },
+    {
+      "path": "spider/spider-funnel.json",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/spider-funnel.json",
+      "bytes": 64762,
+      "sha256": "64bc6a7154672b008ccf84dd8bd055686d4f4341e4c7fe6d8ab36b01a222b6fb"
+    },
+    {
+      "path": "spider/time-bin-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/time-bin-funnel.csv",
+      "bytes": 16568,
+      "sha256": "7466659b2cffabd0bb9f5c0158360e217da59ccf730264a707a6fbae52c2f641"
+    },
+    {
+      "path": "spider/vehicle-funnel.csv",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/vehicle-funnel.csv",
+      "bytes": 33376,
+      "sha256": "572261ee62db794b11dc372d84e5d4c251042099b3c9d2583614bd93157e7c32"
+    },
+    {
+      "path": "spider/诊断说明.md",
+      "source": "build/validation/f01-isr-diagnosis-20261028/spider/诊断说明.md",
+      "bytes": 5088,
+      "sha256": "75e0e5c70366cb7c42e124cb7ad371764846f9f9389bea8e8f50b787ef021810"
+    }
+  ],
+  "omitted_engineering_artifacts": [
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/association/geometry-audit.stdout.json",
+      "bytes": 4468,
+      "sha256": "d2fe433edd90dd3191215444764cb5f3cb0f41eaca86383f324ca0191bd28c0b"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/archive-index.json",
+      "bytes": 2263,
+      "sha256": "e383d04fdc3a06f42d5b03a852bd60430c0897db5becd500717315a0166fa00e"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k12000-s23001-a1-requests.csv",
+      "bytes": 2553220,
+      "sha256": "63201d32aa52fb4dc9918498050f603eb49f9c68585d1a66c4e0b621a9b3d417"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k12000-s23001-a3-requests.csv",
+      "bytes": 2700919,
+      "sha256": "a908d261277abc1d36946011c0b5d61b9ac078edc7c159f27e33ce435a568eb4"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k12000-s23002-a1-requests.csv",
+      "bytes": 2553417,
+      "sha256": "777218a1914d38113a371db5190b64d3c0e89bf69b255cecd4e04771c288eb0f"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k12000-s23002-a3-requests.csv",
+      "bytes": 2698874,
+      "sha256": "f10331aefd860849880d65bcb5197b3dd00af46a93faaa36542a294dd96aa36b"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k9000-s23001-a1-requests.csv",
+      "bytes": 1928776,
+      "sha256": "8d7e3277d10ed74af6b4d90787aa0c6511214f9905d26fb8247aff4f4d23c646"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k9000-s23001-a3-requests.csv",
+      "bytes": 2015588,
+      "sha256": "71668b30524955d18a7da9ab8d464e3ae12c80cd28a75f512bfe978a2853b3e8"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k9000-s23002-a1-requests.csv",
+      "bytes": 1926786,
+      "sha256": "187ad5eb85595df8bb86360b66f274c90c79767fad7bb8815e1dd7d9288e6cef"
+    },
+    {
+      "path": "build/validation/f01-isr-diagnosis-20261028/circle/k9000-s23002-a3-requests.csv",
+      "bytes": 2015848,
+      "sha256": "9fe20602904e515d07dfe02726daf163ae66ac786d8954ac6e2f5f47233228d6"
+    }
+  ]
+}

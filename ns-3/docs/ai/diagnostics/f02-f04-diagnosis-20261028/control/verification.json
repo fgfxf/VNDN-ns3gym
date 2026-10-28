@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "selected_runs": 120,
+  "mean_points": 60,
+  "matching_f03_f04_values": 120,
+  "naive_control_all_hello": true,
+  "all_byte_partitions_close": true,
+  "all_sealed_sources_unchanged": true,
+  "source_sha256": {
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/aggregate.json": "7e390e67d5aa079e693d340c465c557966313ede8af01d3a703a313e27c5fd3e",
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/run-metrics.csv": "3486cb4c6845fdc8ce739902c92f355c0386861606432bbeee485d68da1faf88",
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/source-tables/plot-summary.csv": "e86579301ee79141d16a93d50274c1da7c51700d0c306101f738aebc74aedeeb",
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/baseline-decomposition.csv": "7b663676d98c9d3ac22e73ac77255215014fb900b87ca45f9b7d9065a4ae7ab7",
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/historical-control-packet-sizes.csv": "db938891e7610a95af7ef3b6cb6100e2a8f39e7e22dae7af7737c8d7504c3f57",
+    "data/experiments/quick-fixed-model-20261022/workflow/figures/all/attempt-001/analysis/run-details.json": "ab4104eb572e02235daa2e9ebefdfb59464cca7301e88f7f1d8033c612e01347"
+  },
+  "script_sha256": "48de67af6d1b3fa9e8fe1e39bc9f6bf5d1abb91442da52f1e667bef9c161a65b",
+  "control_classes": [
+    "hello",
+    "p2p_handshake",
+    "search",
+    "find",
+    "neural_route",
+    "neural_pit"
+  ],
+  "scope": "Network Face NDN L3 OUT INTEREST+DATA bytes, [20s,143.5s); no LP/MAC/retry bytes.",
+  "metric_relation": "network = business + relay_data + control; control includes both hello request and response."
+}

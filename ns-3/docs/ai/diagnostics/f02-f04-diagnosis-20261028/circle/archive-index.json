@@ -1,0 +1,25 @@
+{
+  "scope": "read-only existing 40 Circle runs; no production edits or simulations",
+  "files": [
+    {
+      "path": "diagnose_rtt.py",
+      "bytes": 5996,
+      "sha256": "5af27701764a6e3e1b082ad2359af925072e45c6d3535eeea00da9cac51d3a93"
+    },
+    {
+      "path": "execution.log",
+      "bytes": 6057,
+      "sha256": "958ed8f7b26eb59d38f83d1db102bf91e2d2e8f7d5afbf30518ee54e20ef081a"
+    },
+    {
+      "path": "f02-circle-points.csv",
+      "bytes": 1552,
+      "sha256": "554d7997d265d1382fadf12f684af4dc2518af45f224af8b276068a8297a5344"
+    },
+    {
+      "path": "rtt-report.json",
+      "bytes": 160395,
+      "sha256": "d36fb16693f4cddad79a88d4fecb567233023c5305decff21f840750239522c3"
+    }
+  ]
+}

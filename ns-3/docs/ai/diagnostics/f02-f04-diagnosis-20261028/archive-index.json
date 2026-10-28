@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-28",
+  "files": [
+    {
+      "path": "circle/archive-index.json",
+      "source": "build/validation/f02-f04-diagnosis-20261028/circle/archive-index.json",
+      "bytes": 710,
+      "sha256": "da3d04c14788b7d990b9a41a7896f44f613f056a4f86407db165ee4b667b419c"
+    },
+    {
+      "path": "circle/diagnose_rtt.py",
+      "source": "build/validation/f02-f04-diagnosis-20261028/circle/diagnose_rtt.py",
+      "bytes": 5996,
+      "sha256": "5af27701764a6e3e1b082ad2359af925072e45c6d3535eeea00da9cac51d3a93"
+    },
+    {
+      "path": "circle/execution.log",
+      "source": "build/validation/f02-f04-diagnosis-20261028/circle/execution.log",
+      "bytes": 6057,
+      "sha256": "958ed8f7b26eb59d38f83d1db102bf91e2d2e8f7d5afbf30518ee54e20ef081a"
+    },
+    {
+      "path": "circle/f02-circle-points.csv",
+      "source": "build/validation/f02-f04-diagnosis-20261028/circle/f02-circle-points.csv",
+      "bytes": 1552,
+      "sha256": "554d7997d265d1382fadf12f684af4dc2518af45f224af8b276068a8297a5344"
+    },
+    {
+      "path": "circle/rtt-report.json",
+      "source": "build/validation/f02-f04-diagnosis-20261028/circle/rtt-report.json",
+      "bytes": 160395,
+      "sha256": "d36fb16693f4cddad79a88d4fecb567233023c5305decff21f840750239522c3"
+    },
+    {
+      "path": "control/analysis.log",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/analysis.log",
+      "bytes": 554,
+      "sha256": "88d1de0571ffb1dc10b305a49c98f4ec2bdebcf79ff56318bdf51d3c7714c3e4"
+    },
+    {
+      "path": "control/circle-baseline-control-packet-sizes.csv",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/circle-baseline-control-packet-sizes.csv",
+      "bytes": 4165,
+      "sha256": "a46aef31f2659e9d0037699f90b3f29299efe5fb65cdfc97f6212b4a08009878"
+    },
+    {
+      "path": "control/control-network-means.csv",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/control-network-means.csv",
+      "bytes": 7809,
+      "sha256": "17d32ac387a6605f73b5698933e61559cf5dcf3d09c43580a5f28b82ad5f0da2"
+    },
+    {
+      "path": "control/control-network-runs.csv",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/control-network-runs.csv",
+      "bytes": 9558,
+      "sha256": "45d735bfd04fca7ee6c70777666f74c67add5c36382586b39200a3da029559d4"
+    },
+    {
+      "path": "control/diagnose_control.py",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/diagnose_control.py",
+      "bytes": 5859,
+      "sha256": "48de67af6d1b3fa9e8fe1e39bc9f6bf5d1abb91442da52f1e667bef9c161a65b"
+    },
+    {
+      "path": "control/verification.json",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/verification.json",
+      "bytes": 1732,
+      "sha256": "63f39e4bfb623bf1f4e740e5ca2d3c80a807b6728af81021672640169b1d7991"
+    },
+    {
+      "path": "control/控制与网络负载诊断.md",
+      "source": "build/validation/f02-f04-diagnosis-20261028/control/控制与网络负载诊断.md",
+      "bytes": 5560,
+      "sha256": "3a0616c0efcdf9f1e8c5092cd854d6f8e14e313c1a182d5a879e8783d3318ae2"
+    }
+  ],
+  "note": "Read-only saved-data diagnosis snapshots; original experiments remain separately stored."
+}
