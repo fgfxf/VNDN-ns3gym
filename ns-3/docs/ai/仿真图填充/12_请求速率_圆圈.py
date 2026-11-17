@@ -28,6 +28,8 @@ GROUP_WIDTH = 0.8
 LEGEND_COLUMNS = 4
 # 内部X位置为0、1、2……，刻度标签取自末尾DATA["xlabels"]。
 X_LIM = None
+# 仅控制刻度文字；DATA中的原始设置、速率和统计值保持不变。
+X_TICK_LABELS = ('12', '25', '50', '75', '100')
 # 指标依次为额外Data应用提交、成功RTT、兴趣满足率、NDN L3网络负载。
 # None自动覆盖完整柱高与SD端点；也可将某项改为(lower, upper)及刻度列表。
 Y_LIMS = (None, None, None, None)
@@ -127,7 +129,7 @@ def draw_bars(ax, panel):
                 ax.text(x[i], .015, "N/A", transform=ax.get_xaxis_transform(),
                         ha="center", va="bottom", rotation=90, fontsize=7)
     ax.set_xticks(positions)
-    ax.set_xticklabels(["{:g}".format(value) for value in DATA["xlabels"]])
+    ax.set_xticklabels(X_TICK_LABELS)
 
 
 def draw():
@@ -198,7 +200,7 @@ DATA = {'scene': 'circle',
  'xlabel': 'Network request rate (requests/s)',
  'panels': [{'metric': 'extra_data_app_attempts',
              'title': 'Extra Data submissions',
-             'ylabel': 'Extra Data application submissions',
+             'ylabel': 'Number of secondary forwarding',
              'series': [{'strategy': 0,
                          'points': [{'estimate': 0.0, 'run_sd': 0.0},
                                     {'estimate': 0.0, 'run_sd': 0.0},
@@ -282,7 +284,7 @@ DATA = {'scene': 'circle',
                                      'run_sd': 0.6894291116568848}]}]},
             {'metric': 'network_mbit',
              'title': 'Network overhead',
-             'ylabel': 'NDN L3 outgoing traffic (Mbit)',
+             'ylabel': 'Network overhead (Mbit)',
              'series': [{'strategy': 0,
                          'points': [{'estimate': 513.50954, 'run_sd': 0.6832744542334762},
                                     {'estimate': 882.303692, 'run_sd': 0.7700505984206599},

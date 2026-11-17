@@ -1,0 +1,612 @@
+{
+  "revision_date": "2026-11-17",
+  "definition": "EVALUABLE records with label != source_rsu_id. Grid: unconditionally top two candidates. Circle/Spider: deployed float32 gap<=0.10 OR second>=0.10 one/two-candidate selection. These are distinct coverage metrics and conditions, not the same Top-1 accuracy or online ISR.",
+  "aggregation": "Per-seed percentages then arithmetic mean; single-seed SD undefined and omitted. Interaction counts are full-run application hello Data submissions during [20,140)s.",
+  "csv": "docs/ai/仿真图填充/周期候选覆盖率逐轮数据.csv",
+  "csv_sha256": "8f8830bcc680a2c187f2644268c02e1278d7a3c80fc7d90b935a8988583c62a4",
+  "summary": [
+    {
+      "scenario": "circle",
+      "period_ms": 20,
+      "estimate": 96.1038961038961,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 77,
+      "correct_count_total": 74,
+      "interaction_mean": 51436
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 40,
+      "estimate": 92.7710843373494,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 83,
+      "correct_count_total": 77,
+      "interaction_mean": 26720
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 80,
+      "estimate": 87.3015873015873,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 63,
+      "correct_count_total": 55,
+      "interaction_mean": 13331
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 160,
+      "estimate": 71.42857142857143,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 35,
+      "correct_count_total": 25,
+      "interaction_mean": 6606
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 20,
+      "estimate": 91.69210784244761,
+      "run_sd": 2.712166743816326,
+      "repetitions": 3,
+      "defined_runs": 3,
+      "sample_count_total": 268,
+      "correct_count_total": 246,
+      "interaction_mean": 49054.333333333336
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 40,
+      "estimate": 86.42176231808956,
+      "run_sd": 5.663025667646583,
+      "repetitions": 3,
+      "defined_runs": 3,
+      "sample_count_total": 256,
+      "correct_count_total": 222,
+      "interaction_mean": 24524.333333333332
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 80,
+      "estimate": 82.87789363236934,
+      "run_sd": 6.545086628331549,
+      "repetitions": 3,
+      "defined_runs": 3,
+      "sample_count_total": 255,
+      "correct_count_total": 212,
+      "interaction_mean": 12260.333333333334
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 160,
+      "estimate": 82.80105642143162,
+      "run_sd": 6.493631168809181,
+      "repetitions": 3,
+      "defined_runs": 3,
+      "sample_count_total": 284,
+      "correct_count_total": 236,
+      "interaction_mean": 6114.666666666667
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "estimate": 36.05898123324397,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 746,
+      "correct_count_total": 269,
+      "interaction_mean": 57369
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 40,
+      "estimate": 30.495552731893266,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 787,
+      "correct_count_total": 240,
+      "interaction_mean": 46942
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 80,
+      "estimate": 26.180836707152498,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 741,
+      "correct_count_total": 194,
+      "interaction_mean": 31330
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 160,
+      "estimate": 24.573378839590443,
+      "run_sd": null,
+      "repetitions": 1,
+      "defined_runs": 1,
+      "sample_count_total": 293,
+      "correct_count_total": 72,
+      "interaction_mean": 10366
+    }
+  ],
+  "sources": [
+    {
+      "scenario": "circle",
+      "period_ms": 20,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 77,
+      "correct_count": 74,
+      "coverage_percent": 96.1038961038961,
+      "interaction_numbers": 51436,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-circle-n10-v60-k6000-hello20-s85001/20261117T081736.438277Z-54392d1a",
+      "task": "pressure-circle-n10-v60-k6000-hello20-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-circle-n10-v60-k6000-hello20-s85001/predictions.jsonl",
+      "prediction_sha256": "51cdfc10d16cf368d887525fd728be639d5c4e7d2e8fd8c5e4d0664d1724ffaa",
+      "manifest_sha256": "c4f51fc41fa451cd823df3e3256699d25b0136a26a1ab39646db454a9a8765d0",
+      "hello_sha256": "2f06ea250301c9d7eca246c309f66c7b538fd855d3f3489476a1db5bc0266b10",
+      "interaction_categories": {
+        "unchanged": 49166,
+        "delta": 2270
+      },
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 40,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 83,
+      "correct_count": 77,
+      "coverage_percent": 92.7710843373494,
+      "interaction_numbers": 26720,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-circle-n10-v60-k6000-hello40-s85001/20261117T081919.539181Z-17af456f",
+      "task": "pressure-circle-n10-v60-k6000-hello40-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-circle-n10-v60-k6000-hello40-s85001/predictions.jsonl",
+      "prediction_sha256": "44532b870472e0e0ac9b88ccd8253693d13876baccb6695d7efbeeb5ea890321",
+      "manifest_sha256": "4d3e1bd516ccf5cc4ae1dc85042212627b998943932265236ddf4951544f8af5",
+      "hello_sha256": "cd8193098995f8af4504e30dde6af93b40aec072f5817efc426ca1ebea30b728",
+      "interaction_categories": {
+        "unchanged": 23991,
+        "delta": 2729
+      },
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 80,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 63,
+      "correct_count": 55,
+      "coverage_percent": 87.3015873015873,
+      "interaction_numbers": 13331,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-circle-n10-v60-k6000-hello80-s85001/20261117T082049.510138Z-c05be37e",
+      "task": "pressure-circle-n10-v60-k6000-hello80-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-circle-n10-v60-k6000-hello80-s85001/predictions.jsonl",
+      "prediction_sha256": "38db068f08aa8ac30b5084461de1c026266b113885304cfc3b4c5853a2c6026f",
+      "manifest_sha256": "1d9d045c997a9da6a455e9e175b945c06ba0bcb69dbbc6bc5500879f4b0ab925",
+      "hello_sha256": "d328b2259ebefab4bc1da99dd0ad603ec23e284c642848ef464c00e8947b42f4",
+      "interaction_categories": {
+        "unchanged": 9583,
+        "delta": 3748
+      },
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 160,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 35,
+      "correct_count": 25,
+      "coverage_percent": 71.42857142857143,
+      "interaction_numbers": 6606,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-circle-n10-v60-k6000-hello160-s85001/20261117T082212.515223Z-59ba91cd",
+      "task": "pressure-circle-n10-v60-k6000-hello160-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-circle-n10-v60-k6000-hello160-s85001/predictions.jsonl",
+      "prediction_sha256": "78d4c47f66b814895abdfa57a0d2aab76eccc3c4f46230d7076092b1fb8bf4dc",
+      "manifest_sha256": "dc041033b3cba65eaff5f44b608da600df2cb7b8814ab1472815725fb1d9b89a",
+      "hello_sha256": "63edcf296c2068b8e69ea715d5e4dbd10ee23440bbf2710123587e84cae9503a",
+      "interaction_categories": {
+        "unchanged": 2387,
+        "delta": 4219
+      },
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84001,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 86,
+      "correct_count": 77,
+      "coverage_percent": 89.53488372093024,
+      "interaction_numbers": 49347,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello20-s84001/attempt-001/20261026T041655.568097Z-dc4ddcd0",
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84001",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84001/predictions.jsonl",
+      "prediction_sha256": "2900167633dce46d25c9b0b4eecba1a7678a126e7986490a3e86862a4a68df41",
+      "manifest_sha256": "ba51572e11bcd82ab0d7c833047e6fea92e56bc6422c9f2ce497b9fc7f66e822",
+      "hello_sha256": "d618945df561b9b6a037996811fd73034ccdb685485b7aaff405deaeef989f03",
+      "interaction_categories": {
+        "unchanged": 45236,
+        "delta": 4111
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84002,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 95,
+      "correct_count": 90,
+      "coverage_percent": 94.73684210526316,
+      "interaction_numbers": 49010,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello20-s84002/attempt-001/20261026T041842.782628Z-8ef94d84",
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84002",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84002/predictions.jsonl",
+      "prediction_sha256": "1699a02511b82959ca6fea652283c9a4bb74d3b40daefafa23361c0dddfc1ad0",
+      "manifest_sha256": "67b601fc9a333b0af177ba464189c1d5d35235ba66ede123eb23872206447854",
+      "hello_sha256": "799a62796209e16ad956a6e712700a66a84b3853f82f480ead56aecea34dea78",
+      "interaction_categories": {
+        "unchanged": 45018,
+        "delta": 3992
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84003,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 87,
+      "correct_count": 79,
+      "coverage_percent": 90.80459770114942,
+      "interaction_numbers": 48806,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello20-s84003/attempt-001/20261026T042028.000771Z-f14f1507",
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84003",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84003/predictions.jsonl",
+      "prediction_sha256": "74b4da036e668091731dc024f57317075dd76135e7d08b0eddb8af2a9a74a36a",
+      "manifest_sha256": "7190883f1101f44e89c35d8400613d51bfe44454585dc484009a6b74f76fc76f",
+      "hello_sha256": "c410f17ae6d42229aafb38912f1d06608b057779256c80c2a2b1b3dcf0770160",
+      "interaction_categories": {
+        "unchanged": 44638,
+        "delta": 4168
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 40,
+      "seed": 84001,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 83,
+      "correct_count": 71,
+      "coverage_percent": 85.5421686746988,
+      "interaction_numbers": 24326,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello40-s84001/attempt-001/20261026T042206.766893Z-a0a42393",
+      "task": "accuracy-grid-n10-v30-k6000-hello40-s84001",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello40-s84001/predictions.jsonl",
+      "prediction_sha256": "0312dc076a42f8682d85c878fa49e91c2800cf9d64dd1ed0153c46240e9a9de8",
+      "manifest_sha256": "1b04c2077b561252411617bcb9245bbda29b41c6ee9119f89d47614e8e121029",
+      "hello_sha256": "2e45ed72d799fed9d7a68a6bcdbea44853475c8a5159ed2c432e6d40f16aa8aa",
+      "interaction_categories": {
+        "unchanged": 19862,
+        "delta": 4464
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 40,
+      "seed": 84002,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 93,
+      "correct_count": 86,
+      "coverage_percent": 92.47311827956989,
+      "interaction_numbers": 24728,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello40-s84002/attempt-001/20261026T042332.646286Z-ec3fc6a7",
+      "task": "accuracy-grid-n10-v30-k6000-hello40-s84002",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello40-s84002/predictions.jsonl",
+      "prediction_sha256": "9edb729b967159b150063a9d2295a3e0d2832e13e8905c4555d6212d01663cd6",
+      "manifest_sha256": "8756275875aeaf26528aad6f54472ce132dcb371ba77b34b3df947083312f8d3",
+      "hello_sha256": "dcf839209951ded04bb1732f728da5ccab04b68e38f58e7bdf796e33c760f7e2",
+      "interaction_categories": {
+        "unchanged": 20360,
+        "delta": 4368
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 40,
+      "seed": 84003,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 80,
+      "correct_count": 65,
+      "coverage_percent": 81.25,
+      "interaction_numbers": 24519,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello40-s84003/attempt-001/20261026T042459.454883Z-9956c708",
+      "task": "accuracy-grid-n10-v30-k6000-hello40-s84003",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello40-s84003/predictions.jsonl",
+      "prediction_sha256": "324621cc0495bc837b354857467d0efdc0e090fd0156d6add2d876815fa9ef31",
+      "manifest_sha256": "53bfaab4b48933fde6021ed095f63059368a577d1727da7eb2e91624ff18df84",
+      "hello_sha256": "eeab735f6d4908420a68925a6e41705698e24644a89f4ce01de0d411f0de0c6d",
+      "interaction_categories": {
+        "unchanged": 20077,
+        "delta": 4442
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 80,
+      "seed": 84001,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 78,
+      "correct_count": 63,
+      "coverage_percent": 80.76923076923077,
+      "interaction_numbers": 12166,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello80-s84001/attempt-001/20261026T042626.240745Z-bf4eafd6",
+      "task": "accuracy-grid-n10-v30-k6000-hello80-s84001",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello80-s84001/predictions.jsonl",
+      "prediction_sha256": "85c5140af16d97fe2bb309e960a3c8145806e77de10d94fa6c32db923264e747",
+      "manifest_sha256": "8cedcf713c05eb2d63727cc86702bc9c13933181b6138b869918a14b903368cd",
+      "hello_sha256": "0d7a57fc50a0215a857978cf6f9773776c573f046966190af5a3c082e6abd8e0",
+      "interaction_categories": {
+        "unchanged": 7522,
+        "delta": 4644
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 80,
+      "seed": 84002,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 92,
+      "correct_count": 83,
+      "coverage_percent": 90.21739130434783,
+      "interaction_numbers": 12348,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello80-s84002/attempt-001/20261026T042747.262324Z-bd8ef7fe",
+      "task": "accuracy-grid-n10-v30-k6000-hello80-s84002",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello80-s84002/predictions.jsonl",
+      "prediction_sha256": "8271e6962ce92c0cd8f9085acfd527651e8d5ac3eff2991153c9438a4130951a",
+      "manifest_sha256": "b2dd3d214d453e805a5be13d8bcdd1d1b3442e3ca8b5e3e554b1f521d9dca61f",
+      "hello_sha256": "14defb5ed4e4d337f6f94d8ff765a10c578c2bb83faf24bc068d2ba788ac8f15",
+      "interaction_categories": {
+        "unchanged": 7681,
+        "delta": 4667
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 80,
+      "seed": 84003,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 85,
+      "correct_count": 66,
+      "coverage_percent": 77.6470588235294,
+      "interaction_numbers": 12267,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello80-s84003/attempt-001/20261026T042908.072826Z-cbd79b16",
+      "task": "accuracy-grid-n10-v30-k6000-hello80-s84003",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello80-s84003/predictions.jsonl",
+      "prediction_sha256": "c5150820c27da8cf87290bf77d86bf393a778f8b6feeb3d2ecfa0767193a075f",
+      "manifest_sha256": "2e275c16905e3589e23386395e5614695a206a82953a55ba46019d8f46606420",
+      "hello_sha256": "c9cbdc485856a5607fff035ff660af3606bf8ea3b3736c3c64269a5ddc68c6d9",
+      "interaction_categories": {
+        "unchanged": 7544,
+        "delta": 4723
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 160,
+      "seed": 84001,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 88,
+      "correct_count": 67,
+      "coverage_percent": 76.13636363636364,
+      "interaction_numbers": 6077,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello160-s84001/attempt-001/20261026T043029.749304Z-2105a8c7",
+      "task": "accuracy-grid-n10-v30-k6000-hello160-s84001",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello160-s84001/predictions.jsonl",
+      "prediction_sha256": "b9db8f1e078c1e6ff5f324ca78aea9e92b97ef0d152b07f57ff845ec018e1fbf",
+      "manifest_sha256": "13ea95aaa9b9309fc41081abdce961eb497b0a649f5db6bb4b60335bd827adea",
+      "hello_sha256": "1fae0f72d65f5f23d53efb15a5fe2cd2fcc372919b19654e1102d882db822bc8",
+      "interaction_categories": {
+        "unchanged": 1480,
+        "delta": 4597
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 160,
+      "seed": 84002,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 101,
+      "correct_count": 90,
+      "coverage_percent": 89.10891089108911,
+      "interaction_numbers": 6168,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello160-s84002/attempt-001/20261026T043147.768869Z-58a40a86",
+      "task": "accuracy-grid-n10-v30-k6000-hello160-s84002",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello160-s84002/predictions.jsonl",
+      "prediction_sha256": "f6383d5634c4ce25a2655796fb90e2d4166980f3fbc6bf2a365d0cba7ef393cd",
+      "manifest_sha256": "abe9a0dc964da366257870dced29964a82c9094e74fdb3c74020a50ae9ecdd90",
+      "hello_sha256": "9a087e3d1e1d9eb32b6c3f5c2146254046cdc792c9d40503fe83c1973a5f46f5",
+      "interaction_categories": {
+        "unchanged": 1561,
+        "delta": 4607
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 160,
+      "seed": 84003,
+      "metric": "top2_candidate_coverage",
+      "speed_kmh": 30,
+      "sample_count": 95,
+      "correct_count": 79,
+      "coverage_percent": 83.15789473684211,
+      "interaction_numbers": 6099,
+      "run_path": "data/experiments/paper-figures-followup-20261026/runs/accuracy-grid-n10-v30-k6000-hello160-s84003/attempt-001/20261026T043305.815229Z-03e8f196",
+      "task": "accuracy-grid-n10-v30-k6000-hello160-s84003",
+      "prediction": "data/experiments/paper-figures-followup-20261026/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello160-s84003/predictions.jsonl",
+      "prediction_sha256": "4c57a6113fcb8e185190fdab9305742b3d2e35c7b26d57ebd84c2548369be2d3",
+      "manifest_sha256": "80beb7899d48531d36c78c08a86b48af467dc9abf19ac1c99c559f829cf8e5b1",
+      "hello_sha256": "78b5f2ae1a655ca575bb6fdfcf501d0472b93beba47c1752eb807d434188e630",
+      "interaction_categories": {
+        "unchanged": 1461,
+        "delta": 4638
+      },
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 746,
+      "correct_count": 269,
+      "coverage_percent": 36.05898123324397,
+      "interaction_numbers": 57369,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-spidermap-n10-v60-k6000-hello20-s85001/20261117T082331.851832Z-a586f19b",
+      "task": "pressure-spidermap-n10-v60-k6000-hello20-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-spidermap-n10-v60-k6000-hello20-s85001/predictions.jsonl",
+      "prediction_sha256": "e3b0e811cec0686faff3765b45d615d5aa6262742939ea9ea006f7df760a251b",
+      "manifest_sha256": "666835a66e2d13e45643295ea2a11a8354d40e549290ba1bd519f29b35b3826b",
+      "hello_sha256": "90828d524f87b8d93e004c51e30b35fe9467541e7db41c61b5c32ac3e37483e9",
+      "interaction_categories": {
+        "unchanged": 55709,
+        "delta": 1660
+      },
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 40,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 787,
+      "correct_count": 240,
+      "coverage_percent": 30.495552731893266,
+      "interaction_numbers": 46942,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-spidermap-n10-v60-k6000-hello40-s85001/20261117T082521.788316Z-80fa93b7",
+      "task": "pressure-spidermap-n10-v60-k6000-hello40-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-spidermap-n10-v60-k6000-hello40-s85001/predictions.jsonl",
+      "prediction_sha256": "1cfa4b404bd97103007e82cc0f1d327b0e53f1efefe5a0c06611563656191ac4",
+      "manifest_sha256": "26a989f93531589763a6c0f10b41b82ff17083f368a5efa0504911d85462bb5f",
+      "hello_sha256": "8bd445b82e645aa2a250f3acdbb32c08a5ff1bbe5fd68ebcc031853d41e0ae00",
+      "interaction_categories": {
+        "unchanged": 45025,
+        "delta": 1917
+      },
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 80,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 741,
+      "correct_count": 194,
+      "coverage_percent": 26.180836707152498,
+      "interaction_numbers": 31330,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-spidermap-n10-v60-k6000-hello80-s85001/20261117T082703.817137Z-7367fc39",
+      "task": "pressure-spidermap-n10-v60-k6000-hello80-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-spidermap-n10-v60-k6000-hello80-s85001/predictions.jsonl",
+      "prediction_sha256": "39c08649613c2f1eaba90b652a99d045dc7a26cfd46aaf18fa05575ebe98bb69",
+      "manifest_sha256": "5bbda151588dcb62e6c5a0847c5727a76d5b8373899bef41397623cd6be0ec44",
+      "hello_sha256": "707ebbbee7c7a4d681f10e4de33a1c9cfe7953fa8eb4b372f12dc7e50da51eff",
+      "interaction_categories": {
+        "unchanged": 29025,
+        "delta": 2305
+      },
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 160,
+      "seed": 85001,
+      "metric": "adaptive_candidate_coverage",
+      "speed_kmh": 60,
+      "sample_count": 293,
+      "correct_count": 72,
+      "coverage_percent": 24.573378839590443,
+      "interaction_numbers": 10366,
+      "run_path": "data/experiments/period-candidate-pressure-20261117/runs/pressure-spidermap-n10-v60-k6000-hello160-s85001/20261117T082839.402256Z-b3ed1849",
+      "task": "pressure-spidermap-n10-v60-k6000-hello160-s85001",
+      "prediction": "data/experiments/period-candidate-pressure-20261117/analysis/evaluation/pressure-spidermap-n10-v60-k6000-hello160-s85001/predictions.jsonl",
+      "prediction_sha256": "ccad2db4534a1a2d770808d9f21437baea0a5e3d86cd6426fb3155bb8bcadc9a",
+      "manifest_sha256": "7c066f7a8e569e889ebf329a2a7b06f08ba79caf0d5ed9d6bcb32542ef5bf99a",
+      "hello_sha256": "2d1c0855723d887af644c882227b80b983f163d7650794899e37381536075ff7",
+      "interaction_categories": {
+        "unchanged": 6922,
+        "delta": 3444
+      },
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    }
+  ],
+  "conditions": {
+    "circle": {
+      "speed_kmh": 60,
+      "seeds": [
+        85001
+      ]
+    },
+    "grid": {
+      "speed_kmh": 30,
+      "seeds": [
+        84001,
+        84002,
+        84003
+      ]
+    },
+    "spidermap": {
+      "speed_kmh": 60,
+      "seeds": [
+        85001
+      ],
+      "power_dbm": 16.5
+    }
+  },
+  "historical_sources_preserved": [
+    "周期实验来源.json",
+    "周期实验逐轮数据.csv",
+    "../问题图片/Period共同匹配来源.json",
+    "../问题图片/Period共同匹配逐轮统计.csv"
+  ]
+}

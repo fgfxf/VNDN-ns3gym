@@ -1,0 +1,73 @@
+{
+  "revision_date": "2026-11-17",
+  "cache_entry_approx_bytes": {
+    "vehicle_to_names": 700,
+    "name_to_vehicles": 200
+  },
+  "estimate_method": "64-bit libstdc++ node sizes plus string storage; typical 6 names/vehicle, 1 holder/name, approximately 32-byte URI; excludes allocator bookkeeping, shared map roots and other vehicle history/status maps. Rounded estimates, not fixed entry sizes or whole-process memory.",
+  "estimate_evidence": "build/validation/period-refresh-20261117/entry-size.txt",
+  "estimate_input_statistics": {
+    "runs": 9,
+    "vehicle_mean_cache_names": 6.325708240932049,
+    "name_mean_holders": 1.0,
+    "mean_name_uri_bytes": 31.698333333333334,
+    "max_name_uri_bytes": 34
+  },
+  "control_packet_mean_bytes": {
+    "registration": {
+      "circle": 111.0,
+      "grid": 108.06666666666666,
+      "spidermap": 109.57407407407408
+    },
+    "update": {
+      "circle": 185.46444650962033,
+      "grid": 186.79445364932502,
+      "spidermap": 185.74562068843807
+    },
+    "hello Interest": {
+      "circle": 32.0,
+      "grid": 32.0,
+      "spidermap": 32.0
+    },
+    "neural-route": {
+      "circle": 85.31190253037738,
+      "grid": 85.62942580143428,
+      "spidermap": 85.28740456288156
+    },
+    "neural-pit": {
+      "circle": 111.73289868104487,
+      "grid": 112.22280166549261,
+      "spidermap": 112.18293227732576
+    }
+  },
+  "control_scope": "registration: application-encoded hello Data in [0,20)s; update: delta-only application-encoded hello Data in [20,140)s; other controls: network Face outgoing NDN wire bytes in [20,143.5)s. Three per-run means averaged; 10 vehicles/20ms, historical Spider 13dBm. Excludes LP/MAC.",
+  "inference_median_ms": {
+    "forward": {
+      "circle": 1.398355,
+      "grid": 1.413039,
+      "spidermap": 1.4091002
+    },
+    "controller_compute": {
+      "circle": 1.48018,
+      "grid": 1.5017293999999999,
+      "spidermap": 1.5040606
+    }
+  },
+  "inference_scope": "Intel Core i7-14700, CPU single thread, batch=1; 5 independent processes, each 100 warmup/1000 timed calls. Mean of process medians; controller compute includes forward, excludes load/Gym/I-O. Reused saved measurements, no new benchmark.",
+  "sources": {
+    "data/experiments/paper-figures-followup-20261026/figures-paper-20261026/control-packet-runs.csv": "e4a6e1a03caba30b1166e2a778b0a542f69b6420741a0cc9512e661760298fdf",
+    "docs/ai/仿真图填充/03_注册与更新报文大小.py": "247598ca9b5beb8e149ad12c49193af28833bd2033b68f64b3b212b9e6c80dcb",
+    "docs/ai/仿真图填充/04_TKAN推理时延.py": "71c9612934f17407ff579cadfeda6b07f6b579096480078ec9cb7983f9cc9d8c",
+    "data/experiments/paper-figures-followup-20261026/analysis/state-runs.csv": "f7a09003628265bec823c181af1dd67abbade149f4c174dae17e88d433251c26"
+  },
+  "estimate_node_bytes": {
+    "pointer": 8,
+    "vehicle_map_node": 88,
+    "name_map_node": 112,
+    "name_set_node": 64,
+    "vehicle_set_node": 40,
+    "string_heap_for_32_byte_name": 33,
+    "typical_vehicle_entry_before_rounding": 670,
+    "typical_name_entry_before_rounding": 185
+  }
+}

@@ -341,8 +341,8 @@
   "figures": [
     "01_成功RTT_三维",
     "02_成功RTT_折线",
-    "03_平均RTT含超时_三维",
-    "04_平均RTT含超时_折线"
+    "03_平均RTT_三维",
+    "04_平均RTT_折线"
   ],
   "mean_rtt_definition": "Per bin: sum of actual (terminal_ns-send_ns) for DATA and TIMEOUT / generated count / 1e6.",
   "axis_label_for_inclusive": "Mean RTT (ms)",
@@ -425,7 +425,7 @@
       "grid": 298.71631904516147,
       "spidermap": 436.54972734366197
     },
-    "03_平均RTT含超时_三维.py": {
+    "03_平均RTT_三维.py": {
       "circle": 410.681537136,
       "grid": 300.59382756,
       "spidermap": 1890.726254064
@@ -595,14 +595,21 @@
     "docs/ai/问题图片/02_成功RTT_折线.png": "98fb97346d7436f1b6e58d6ff24ff457d2a21a7c13a2efe3b1b3b4e2b76cf28e",
     "docs/ai/问题图片/02_成功RTT_折线.svg": "b55d2e45a7db37d3827f70b47ba9e5238ed4165cc59d27db38028101db851405",
     "docs/ai/问题图片/02_成功RTT_折线.pdf": "22c1fc5634a1194cd081948c3aa137c297e90e9406934ffb97946220d2738aaf",
-    "docs/ai/问题图片/03_平均RTT含超时_三维.py": "a7420e6336b205119c9d946665b53ed9f01b92409c764ff8517632d79c45aa81",
-    "docs/ai/问题图片/03_平均RTT含超时_三维.png": "54f72b577514b1a40684c9d7e3a41d0fa247345cb74e4aea1556ad01b8f9a131",
-    "docs/ai/问题图片/03_平均RTT含超时_三维.svg": "384ac24a14a14902d174a9d452d5376244588398032393e680d2c77676f7c1b0",
-    "docs/ai/问题图片/03_平均RTT含超时_三维.pdf": "07b81bed4a01e7efa50feb6434dc2348d51c279e866212b2bea8bcda9906406a",
-    "docs/ai/问题图片/04_平均RTT含超时_折线.py": "6c4c30fc9f930e812171774a610435eca84485e2f132112caf1613391c544030",
-    "docs/ai/问题图片/04_平均RTT含超时_折线.png": "08361ba18859f74b61d6702851e3f059b069b7c9e56f2d91ded55b72e7f3711d",
-    "docs/ai/问题图片/04_平均RTT含超时_折线.svg": "c3269d1ccca8752369f07646870679e455adf82657a9c4ed5040fdde7891f5c0",
-    "docs/ai/问题图片/04_平均RTT含超时_折线.pdf": "f001f569a32448698bf83829031d87204f25f732818217e4dd6b0e6b5738d554"
+    "docs/ai/问题图片/03_平均RTT_三维.py": "aed222cda2bb4799772a5d22d9fe27eb24a42f2a8dca421b306b5bbada8e3bbe",
+    "docs/ai/问题图片/03_平均RTT_三维.png": "54f72b577514b1a40684c9d7e3a41d0fa247345cb74e4aea1556ad01b8f9a131",
+    "docs/ai/问题图片/03_平均RTT_三维.svg": "384ac24a14a14902d174a9d452d5376244588398032393e680d2c77676f7c1b0",
+    "docs/ai/问题图片/03_平均RTT_三维.pdf": "07b81bed4a01e7efa50feb6434dc2348d51c279e866212b2bea8bcda9906406a",
+    "docs/ai/问题图片/04_平均RTT_折线.py": "89421f6cbe4b0a001926efe947f7b8bad8a9e25d5b41e044da0e50101dd42276",
+    "docs/ai/问题图片/04_平均RTT_折线.png": "08361ba18859f74b61d6702851e3f059b069b7c9e56f2d91ded55b72e7f3711d",
+    "docs/ai/问题图片/04_平均RTT_折线.svg": "c3269d1ccca8752369f07646870679e455adf82657a9c4ed5040fdde7891f5c0",
+    "docs/ai/问题图片/04_平均RTT_折线.pdf": "f001f569a32448698bf83829031d87204f25f732818217e4dd6b0e6b5738d554"
   },
-  "export_normalization": "SVG line-end whitespace normalized after export; parsed tags, text and whitespace-normalized attribute values verified unchanged."
+  "export_normalization": "SVG line-end whitespace normalized after export; parsed tags, text and whitespace-normalized attribute values verified unchanged.",
+  "filename_revision_20261117": {
+    "from": "平均RTT含超时",
+    "to": "平均RTT",
+    "data_changed": false,
+    "method_document": "docs/ai/平均RTT统计说明_20261117.md",
+    "note": "initial_artifacts preserves historical names and hashes."
+  }
 }

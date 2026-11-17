@@ -1,0 +1,4094 @@
+{
+  "revision_date": "2026-11-17",
+  "campaign": "data/experiments/period-refresh-20261117",
+  "manifest_sha256": "369f40cb86e03dd95a895c2392fbbc55c1918bd0df3e1f18e8b5f90f3ef7310b",
+  "periods_ms": [
+    20,
+    200,
+    1000,
+    2000
+  ],
+  "seeds": [
+    84001,
+    84002,
+    84003
+  ],
+  "run_count": 36,
+  "models": {
+    "circle": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/circle/tkan-lstm/retrain-quick-20261021-22109572fde7474a-session/checkpoint.pt",
+      "sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    "grid": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/grid/tkan-lstm/retrain-quick-20261021-f6a90796ad9a2a7f-session/checkpoint.pt",
+      "sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    "spidermap": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt",
+      "sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    }
+  },
+  "source": {
+    "file_count": 1621,
+    "git_diff_sha256": "fc200279a27492b0eff3dfd6cc65075fdd7c81cf83e593a6c6c97a2a09738d28",
+    "git_revision": "84fcab5491a31f27129baffeab20b22604cb3e8b",
+    "scope": [
+      "scratch",
+      "contrib/vndn-nn-rd",
+      "src/ndnSIM",
+      "tools/experiments",
+      "wscript",
+      "waf"
+    ],
+    "sha256": "492ca79daebc81bd341e068fc76c26d0d6562eed78ebe7b2bf7fce4a89e0ce4b",
+    "trace_configuration_suffixes": [
+      ".xml",
+      ".sumocfg",
+      ".cfg"
+    ]
+  },
+  "definitions": {
+    "accuracy": "Mean of 3 per-run fixed-model Top-1 percentages on all evaluable observations; handover subset retained separately.",
+    "interactions": "Vehicle application hello Data submissions in [20,140)s, not ideal counts or successful receptions.",
+    "exclusions": "Retain empty/short padded histories, report missing labels and evaluable coverage; see per-run CSV.",
+    "period": "RSU departure expiry=2T, OBU neighbor expiry=2000ms; no forced monotonic trend."
+  },
+  "sources": [
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84001",
+      "scenario": "circle",
+      "period_ms": 20,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello20-s84001/attempt-001/20261117T043603.053891Z-ded23916/manifest.json",
+      "manifest_sha256": "471ba75d0515c9df5ac9bab3ade660218bfe9529b3baa9f54a2801ac43f883d4",
+      "hello_payloads_sha256": "2b050d0e16b12672a59e250889b2bc951ae4627954e01b273abfc5c8008752c8",
+      "prediction_sha256": "f138e5ee0891b8e0ec96477bd1bb1bc40e80858d48271856a456f18e12fc5879",
+      "interaction_categories": {
+        "unchanged": 49910,
+        "delta": 2177
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84002",
+      "scenario": "circle",
+      "period_ms": 20,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello20-s84002/attempt-001/20261117T043742.891206Z-5741db13/manifest.json",
+      "manifest_sha256": "51666e22ede17c3da8c357df0c9178fd5a400af8b596e075d8a0e281c3bc5662",
+      "hello_payloads_sha256": "8e44d8b5af2912701e7f4c40be7daf88a0da42c48eebbdd5f002d04d557973cb",
+      "prediction_sha256": "3118d8a26002ee7f21f0176a58cba36106897ba7bd9ed68bc126b433ea1817e4",
+      "interaction_categories": {
+        "unchanged": 48537,
+        "delta": 2235
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84003",
+      "scenario": "circle",
+      "period_ms": 20,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello20-s84003/attempt-001/20261117T043923.458283Z-fe678e1c/manifest.json",
+      "manifest_sha256": "bbcf013c81cb90f7607f688198919a6fa9f6eae1ff06d876a1220d2ca175b90e",
+      "hello_payloads_sha256": "a212346db274387f5275d3c6210e8935b40b0904b4dddde49fb8114be8e7fb7a",
+      "prediction_sha256": "6271bb82fc2ca9fee7359593a16436a8da0e17fb5f45ba9efa9bece70c798c8e",
+      "interaction_categories": {
+        "unchanged": 49156,
+        "delta": 2236
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84001",
+      "scenario": "circle",
+      "period_ms": 200,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello200-s84001/attempt-001/20261117T044111.247942Z-4ee5f02d/manifest.json",
+      "manifest_sha256": "1c72fe11ca399dc8cfc6a8d0e313d4edaeea4fd40fc8e673a752bf5abb1e0aee",
+      "hello_payloads_sha256": "e9e54b295b1fd26de669847facae0833fbff88b9f96de2466cf036873fb40833",
+      "prediction_sha256": "5b0250fe3e20aaaf3dc966bc80c9de8680490df5edfdc64b4c0ed5226e0fc369",
+      "interaction_categories": {
+        "unchanged": 906,
+        "delta": 4573
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84002",
+      "scenario": "circle",
+      "period_ms": 200,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello200-s84002/attempt-001/20261117T044238.181725Z-c554814a/manifest.json",
+      "manifest_sha256": "b6c03ac2d053a1dec2bc2d25c7f80d2a04a1371c49408e31f8a9a81006ad6769",
+      "hello_payloads_sha256": "ef99722f28178d6b36945b4ab1d25b5c6301097bed6cc616c66b5319916a8807",
+      "prediction_sha256": "7e327836a6bcbfd7812f7ac277c791a9ea4e10063c5b34eaf69f4bbd56952b7a",
+      "interaction_categories": {
+        "unchanged": 1296,
+        "delta": 4119
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84003",
+      "scenario": "circle",
+      "period_ms": 200,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello200-s84003/attempt-001/20261117T044405.536360Z-4aafc41b/manifest.json",
+      "manifest_sha256": "7d43d3007ce88ab16dd103c9e4541afbbdb9cd40900663c1883b0064ef67141a",
+      "hello_payloads_sha256": "784426235d45cc06b9248168ceb9ee5c8e00d9b2b7e09fb2559a0139f4c49988",
+      "prediction_sha256": "2eaececce88441c26e122c90910f2e60a9121d3b74fbe9d13429998a87d3a3b5",
+      "interaction_categories": {
+        "unchanged": 972,
+        "delta": 4706
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84001",
+      "scenario": "circle",
+      "period_ms": 1000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello1000-s84001/attempt-001/20261117T044529.970988Z-52923444/manifest.json",
+      "manifest_sha256": "5c6b340261fce1d73a784c80e97fdeb422450efa7ed145aa4a35709a2c8ca686",
+      "hello_payloads_sha256": "f217fcb5907c184e202bda3717d096380cce2d0e21c7752dc18aed7fc6d0638b",
+      "prediction_sha256": "1dbee3deacfeb5f69686bd51c7a6f8214277f8c1d332a0f847cbe4bab79c0414",
+      "interaction_categories": {
+        "unchanged": 20,
+        "delta": 1010
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84002",
+      "scenario": "circle",
+      "period_ms": 1000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello1000-s84002/attempt-001/20261117T044647.634661Z-3fa183b2/manifest.json",
+      "manifest_sha256": "12dc6a8de75161c0617da141c49791dc5910dd146576ff7816e79f63189e3a4d",
+      "hello_payloads_sha256": "9ac566125455eaf64ef43646f3eaa6119025700723e41f080cf1ef678b0d1079",
+      "prediction_sha256": "2293f5df65ff80a4d07e08bf4c2f9a3c808277e948ca482850fc52a9c16fd944",
+      "interaction_categories": {
+        "unchanged": 61,
+        "delta": 988
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84003",
+      "scenario": "circle",
+      "period_ms": 1000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello1000-s84003/attempt-001/20261117T044805.691858Z-07f32520/manifest.json",
+      "manifest_sha256": "a50158ba6bbbaf2d8941e597ba9a515008dfaaf8d433dec59bcf9fa4abeae7a3",
+      "hello_payloads_sha256": "df2382b2d8d1920fd346effc56b6c7c254c4b4fd71983ca87d0148c743e5fdf2",
+      "prediction_sha256": "0f972ec2a5431c1bb9298b5edb1aeeb3d72822f07c3e92db97b8d7a2ddfe40d8",
+      "interaction_categories": {
+        "unchanged": 24,
+        "delta": 1077
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84001",
+      "scenario": "circle",
+      "period_ms": 2000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello2000-s84001/attempt-001/20261117T044921.427710Z-30f22ba4/manifest.json",
+      "manifest_sha256": "0c98132cbecab51bb7b74d632a9fbc249d8c6071128a8af71562cfd38f3b5b7c",
+      "hello_payloads_sha256": "eae81321b27841e27903d58c591f806926815b3082ceec0ea58ffbe8d9842a44",
+      "prediction_sha256": "7c67d7f4b1e1cb2d34b19d1a29bdb36f1a99ae55ec7420df5a51db9ce7b9ce28",
+      "interaction_categories": {
+        "unchanged": 14,
+        "delta": 474
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84002",
+      "scenario": "circle",
+      "period_ms": 2000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello2000-s84002/attempt-001/20261117T045036.164755Z-4f006000/manifest.json",
+      "manifest_sha256": "8088cf1a447e4d44f38fd4d3670ba9f21bf46ee880e4103d33884d829191d6ac",
+      "hello_payloads_sha256": "ac42e709d049ec8e2eb737533f43846644dd862e1b37652bdc529dc52e682fc2",
+      "prediction_sha256": "23cb2870c907e0eea06bf3d0296ff4b16deccc9f7b5b796ad60b69fcfc243d2c",
+      "interaction_categories": {
+        "unchanged": 29,
+        "delta": 483
+      }
+    },
+    {
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84003",
+      "scenario": "circle",
+      "period_ms": 2000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-circle-n10-v30-k6000-hello2000-s84003/attempt-001/20261117T045151.464594Z-024b810a/manifest.json",
+      "manifest_sha256": "387e46092a4353222aa957932da7d10704fd3eb1d84b0d98244bcb0d4b66a756",
+      "hello_payloads_sha256": "499bce1d8b95d6705dd32c1f0e3f09358dc5f8fe8626b995eebdeb2c1afd9d5f",
+      "prediction_sha256": "bf155ddfbcb0d7ab4542652b71b95f36e1e208ac9f00a69cb620a88ab8d56a62",
+      "interaction_categories": {
+        "unchanged": 15,
+        "delta": 519
+      }
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84001",
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello20-s84001/attempt-001/20261117T045306.449344Z-68973bc0/manifest.json",
+      "manifest_sha256": "2ec80e7c30e7af13f893e7512e501dc34ec1315c14fe10e1cbce1ba2f721e8c5",
+      "hello_payloads_sha256": "d618945df561b9b6a037996811fd73034ccdb685485b7aaff405deaeef989f03",
+      "prediction_sha256": "2900167633dce46d25c9b0b4eecba1a7678a126e7986490a3e86862a4a68df41",
+      "interaction_categories": {
+        "unchanged": 45236,
+        "delta": 4111
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84002",
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello20-s84002/attempt-001/20261117T045442.266313Z-89647481/manifest.json",
+      "manifest_sha256": "cee7dce41241ea5949431cdd39dc7ac3198b76e63628468a70c8acfafaf78034",
+      "hello_payloads_sha256": "799a62796209e16ad956a6e712700a66a84b3853f82f480ead56aecea34dea78",
+      "prediction_sha256": "1699a02511b82959ca6fea652283c9a4bb74d3b40daefafa23361c0dddfc1ad0",
+      "interaction_categories": {
+        "unchanged": 45018,
+        "delta": 3992
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84003",
+      "scenario": "grid",
+      "period_ms": 20,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello20-s84003/attempt-001/20261117T045618.532377Z-ac2c682a/manifest.json",
+      "manifest_sha256": "4ce9da7ea24d904e1b7eb6b775fba73724f496264b907bd2df1e246a02e925b9",
+      "hello_payloads_sha256": "c410f17ae6d42229aafb38912f1d06608b057779256c80c2a2b1b3dcf0770160",
+      "prediction_sha256": "74b4da036e668091731dc024f57317075dd76135e7d08b0eddb8af2a9a74a36a",
+      "interaction_categories": {
+        "unchanged": 44638,
+        "delta": 4168
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84001",
+      "scenario": "grid",
+      "period_ms": 200,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello200-s84001/attempt-001/20261117T045754.262046Z-225c3a02/manifest.json",
+      "manifest_sha256": "eaa54696026af78426d2ffc067682680d84119b2ec66cf837f019f1520a09468",
+      "hello_payloads_sha256": "cb3601ae9a362fa68834e1752f76bbb603e646381270062476e8e6275b2cf906",
+      "prediction_sha256": "3ec3bae797c52b49592aa75eddbfbd6462ab5f2766bb508edb6eadbf190cda6a",
+      "interaction_categories": {
+        "unchanged": 494,
+        "delta": 4410
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84002",
+      "scenario": "grid",
+      "period_ms": 200,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello200-s84002/attempt-001/20261117T045909.970802Z-fbac9b51/manifest.json",
+      "manifest_sha256": "f2b3d9caf916ab500b25cbb57bc7ec5d55d8df423f0d83a825eb7dcde5e5f466",
+      "hello_payloads_sha256": "8ca16acdff361f30691c213d7b8743ced8bfdc574d3b694bc104338a56c0d9bb",
+      "prediction_sha256": "6106eb702ce13238b94c1079bb77e093661d1debe953ce064dcaa053f45407e0",
+      "interaction_categories": {
+        "unchanged": 271,
+        "delta": 4468
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84003",
+      "scenario": "grid",
+      "period_ms": 200,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello200-s84003/attempt-001/20261117T050025.640845Z-fcb8beb0/manifest.json",
+      "manifest_sha256": "1ac1be5511ea62b97661a97e4d65bacf7a33caa668df720fd43839b5352074d3",
+      "hello_payloads_sha256": "a15b84d15fa5088cb32c2edf22852f24786c1b049e4ee518024b9e78b19607ce",
+      "prediction_sha256": "d21e9a8199a85d5b4538922bd25c3860ec970434f054fbdfdac39046cf0a51eb",
+      "interaction_categories": {
+        "unchanged": 401,
+        "delta": 4556
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84001",
+      "scenario": "grid",
+      "period_ms": 1000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello1000-s84001/attempt-001/20261117T050142.274106Z-2e5cdf0d/manifest.json",
+      "manifest_sha256": "7d28c435e7c531c5783e7edce5d1cad68d4638237a16b6d714793ae449a09f29",
+      "hello_payloads_sha256": "72bac9b0a95794a265a0d6467eceb8aca21300c9ed1f159f5fc81357dca192ec",
+      "prediction_sha256": "f7fce256d49dfff76b6b09a9e2976d7a1bb9be5ea772be259073954e57b812b8",
+      "interaction_categories": {
+        "unchanged": 25,
+        "delta": 961
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84002",
+      "scenario": "grid",
+      "period_ms": 1000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello1000-s84002/attempt-001/20261117T050256.767388Z-5ad61086/manifest.json",
+      "manifest_sha256": "1ef1a9219d92cfd29b3f7a830a08e1321d403262ba967710d602fd868b8a65e2",
+      "hello_payloads_sha256": "031e92a6acee324c3fd73b4d305233097767cf93f90a140063c02308f36d9e93",
+      "prediction_sha256": "c4d751ab9d26427069671452cf0b916ef31e8d5c2a3e311bb9453c8b38c72a56",
+      "interaction_categories": {
+        "unchanged": 19,
+        "delta": 928
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84003",
+      "scenario": "grid",
+      "period_ms": 1000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello1000-s84003/attempt-001/20261117T050410.777532Z-70994f8a/manifest.json",
+      "manifest_sha256": "2972739beff67233e7118a4b7f1f2697a1742b978c6126581a6b284014230be0",
+      "hello_payloads_sha256": "a140aa7ae644ad8de3692ffbaf5d246117dc40e1a1206ed9b5ec45d1a7f8c532",
+      "prediction_sha256": "eb6a1b27c2e3b9dbeb3ebfcf6ef483811fbde4ed3730f600544a91521f90dcbc",
+      "interaction_categories": {
+        "unchanged": 29,
+        "delta": 947
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84001",
+      "scenario": "grid",
+      "period_ms": 2000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello2000-s84001/attempt-001/20261117T050525.458733Z-335d2022/manifest.json",
+      "manifest_sha256": "8f0af7c6e4fde90944fe325c2eb866601d0453f725745d56857c40532fee033a",
+      "hello_payloads_sha256": "7d5da7a3f2667f3bd9b835272a4579b58555d165dd4119085864e89aa535c697",
+      "prediction_sha256": "7797cfa8549eff5c114c9852ce369ffe4a9bf3ac8fbd155fb8b641c263536083",
+      "interaction_categories": {
+        "unchanged": 14,
+        "delta": 478
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84002",
+      "scenario": "grid",
+      "period_ms": 2000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello2000-s84002/attempt-001/20261117T050639.783502Z-e5509525/manifest.json",
+      "manifest_sha256": "c9f6da824e13b47fa07a9a71c934a30f54da20a52fe2d103f9ee93f479d15b5c",
+      "hello_payloads_sha256": "862dc195c83f83e5e549bc24d5ac9e10e83b255d63bebaf356da291a30db5a8b",
+      "prediction_sha256": "abe59ea3284151e2b7f9c9e3f929c0ddd8febb62588f6ed04cc61dfc4644c384",
+      "interaction_categories": {
+        "unchanged": 12,
+        "delta": 458
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84003",
+      "scenario": "grid",
+      "period_ms": 2000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-grid-n10-v30-k6000-hello2000-s84003/attempt-001/20261117T050753.780969Z-8642a62a/manifest.json",
+      "manifest_sha256": "bc4f77ebf206591cbc06ac74a0f4564b693dc3acdc1bf0c240da2fc3e87219fc",
+      "hello_payloads_sha256": "ab5310a698c53cc377ee6b9a0d44faa662661ded460612efaa74af7681b880be",
+      "prediction_sha256": "7e7fcb9c206903333706c2c69f4d77ab306dfbbcdb05edf800ce05fbb1442eac",
+      "interaction_categories": {
+        "unchanged": 16,
+        "delta": 464
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "grid",
+        "requested_tx_power_dbm": 12,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 12,
+            "tx_power_end_dbm": 12,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "c053244a42b35d97b770fd5293182054242701792810664b19cd3119a40688ce"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84001",
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello20-s84001/attempt-001/20261117T050907.698162Z-03c29124/manifest.json",
+      "manifest_sha256": "881a67e10ce4e871b675399e3f8cb4711912bd6be0e5ed653776e570b5bb9b2e",
+      "hello_payloads_sha256": "b61d3b6b68dd5911651062047f37c2bee646644dea09023799a935701cbd2087",
+      "prediction_sha256": "e6dc20fbf03b2f6d22de8fe757dac625a44090625a6080176222f5ea1ae3da2e",
+      "interaction_categories": {
+        "unchanged": 47410,
+        "delta": 1379
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84002",
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello20-s84002/attempt-001/20261117T051053.997686Z-eadf9cb4/manifest.json",
+      "manifest_sha256": "8c33091c494251645408ab32974b4c200ff92993ccc9a7f2e1890091a3a37409",
+      "hello_payloads_sha256": "834c3a54073175982ad8eb608c860f3aff5822b21af44d7da0bca25d5a2bf772",
+      "prediction_sha256": "30dc83b7a9cde57949a989363d1db4e57ab8abf68b06bad4faa92abf806a2def",
+      "interaction_categories": {
+        "unchanged": 56460,
+        "delta": 1639,
+        "registration": 1
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84003",
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello20-s84003/attempt-001/20261117T051243.861077Z-14c54945/manifest.json",
+      "manifest_sha256": "63858d778fe1591661835635a9b4abe47ccff74b6b6dded0ecda29870910c09d",
+      "hello_payloads_sha256": "fc9cdae62f001598e6017bbbce5013e5e8e067ceb638354bbafd3fd56f62c07f",
+      "prediction_sha256": "e7c3348a950b685153712390cf748c74e7c09770ae6689558a5b7c11575ed8ea",
+      "interaction_categories": {
+        "unchanged": 59842,
+        "delta": 1778
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84001",
+      "scenario": "spidermap",
+      "period_ms": 200,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello200-s84001/attempt-001/20261117T051435.333729Z-af176f2c/manifest.json",
+      "manifest_sha256": "526e2a5fcf8e99b02ea06d5fcb718885c0e1140cf6c7bcdb1ce4e2ecae27ac08",
+      "hello_payloads_sha256": "f8424a7abc832c4a7c1b16fbc4c5570cd5aa56faebf571d0c85bee35ba7e025d",
+      "prediction_sha256": "430e2cba0005d2943349f355a7a62c665ed7e1df9e71e392047dc1cd170e806c",
+      "interaction_categories": {
+        "unchanged": 1400,
+        "delta": 3731
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84002",
+      "scenario": "spidermap",
+      "period_ms": 200,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello200-s84002/attempt-001/20261117T051553.403692Z-6293f2a0/manifest.json",
+      "manifest_sha256": "38a93aba2eb4c543da15423e3ef4da2cd2623348bda32af92380d342187f039c",
+      "hello_payloads_sha256": "09edea686f6abfd700018fab76b1f00bef8ff30840d3f04bbd49299870503181",
+      "prediction_sha256": "25f9e7327df33cbf915d00fef1f6db53572e1888605dd226aefd5f87c2fb7f19",
+      "interaction_categories": {
+        "unchanged": 612,
+        "delta": 3934,
+        "registration": 1
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84003",
+      "scenario": "spidermap",
+      "period_ms": 200,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello200-s84003/attempt-001/20261117T051710.364830Z-a495bfda/manifest.json",
+      "manifest_sha256": "b552975bde21276987a06e820b6e31be8e050ef6b3febf4302beffcf51211c2e",
+      "hello_payloads_sha256": "3f2ce0c7930c0b2fbd5489d3917056a42301d0cceaad5f4f878ac18c666dd704",
+      "prediction_sha256": "226b0c1eb6fd5d08b1476313b177a743af015ad2046f77a89ac49f10904f9beb",
+      "interaction_categories": {
+        "unchanged": 2236,
+        "delta": 3483
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84001",
+      "scenario": "spidermap",
+      "period_ms": 1000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello1000-s84001/attempt-001/20261117T051829.217053Z-5fd4adc9/manifest.json",
+      "manifest_sha256": "25daacb7c8919f308ab36a2acd1c1284908a884ad8af2e94a449b1781d26e17a",
+      "hello_payloads_sha256": "65f4cf0c9d7ac8f654abaf9620638658afe496a43128536a03ebd8e2efba13e0",
+      "prediction_sha256": "0b6f1712c4e38f5c76db8ce41d95a3d4b5b6dea47fd5c4b88d7915f366f4abd1",
+      "interaction_categories": {
+        "unchanged": 57,
+        "delta": 926
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84002",
+      "scenario": "spidermap",
+      "period_ms": 1000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello1000-s84002/attempt-001/20261117T051943.592129Z-cbc3a78e/manifest.json",
+      "manifest_sha256": "5514036578368b6f87fdcf1349db807cfa2339e49cb67511f5d5d84e67117748",
+      "hello_payloads_sha256": "4cb78c1de898f4c56a2dd05e2d6d51dee630eca89ab8f7fe05b5ee413f06c140",
+      "prediction_sha256": "68e36f932662676e9af22b5d949a6826b46952e63a533e2d5d6a5b4006153f8f",
+      "interaction_categories": {
+        "unchanged": 61,
+        "delta": 845,
+        "registration": 1
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84003",
+      "scenario": "spidermap",
+      "period_ms": 1000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello1000-s84003/attempt-001/20261117T052057.651761Z-6709baf0/manifest.json",
+      "manifest_sha256": "0223c00aeb14fe947de69c0a814873b86a5cbc9f67aca4f9896e745a1f3a419c",
+      "hello_payloads_sha256": "c1592cebe029362638c83640d0c13ffc452c65900875d4e925e1ead403b64c13",
+      "prediction_sha256": "6bda1a9b58cd18d71920270d8ad2818ff48e034d213becda185e2c7efa51500f",
+      "interaction_categories": {
+        "unchanged": 168,
+        "delta": 896
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84001",
+      "scenario": "spidermap",
+      "period_ms": 2000,
+      "seed": 84001,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello2000-s84001/attempt-001/20261117T052212.117439Z-fcb8996e/manifest.json",
+      "manifest_sha256": "1d5a714e103bcd782e374daba22339109da851b45f24f08f0f42c4be041dc3f4",
+      "hello_payloads_sha256": "d29a9d81e6dbf190b9745e455e84be7c8d8ad77c199f4a286952846ca294c333",
+      "prediction_sha256": "c16e43914f4186f0880ff495a46f263a08e38d3518c26eddb1e66c341f11e410",
+      "interaction_categories": {
+        "unchanged": 26,
+        "delta": 475
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84002",
+      "scenario": "spidermap",
+      "period_ms": 2000,
+      "seed": 84002,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello2000-s84002/attempt-001/20261117T052325.764053Z-6c9323fc/manifest.json",
+      "manifest_sha256": "ce3fcd0db31f00c6b48fa5f11ce4027190b91cd0db9e54a32a9408294369946c",
+      "hello_payloads_sha256": "cb904265e3f11f0b38adc2464aa69dea7ae6f505347a116a5e6b0c3e691bf65b",
+      "prediction_sha256": "690a08d303167843e33001a28978b66cd99ed51bc8ecd8f0a176698d0fb6fe2a",
+      "interaction_categories": {
+        "unchanged": 25,
+        "delta": 428,
+        "registration": 1
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84003",
+      "scenario": "spidermap",
+      "period_ms": 2000,
+      "seed": 84003,
+      "manifest": "data/experiments/period-refresh-20261117/runs/accuracy-spidermap-n10-v30-k6000-hello2000-s84003/attempt-001/20261117T052439.886453Z-77ae8f28/manifest.json",
+      "manifest_sha256": "1067cacaee9e06cb755c601098f18bc30483c9d69a668e8623019bce130b5fc3",
+      "hello_payloads_sha256": "0f7caf2e5edc33d9a8a37494fc7793019994af2d75aec26617c463db8078c15e",
+      "prediction_sha256": "12af4d2d61858bed10db99488e26a1f423b9788dc38d447dcaa27d4e93c6dab4",
+      "interaction_categories": {
+        "unchanged": 61,
+        "delta": 453
+      },
+      "radio_config": {
+        "schema_version": 1,
+        "scenario": "spidermap",
+        "requested_tx_power_dbm": 16.5,
+        "rsu_count": 7,
+        "obu_count": 10,
+        "devices": [
+          {
+            "node_id": 0,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 1,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 2,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 3,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 4,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 5,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 6,
+            "role": "rsu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 7,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 8,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 9,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 10,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 11,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 12,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 13,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 14,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 15,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          },
+          {
+            "node_id": 16,
+            "role": "obu",
+            "tx_power_start_dbm": 16.5,
+            "tx_power_end_dbm": 16.5,
+            "tx_power_levels": 1,
+            "rx_sensitivity_dbm": -69.80000000000001
+          }
+        ]
+      },
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    }
+  ],
+  "summary": "data/experiments/period-refresh-20261117/analysis/accuracy-summary.csv",
+  "summary_sha256": "ed7ed43d451c1b4708f961c0df75ea9c8a6645bd0634712b31d79700a0eb55c5",
+  "published_csv_sha256": "2e8d0765160238a3b62bf694a14d146aa8a9927aba4bfbda89f00b426681350a",
+  "observed_outcome": "No overall monotonically decreasing accuracy trend. Period affects request/observation coverage and handover sample composition; higher conditional accuracy does not alone prove better prediction. Spider uses 16.5dBm versus the historical 13dBm period campaign.",
+  "evaluable_request_percent_means": {
+    "circle": {
+      "20": 99.49444444444444,
+      "200": 99.17777777777778,
+      "1000": 97.60555555555555,
+      "2000": 94.76666666666667
+    },
+    "grid": {
+      "20": 93.36111111111111,
+      "200": 91.00555555555556,
+      "1000": 89.30555555555556,
+      "2000": 85.93333333333334
+    },
+    "spidermap": {
+      "20": 71.36111111111111,
+      "200": 76.66111111111111,
+      "1000": 79.15555555555555,
+      "2000": 79.78333333333333
+    }
+  }
+}

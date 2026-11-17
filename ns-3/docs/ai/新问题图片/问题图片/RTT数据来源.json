@@ -1,0 +1,615 @@
+{
+  "campaign": "mixed-preserved-experiments",
+  "condition_id": "baseline",
+  "seeds": {
+    "circle": 23001,
+    "grid": 23009,
+    "spidermap": [
+      93001,
+      93002,
+      93003,
+      93004,
+      93005
+    ]
+  },
+  "measurement_window_s": [
+    20,
+    140
+  ],
+  "bin_seconds": 5,
+  "timeout_ms": 3000,
+  "total_requests": 168000,
+  "successful_requests": 71510,
+  "timeouts": 96490,
+  "aggregation": "Circle/Grid: one preserved run per strategy. Spider: pool requests from all five independent confirmation seeds within each generation-time bin; successful RTT is weighted by successful request count.",
+  "sources": [
+    {
+      "scene": "circle",
+      "seed": 23001,
+      "strategy": 0,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a0/attempt-001/runs/20261022T081957.621032Z-4390833e/raw/request-events.csv",
+      "sha256": "38b730ccc12b17c2d7ad33f942fa35785b8dbe57f353d1be6532ef436353dbe3",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a0/attempt-001/runs/20261022T081957.621032Z-4390833e/manifest.json",
+      "manifest_sha256": "31cdc38bb21d6fd0ccc92954d7f04ace9339a1ed95e33c47c3290dc01af8fcc3"
+    },
+    {
+      "scene": "circle",
+      "seed": 23001,
+      "strategy": 1,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a1/attempt-001/runs/20261022T082136.797486Z-38b38119/raw/request-events.csv",
+      "sha256": "b690160149f199dd2577d6d1330fd46f05d9e6fd0c37f12180fa3203bf3b3914",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a1/attempt-001/runs/20261022T082136.797486Z-38b38119/manifest.json",
+      "manifest_sha256": "6f1d73741c5ac1131f8a4613d39ba8e46922fc1c1a003bada2cbd4df913577d1"
+    },
+    {
+      "scene": "circle",
+      "seed": 23001,
+      "strategy": 2,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a2/attempt-001/runs/20261022T082316.538063Z-3f8e9c19/raw/request-events.csv",
+      "sha256": "e95fe24a56155016e1cd91d140a2229f005e3e6d8daf3eab304085fc65e3fee8",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a2/attempt-001/runs/20261022T082316.538063Z-3f8e9c19/manifest.json",
+      "manifest_sha256": "c88d6b8af50657afa3976d30146588c8402aceec377d54df1b1b57c5a8f75da2"
+    },
+    {
+      "scene": "circle",
+      "seed": 23001,
+      "strategy": 3,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a3/attempt-001/runs/20261022T082455.481496Z-dc9325e7/raw/request-events.csv",
+      "sha256": "6658a4bfb38c9c0779fd75cc645d3678610f711d4696b92883906edc7cbeb592",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a3/attempt-001/runs/20261022T082455.481496Z-dc9325e7/manifest.json",
+      "manifest_sha256": "70936295fcbb6f45b43d114024ce1939e97c5acbfcf19f35ddff5298cad82735"
+    },
+    {
+      "scene": "grid",
+      "seed": 23009,
+      "strategy": 0,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a0/attempt-001/runs/20261022T082647.597615Z-8361c190/raw/request-events.csv",
+      "sha256": "f914b7806c8c57eaeb2967d777c92999a1126dd70bd16efdcf55f8b46dc29e95",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a0/attempt-001/runs/20261022T082647.597615Z-8361c190/manifest.json",
+      "manifest_sha256": "084aa3cfc86e32b5bb5bc73654a3e699e473bdfdccef6e4647b44e6bee1d404c"
+    },
+    {
+      "scene": "grid",
+      "seed": 23009,
+      "strategy": 1,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a1/attempt-001/runs/20261022T082822.758235Z-cd488a00/raw/request-events.csv",
+      "sha256": "701a7e19d0fe080bd5ad0e4824f4e147ee3e3d13b3e1cc4bfffc1b7487b19181",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a1/attempt-001/runs/20261022T082822.758235Z-cd488a00/manifest.json",
+      "manifest_sha256": "ec4550c4a656ef29a1b12c9dff8f92b5930b5f5433e063ec5226fff89466b7d0"
+    },
+    {
+      "scene": "grid",
+      "seed": 23009,
+      "strategy": 2,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a2/attempt-001/runs/20261022T082958.821362Z-fc76bc74/raw/request-events.csv",
+      "sha256": "90394a9c2dadd0a9fcb2b7a7b59f32e4c57656276f9eb65059021446a987cfe9",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a2/attempt-001/runs/20261022T082958.821362Z-fc76bc74/manifest.json",
+      "manifest_sha256": "137dd2a220798469b5d685a0dc857a8c08e88c80a5654b99b2a0f559f36a7a28"
+    },
+    {
+      "scene": "grid",
+      "seed": 23009,
+      "strategy": 3,
+      "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a3/attempt-001/runs/20261022T083144.874513Z-2820f5cd/raw/request-events.csv",
+      "sha256": "18decf71c3306cd377a6fd7e66726574c7d2b0c557080ed79b48e87d67c4eb6b",
+      "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a3/attempt-001/runs/20261022T083144.874513Z-2820f5cd/manifest.json",
+      "manifest_sha256": "04a42e0f5ef7e5fb0b08f1a120725a20363904e6796a551df1ef770841ed0413"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93001,
+      "strategy": 0,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a0/attempt-001/20261103T135049.277655Z-695c99a3/raw/request-events.csv",
+      "sha256": "678d591ecb1bc2be357885ced6304746b71ad8a835024fefcca637084aa04607",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a0/attempt-001/20261103T135049.277655Z-695c99a3/manifest.json",
+      "manifest_sha256": "807cf9ad75f944562ba6cc863fe0449c8497a463e1037dcc46300feab700faf7",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a0/attempt-001/20261103T135049.277655Z-695c99a3/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93002,
+      "strategy": 0,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a0/attempt-001/20261103T135823.935432Z-639cd0cd/raw/request-events.csv",
+      "sha256": "ec7f8071662ddcf8b31d4fcc254a708ebd2a3f978e4380d8245cf88454aeab3b",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a0/attempt-001/20261103T135823.935432Z-639cd0cd/manifest.json",
+      "manifest_sha256": "3b2085899844eec602fe1581b7b4bd309d8d9f9c24620d700c3859ea986fa3df",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a0/attempt-001/20261103T135823.935432Z-639cd0cd/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93003,
+      "strategy": 0,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a0/attempt-001/20261103T140554.624359Z-6d5267e8/raw/request-events.csv",
+      "sha256": "94d7c392e1670e385d1e9577059c421079481d528cd6ec53dd32c193b2dca279",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a0/attempt-001/20261103T140554.624359Z-6d5267e8/manifest.json",
+      "manifest_sha256": "33c97efdc1764cd70db2ab8965d1d9874955aa97408cc7ce0957949bd44c3a3d",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a0/attempt-001/20261103T140554.624359Z-6d5267e8/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93004,
+      "strategy": 0,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a0/attempt-001/20261103T141337.166385Z-6f4ce15f/raw/request-events.csv",
+      "sha256": "16791d57981660e82f2ec1d9e97112ac4a111299828790608cc0d8d9b289259c",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a0/attempt-001/20261103T141337.166385Z-6f4ce15f/manifest.json",
+      "manifest_sha256": "4a20f7aa877f1d687077141bf511e0a9b84b70ee770b2105b300becf3473998b",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a0/attempt-001/20261103T141337.166385Z-6f4ce15f/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93005,
+      "strategy": 0,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a0/attempt-001/20261103T142106.425655Z-381cc821/raw/request-events.csv",
+      "sha256": "6a13efa00626aefcbe0ec3260001ad1a17859551651062fc89016e45b6e76bd1",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a0/attempt-001/20261103T142106.425655Z-381cc821/manifest.json",
+      "manifest_sha256": "36f9a1fc95592d45493a3c2e0669f85152587dfbdc72fd29e4c40b334bf0d994",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a0/attempt-001/20261103T142106.425655Z-381cc821/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93001,
+      "strategy": 1,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a1/attempt-001/20261103T135237.619037Z-35901703/raw/request-events.csv",
+      "sha256": "6c938dcc0585499a68082260570a001f2afacb8388beed20c856767f8540f0fa",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a1/attempt-001/20261103T135237.619037Z-35901703/manifest.json",
+      "manifest_sha256": "678ed0a3f399a622b53a40a5273bd49628cd422389ab318742e6d303b73c2f8f",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a1/attempt-001/20261103T135237.619037Z-35901703/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93002,
+      "strategy": 1,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a1/attempt-001/20261103T140010.547409Z-361091c6/raw/request-events.csv",
+      "sha256": "e5dacf24b397e3329e2649fa175a57385954b02828dc200f0b273c0569ce7eb8",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a1/attempt-001/20261103T140010.547409Z-361091c6/manifest.json",
+      "manifest_sha256": "829af86016930c7d512c9b1b8149b8975644048b735df5d916e7e37ebf42f15f",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a1/attempt-001/20261103T140010.547409Z-361091c6/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93003,
+      "strategy": 1,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a1/attempt-001/20261103T140744.806826Z-648e0704/raw/request-events.csv",
+      "sha256": "caea53d2310c9a895e56166a5bfdb6fe9adef966b72874c8bbd9ec490e957453",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a1/attempt-001/20261103T140744.806826Z-648e0704/manifest.json",
+      "manifest_sha256": "9784843269afc51a0946578d5343fae0d5baa0d6bcab4cc6b89796b35c47ad64",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a1/attempt-001/20261103T140744.806826Z-648e0704/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93004,
+      "strategy": 1,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a1/attempt-001/20261103T141525.543803Z-3408f4a1/raw/request-events.csv",
+      "sha256": "54721c571ce8c063a0e7ce7c9212867df0b419bda3f85856e1fdf1e735c42ab5",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a1/attempt-001/20261103T141525.543803Z-3408f4a1/manifest.json",
+      "manifest_sha256": "2149b6e47e6734427026a0367e1e78f31d27b0adbe6a64fd282ecd79786f1110",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a1/attempt-001/20261103T141525.543803Z-3408f4a1/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93005,
+      "strategy": 1,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a1/attempt-001/20261103T142252.149466Z-e47059f0/raw/request-events.csv",
+      "sha256": "d9e03514610e431662fff1755cc93bc1ccdd51522642beaafe4af3698156994e",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a1/attempt-001/20261103T142252.149466Z-e47059f0/manifest.json",
+      "manifest_sha256": "63b4f2e57b667295f2ec1e0ff1760fea523da5de268a34afb2ff57776cf1d7dd",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a1/attempt-001/20261103T142252.149466Z-e47059f0/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93001,
+      "strategy": 2,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a2/attempt-001/20261103T135428.901464Z-669dcf43/raw/request-events.csv",
+      "sha256": "508917151c8e766e620add00a3d5acb0b0380e46712a52b7b0ddf5db9cb72d9b",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a2/attempt-001/20261103T135428.901464Z-669dcf43/manifest.json",
+      "manifest_sha256": "7387cb664263ab49278cbf2ca30faa62f5b1877ceea52ad46de893f8f3ece3e1",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a2/attempt-001/20261103T135428.901464Z-669dcf43/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93002,
+      "strategy": 2,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a2/attempt-001/20261103T140201.088014Z-b1bb8216/raw/request-events.csv",
+      "sha256": "1be1df2a87fc7e18666c22d8d9d3795edb4c40134b66ab0a493a25ecb1894b8e",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a2/attempt-001/20261103T140201.088014Z-b1bb8216/manifest.json",
+      "manifest_sha256": "abbc5990d3edb22f53797d96c57e71c915a17f6a6634711c9676f47d89dc60e3",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a2/attempt-001/20261103T140201.088014Z-b1bb8216/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93003,
+      "strategy": 2,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a2/attempt-001/20261103T140940.390510Z-f39bc9ca/raw/request-events.csv",
+      "sha256": "0b784fcff56ff765b3b9eb5884d45e54e82265e0a83cbdfe5995223ee1da4e32",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a2/attempt-001/20261103T140940.390510Z-f39bc9ca/manifest.json",
+      "manifest_sha256": "f4744db9355ab89b5b599a4c33b0c281c763c1c89901f5d78f345837a48bd359",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a2/attempt-001/20261103T140940.390510Z-f39bc9ca/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93004,
+      "strategy": 2,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a2/attempt-001/20261103T141714.234207Z-d5d6a360/raw/request-events.csv",
+      "sha256": "d09968e25c180de3d1846c78f53b6efc03b617b59a9d22bc7a246e6cb05b6a44",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a2/attempt-001/20261103T141714.234207Z-d5d6a360/manifest.json",
+      "manifest_sha256": "7045fe3be046ba604382ad8877aa129444bc44dbfc4ac7937877aae765890381",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a2/attempt-001/20261103T141714.234207Z-d5d6a360/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93005,
+      "strategy": 2,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a2/attempt-001/20261103T142442.962745Z-e6518b1c/raw/request-events.csv",
+      "sha256": "1edf5436f9236aad5cd54e4ca2804744ab3b864d0617d91519519f19b51a6a58",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a2/attempt-001/20261103T142442.962745Z-e6518b1c/manifest.json",
+      "manifest_sha256": "0656d4bca3bae1597011c99f90a4faf07e720e1954d460635365252dc21c9a89",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a2/attempt-001/20261103T142442.962745Z-e6518b1c/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93001,
+      "strategy": 3,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a3/attempt-001/20261103T135617.403692Z-3530d401/raw/request-events.csv",
+      "sha256": "37def454d89c91198f417b881feb8191aeec44361c98b6d529859dea64cbf44c",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a3/attempt-001/20261103T135617.403692Z-3530d401/manifest.json",
+      "manifest_sha256": "710f2896b2cf89c33a43fd9229689caae4901ff093beb94ed84539c20dabd776",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93001-a3/attempt-001/20261103T135617.403692Z-3530d401/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93002,
+      "strategy": 3,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a3/attempt-001/20261103T140348.997236Z-aad99f1f/raw/request-events.csv",
+      "sha256": "2906ad4f2218ee689f4a0e23fa4440e09f7723c768624375ff2d65b366779bb7",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a3/attempt-001/20261103T140348.997236Z-aad99f1f/manifest.json",
+      "manifest_sha256": "708b825858ca79397eaeae1697b92a7b1a43eef607fd972340f2fcb9a3cede06",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93002-a3/attempt-001/20261103T140348.997236Z-aad99f1f/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93003,
+      "strategy": 3,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a3/attempt-001/20261103T141128.716240Z-9ad56cb3/raw/request-events.csv",
+      "sha256": "dd06c8ef92221f6339f4abd2a7818b716b615cc4615eef5c776839ed9a1e9472",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a3/attempt-001/20261103T141128.716240Z-9ad56cb3/manifest.json",
+      "manifest_sha256": "1e44b374014b65099dbb14c202fb84cb1af1bc20a42ecc55d4b4867bb9c6db68",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93003-a3/attempt-001/20261103T141128.716240Z-9ad56cb3/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93004,
+      "strategy": 3,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a3/attempt-001/20261103T141902.924879Z-95f86ebb/raw/request-events.csv",
+      "sha256": "c1b1cf355c57e25bab484390ea7f72206a251570399b7f184a83d831a352b3a8",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a3/attempt-001/20261103T141902.924879Z-95f86ebb/manifest.json",
+      "manifest_sha256": "501f168501afafeeb6bc7de5359ad1545e4a09c81f6632dd75751da71be5833f",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93004-a3/attempt-001/20261103T141902.924879Z-95f86ebb/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    },
+    {
+      "scene": "spidermap",
+      "seed": 93005,
+      "strategy": 3,
+      "path": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a3/attempt-001/20261103T142628.855189Z-07f9eb6c/raw/request-events.csv",
+      "sha256": "6b2f7437ff5ca4c5e34b0e95cd6a77feab88ee52f2d45bf2810d11b59e528d7c",
+      "manifest": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a3/attempt-001/20261103T142628.855189Z-07f9eb6c/manifest.json",
+      "manifest_sha256": "ca906789abe4b3627c9ca060845406eceff56a3d6167d7af6354210bf6367808",
+      "wifi_tx_power_dbm": 16.5,
+      "radio_config": "data/experiments/spider-power-20261103/runs/confirmation-p16p5-s93005-a3/attempt-001/20261103T142628.855189Z-07f9eb6c/raw/radio-config.json",
+      "radio_sha256": "fc0d73615515ee04ad905d193095517521295ccba31afac7805bd9dd76f1bf30"
+    }
+  ],
+  "original_success_script_sha256": "efb01373853638d0d67d26486367dbabe04b06f44163808623f8649800b3dc50",
+  "created_date": "2026-11-03",
+  "figures": [
+    "01_成功RTT_三维",
+    "02_成功RTT_折线",
+    "03_平均RTT_三维",
+    "04_平均RTT_折线"
+  ],
+  "mean_rtt_definition": "Per bin: sum of actual (terminal_ns-send_ns) for DATA and TIMEOUT / generated count / 1e6.",
+  "axis_label_for_inclusive": "Mean RTT (ms)",
+  "source_success_figure": "docs/ai/仿真图填充/05_三场景RTT时间变化.py",
+  "new_simulation_runs": 0,
+  "new_training_runs": 0,
+  "initial_artifacts": {
+    "01_成功RTT_三维.py": {
+      "sha256": "a4d7351ccda025fcf312d4f39898215214652f1b8abe01d6ffc946ba50f8dd30",
+      "bytes": 57756
+    },
+    "01_成功RTT_三维.png": {
+      "sha256": "acfca5d022529d1196e351e0c86b528c8c0331001256cdad71a7e3d44fffbd9e",
+      "bytes": 892441
+    },
+    "01_成功RTT_三维.svg": {
+      "sha256": "24fb6abd0c50ee2e34585188756ea83e9b0c98e32a433185eba29f779e43b0dc",
+      "bytes": 129583
+    },
+    "01_成功RTT_三维.pdf": {
+      "sha256": "d8790de783b01260cfef4aa4eca1a45fda107582667a18ba7ed6dcc540711d7a",
+      "bytes": 32850
+    },
+    "02_成功RTT_折线.py": {
+      "sha256": "b4b8cf4af325114fbab8375dc6c466509fca40b22508e0957274b8e89c41ced6",
+      "bytes": 57758
+    },
+    "02_成功RTT_折线.png": {
+      "sha256": "be49637a184d4b7051610e0d789b9e8348b37467c24bc84c158b3b102a881a2e",
+      "bytes": 498491
+    },
+    "02_成功RTT_折线.svg": {
+      "sha256": "78b5a5ae56fe48aae34ea9e45c0e5af1d756186ed4cf5e98c595fc7873abcb80",
+      "bytes": 127148
+    },
+    "02_成功RTT_折线.pdf": {
+      "sha256": "96e76a5ff505f79206ec6fc0ee346e391e75133819092d3e4ddea7af97b836b7",
+      "bytes": 27512
+    },
+    "03_平均RTT含超时_三维.py": {
+      "sha256": "6871de3edc4d0478c74caa9fb7ed76d8ce6cd946f9471fe1bfc2649f4bfacd48",
+      "bytes": 56937
+    },
+    "03_平均RTT含超时_三维.png": {
+      "sha256": "00cd97390cde00b1bffa6dbf14ddb206cd99db0dc73ebeaa16a2b9571f2a44f1",
+      "bytes": 851822
+    },
+    "03_平均RTT含超时_三维.svg": {
+      "sha256": "4a64789e597bef9a39910c9124c0ba3b1259425f41182fb33a6a4699225ca989",
+      "bytes": 124626
+    },
+    "03_平均RTT含超时_三维.pdf": {
+      "sha256": "936c2446f78b660d4550454225281b504b98b9861762f23a0226e022bb44dc3f",
+      "bytes": 31798
+    },
+    "04_平均RTT含超时_折线.py": {
+      "sha256": "3ccd7e147329c4b32f182b45410d73b7b8291e1e46204bc059741def5e9b6122",
+      "bytes": 56939
+    },
+    "04_平均RTT含超时_折线.png": {
+      "sha256": "797a1a2404b6e57e87d03ca9d5851756175eeb1fa7b311c5bcaaea657900c8ff",
+      "bytes": 499004
+    },
+    "04_平均RTT含超时_折线.svg": {
+      "sha256": "641e72de2cae189b1fb523664b83bae7e9bb95ea366283cac2ce3dc257f3b189",
+      "bytes": 124351
+    },
+    "04_平均RTT含超时_折线.pdf": {
+      "sha256": "92b29bba0457209d4fdb1409598078b0bca7920e94286b546e34c87174110824",
+      "bytes": 26545
+    },
+    "RTT分箱数据.csv": {
+      "sha256": "e367e040e31a3a44b8e94e721dc261af12d995a386c1e9c18ee22a209104f52a",
+      "bytes": 26605
+    }
+  },
+  "default_z_axis_minimum_ms": {
+    "01_成功RTT_三维.py": {
+      "circle": 182.39205481720433,
+      "grid": 298.71631904516147,
+      "spidermap": 436.54972734366197
+    },
+    "03_平均RTT_三维.py": {
+      "circle": 410.681537136,
+      "grid": 300.59382756,
+      "spidermap": 1890.726254064
+    }
+  },
+  "campaigns_by_scene": {
+    "circle": "quick-fixed-model-20261022",
+    "grid": "quick-fixed-model-20261022",
+    "spidermap": "spider-power-20261103/confirmation"
+  },
+  "wifi_tx_power_dbm": {
+    "circle": 10.0,
+    "grid": 12.0,
+    "spidermap": 16.5
+  },
+  "total_runs": 28,
+  "revision_date": "2026-11-04",
+  "selection": "User approved 16.5 dBm and confirmation seeds 93001-93005; development seeds excluded.",
+  "spider_analysis": {
+    "path": "data/experiments/spider-power-20261103/analysis/results.json",
+    "sha256": "4b3bdefc11ddcd431af977b58baba17cad0ac4a1eaf2338b72d30e5369d0775f"
+  },
+  "spider_fixed_model": {
+    "path": "/home/fgfxf/ndnSIM/ns-3/data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt",
+    "sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+  },
+  "history": [
+    {
+      "date": "2026-11-03",
+      "campaign": "quick-fixed-model-20261022",
+      "seeds": {
+        "circle": 23001,
+        "grid": 23009,
+        "spidermap": 23017
+      },
+      "total_requests": 72000,
+      "successful_requests": 51019,
+      "timeouts": 20981,
+      "sources": [
+        {
+          "scene": "circle",
+          "seed": 23001,
+          "strategy": 0,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a0/attempt-001/runs/20261022T081957.621032Z-4390833e/raw/request-events.csv",
+          "sha256": "38b730ccc12b17c2d7ad33f942fa35785b8dbe57f353d1be6532ef436353dbe3",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a0/attempt-001/runs/20261022T081957.621032Z-4390833e/manifest.json",
+          "manifest_sha256": "31cdc38bb21d6fd0ccc92954d7f04ace9339a1ed95e33c47c3290dc01af8fcc3"
+        },
+        {
+          "scene": "circle",
+          "seed": 23001,
+          "strategy": 1,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a1/attempt-001/runs/20261022T082136.797486Z-38b38119/raw/request-events.csv",
+          "sha256": "b690160149f199dd2577d6d1330fd46f05d9e6fd0c37f12180fa3203bf3b3914",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a1/attempt-001/runs/20261022T082136.797486Z-38b38119/manifest.json",
+          "manifest_sha256": "6f1d73741c5ac1131f8a4613d39ba8e46922fc1c1a003bada2cbd4df913577d1"
+        },
+        {
+          "scene": "circle",
+          "seed": 23001,
+          "strategy": 2,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a2/attempt-001/runs/20261022T082316.538063Z-3f8e9c19/raw/request-events.csv",
+          "sha256": "e95fe24a56155016e1cd91d140a2229f005e3e6d8daf3eab304085fc65e3fee8",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a2/attempt-001/runs/20261022T082316.538063Z-3f8e9c19/manifest.json",
+          "manifest_sha256": "c88d6b8af50657afa3976d30146588c8402aceec377d54df1b1b57c5a8f75da2"
+        },
+        {
+          "scene": "circle",
+          "seed": 23001,
+          "strategy": 3,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a3/attempt-001/runs/20261022T082455.481496Z-dc9325e7/raw/request-events.csv",
+          "sha256": "6658a4bfb38c9c0779fd75cc645d3678610f711d4696b92883906edc7cbeb592",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-circle-baseline-s23001-a3/attempt-001/runs/20261022T082455.481496Z-dc9325e7/manifest.json",
+          "manifest_sha256": "70936295fcbb6f45b43d114024ce1939e97c5acbfcf19f35ddff5298cad82735"
+        },
+        {
+          "scene": "grid",
+          "seed": 23009,
+          "strategy": 0,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a0/attempt-001/runs/20261022T082647.597615Z-8361c190/raw/request-events.csv",
+          "sha256": "f914b7806c8c57eaeb2967d777c92999a1126dd70bd16efdcf55f8b46dc29e95",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a0/attempt-001/runs/20261022T082647.597615Z-8361c190/manifest.json",
+          "manifest_sha256": "084aa3cfc86e32b5bb5bc73654a3e699e473bdfdccef6e4647b44e6bee1d404c"
+        },
+        {
+          "scene": "grid",
+          "seed": 23009,
+          "strategy": 1,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a1/attempt-001/runs/20261022T082822.758235Z-cd488a00/raw/request-events.csv",
+          "sha256": "701a7e19d0fe080bd5ad0e4824f4e147ee3e3d13b3e1cc4bfffc1b7487b19181",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a1/attempt-001/runs/20261022T082822.758235Z-cd488a00/manifest.json",
+          "manifest_sha256": "ec4550c4a656ef29a1b12c9dff8f92b5930b5f5433e063ec5226fff89466b7d0"
+        },
+        {
+          "scene": "grid",
+          "seed": 23009,
+          "strategy": 2,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a2/attempt-001/runs/20261022T082958.821362Z-fc76bc74/raw/request-events.csv",
+          "sha256": "90394a9c2dadd0a9fcb2b7a7b59f32e4c57656276f9eb65059021446a987cfe9",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a2/attempt-001/runs/20261022T082958.821362Z-fc76bc74/manifest.json",
+          "manifest_sha256": "137dd2a220798469b5d685a0dc857a8c08e88c80a5654b99b2a0f559f36a7a28"
+        },
+        {
+          "scene": "grid",
+          "seed": 23009,
+          "strategy": 3,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a3/attempt-001/runs/20261022T083144.874513Z-2820f5cd/raw/request-events.csv",
+          "sha256": "18decf71c3306cd377a6fd7e66726574c7d2b0c557080ed79b48e87d67c4eb6b",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-grid-baseline-s23009-a3/attempt-001/runs/20261022T083144.874513Z-2820f5cd/manifest.json",
+          "manifest_sha256": "04a42e0f5ef7e5fb0b08f1a120725a20363904e6796a551df1ef770841ed0413"
+        },
+        {
+          "scene": "spidermap",
+          "seed": 23017,
+          "strategy": 0,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a0/attempt-001/runs/20261022T083337.758056Z-a55bc9f9/raw/request-events.csv",
+          "sha256": "0899d3da880627f7635f37dfe8573dfefcf95ec7ef3330a73126360e5cdd2551",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a0/attempt-001/runs/20261022T083337.758056Z-a55bc9f9/manifest.json",
+          "manifest_sha256": "ebda6bf9bc35fbc12684bb3a59c3ebce508f432266f949ce75fe23ab85e1a8bd"
+        },
+        {
+          "scene": "spidermap",
+          "seed": 23017,
+          "strategy": 1,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a1/attempt-001/runs/20261022T083504.695304Z-b52225f5/raw/request-events.csv",
+          "sha256": "da2b1c46c2f5a3fda7a9765b50bb98f7ee2bd79dca16fdf051404df4acf4a57d",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a1/attempt-001/runs/20261022T083504.695304Z-b52225f5/manifest.json",
+          "manifest_sha256": "c8b0cedd02a04e5d4e21944d9fc76ecfa5a240a68e52905f5e4afb0debac4132"
+        },
+        {
+          "scene": "spidermap",
+          "seed": 23017,
+          "strategy": 2,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a2/attempt-001/runs/20261022T083633.555891Z-376c5c74/raw/request-events.csv",
+          "sha256": "535d270d1932c901ff35e9dc74982f19f13f4a38beea3486f0a1e24ffc339558",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a2/attempt-001/runs/20261022T083633.555891Z-376c5c74/manifest.json",
+          "manifest_sha256": "ef42645179f46c222dda264e4fb8da8314e5a1b07bdf587296b1439727badc21"
+        },
+        {
+          "scene": "spidermap",
+          "seed": 23017,
+          "strategy": 3,
+          "path": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a3/attempt-001/runs/20261022T083801.029529Z-ce752a5e/raw/request-events.csv",
+          "sha256": "0d4ce6b42354aca5bf0ead162be9cb2bb4344ad5910c4b79a7fba2f6237dd782",
+          "manifest": "data/experiments/quick-fixed-model-20261022/runs/test-spidermap-baseline-s23017-a3/attempt-001/runs/20261022T083801.029529Z-ce752a5e/manifest.json",
+          "manifest_sha256": "0bac946dd555d8ec17b8072523c7bb5116bab4a832619f6e09f2e86be60cd3e2"
+        }
+      ],
+      "original_success_script_sha256": "efb01373853638d0d67d26486367dbabe04b06f44163808623f8649800b3dc50"
+    }
+  ],
+  "csv_rows": 672,
+  "csv_row_definition": "One original scene/strategy/seed/5-second bin. Pool the five Spider rows per strategy/bin for the plotted point.",
+  "plotted_bins": 288,
+  "current_success_script_sha256": "92be0285041c1fe9bae98ccc7709632f67eb6d8335cd542ca7b1cf597ede1cc0",
+  "engineering_validation": "Separate short default/override checks; never used as figure data.",
+  "current_artifacts": {
+    "docs/ai/仿真图填充/05_三场景RTT时间变化.py": "92be0285041c1fe9bae98ccc7709632f67eb6d8335cd542ca7b1cf597ede1cc0",
+    "docs/ai/仿真图填充/05_三场景RTT时间变化.png": "dfafd5e52f82fa8d455048fa7974aaf21f7c4b4ac2c4c07c2d9618c7c6abf0e9",
+    "docs/ai/仿真图填充/05_三场景RTT时间变化.svg": "c99963074802a5cc2f294e54cc5a99ef7847d4a86d940d6186e04f3aa62ab975",
+    "docs/ai/仿真图填充/05_三场景RTT时间变化.pdf": "d7c666c77d3ab6d8c5beccffb01143d3d49858ba541d4d822b5831904d7d35c6",
+    "docs/ai/问题图片/01_成功RTT_三维.py": "7ea724d2a7bd45bdc2abb9b161838deebe1936e3b8ef87ea5e557a7ef9bbf0a7",
+    "docs/ai/问题图片/01_成功RTT_三维.png": "0d817b1c55a0fcd44713df32941024673b67af452d81a9a505229e5508aa4539",
+    "docs/ai/问题图片/01_成功RTT_三维.svg": "f9e6abfe2f24438af34e521dac9240050b91c7a69359722166c5cb39f120f3ef",
+    "docs/ai/问题图片/01_成功RTT_三维.pdf": "d37bb55c9cbded83a6a51593ab4fc852201a0e284290bdcdb80065955d677ae3",
+    "docs/ai/问题图片/02_成功RTT_折线.py": "8ee9e648f16afd0ce9c5af858758d48bd8d721821bfc4cb81b0cfa461eaba5ea",
+    "docs/ai/问题图片/02_成功RTT_折线.png": "98fb97346d7436f1b6e58d6ff24ff457d2a21a7c13a2efe3b1b3b4e2b76cf28e",
+    "docs/ai/问题图片/02_成功RTT_折线.svg": "b55d2e45a7db37d3827f70b47ba9e5238ed4165cc59d27db38028101db851405",
+    "docs/ai/问题图片/02_成功RTT_折线.pdf": "22c1fc5634a1194cd081948c3aa137c297e90e9406934ffb97946220d2738aaf",
+    "docs/ai/问题图片/03_平均RTT_三维.py": "aed222cda2bb4799772a5d22d9fe27eb24a42f2a8dca421b306b5bbada8e3bbe",
+    "docs/ai/问题图片/03_平均RTT_三维.png": "54f72b577514b1a40684c9d7e3a41d0fa247345cb74e4aea1556ad01b8f9a131",
+    "docs/ai/问题图片/03_平均RTT_三维.svg": "384ac24a14a14902d174a9d452d5376244588398032393e680d2c77676f7c1b0",
+    "docs/ai/问题图片/03_平均RTT_三维.pdf": "07b81bed4a01e7efa50feb6434dc2348d51c279e866212b2bea8bcda9906406a",
+    "docs/ai/问题图片/04_平均RTT_折线.py": "89421f6cbe4b0a001926efe947f7b8bad8a9e25d5b41e044da0e50101dd42276",
+    "docs/ai/问题图片/04_平均RTT_折线.png": "08361ba18859f74b61d6702851e3f059b069b7c9e56f2d91ded55b72e7f3711d",
+    "docs/ai/问题图片/04_平均RTT_折线.svg": "c3269d1ccca8752369f07646870679e455adf82657a9c4ed5040fdde7891f5c0",
+    "docs/ai/问题图片/04_平均RTT_折线.pdf": "f001f569a32448698bf83829031d87204f25f732818217e4dd6b0e6b5738d554"
+  },
+  "export_normalization": "SVG line-end whitespace normalized after export; parsed tags, text and whitespace-normalized attribute values verified unchanged.",
+  "filename_revision_20261117": {
+    "from": "平均RTT含超时",
+    "to": "平均RTT",
+    "data_changed": false,
+    "method_document": "docs/ai/平均RTT统计说明_20261117.md",
+    "note": "initial_artifacts preserves historical names and hashes."
+  }
+}

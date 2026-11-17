@@ -22,6 +22,8 @@ DEFAULT_ROOT = ROOT / "data/experiments/paper-figures-followup-20261026"
 SCENES = ("circle", "grid", "spidermap")
 SEEDS = (84001, 84002, 84003)
 PERIODS = (20, 40, 80, 160)
+PERIOD_REFRESH = (20, 200, 1000, 2000)
+PERIOD_ROOT = ROOT / "data/experiments/period-refresh-20261117"
 STAGES = {"accuracy": "周期预测准确率", "online": "神经策略在线交付与成本", "state": "车辆数量与状态表规模"}
 
 
@@ -71,11 +73,14 @@ def sync_files(paths):
         sync_directory(directory.parent)
 
 
-def make_tasks():
+def make_tasks(profile="supplement"):
+    if profile not in ("supplement", "period-only"):
+        raise ValueError("Unknown follow-up profile: " + profile)
     result = []
-    for stage in STAGES:
+    periods = PERIOD_REFRESH if profile == "period-only" else PERIODS
+    for stage in (("accuracy",) if profile == "period-only" else STAGES):
         for scene in SCENES:
-            conditions = [(10, period) for period in PERIODS] if stage != "state" else [(n, 20) for n in (5, 15, 20)]
+            conditions = [(10, period) for period in periods] if stage != "state" else [(n, 20) for n in (5, 15, 20)]
             for vehicles, period in conditions:
                 requests = vehicles * 600
                 condition = "n{}-v30-k{}-hello{}".format(vehicles, requests, period)
@@ -160,17 +165,19 @@ def bind_models(source_root):
     return models, dependencies, provenance
 
 
-def initialize(root, timeout):
+def initialize(root, timeout, profile="supplement"):
     plan_path = root / "plan/followup-manifest.json"
     if plan_path.is_file():
         expected = (root / "plan/followup-manifest.sha256").read_text().strip()
         if sha(plan_path) != expected:
             raise ValueError("Frozen follow-up manifest hash changed")
         plan = read(plan_path)
+        if plan.get("profile", "supplement") != profile:
+            raise ValueError("Profile differs from the frozen plan")
         if plan["run_timeout_seconds"] != timeout:
             raise ValueError("Run timeout differs from the frozen plan")
         return plan
-    tasks = make_tasks()
+    tasks = make_tasks(profile)
     model_source = ROOT / "data/experiments/retrain-quick-20261021"
     models, dependencies, provenance = bind_models(model_source)
     source = runner.source_snapshot(ROOT)
@@ -199,7 +206,9 @@ def initialize(root, timeout):
         task["config_path"], task["input_hashes"] = inputs[key]
     plan = dict(schema_version=1, campaign_id=root.name, created_utc=runner.utc_now(),
                 design="fixed-model-beacon-and-resource-supplement-v1", tasks=tasks,
-                periods_ms=list(PERIODS), seed_families=list(SEEDS), total=99,
+                profile=profile,
+                periods_ms=list(PERIOD_REFRESH if profile == "period-only" else PERIODS),
+                seed_families=list(SEEDS), total=len(tasks),
                 old_campaign_root=str(ROOT / "data/experiments/quick-fixed-model-20261022"),
                 model_source_root=str(model_source), models=models, model_provenance=provenance,
                 dependencies=dependencies, source=source, binaries=binaries,
@@ -340,12 +349,13 @@ def show_status(root, watch=False):
         print(flush=True)
 
 
-def execute(root, timeout=900, max_runs=None):
+def execute(root, timeout=900, max_runs=None, profile="supplement"):
     root = Path(root).expanduser().resolve()
     if ROOT / "data/experiments" not in root.parents:
         raise ValueError("Follow-up root must be under data/experiments")
     if root in (ROOT / "data/experiments/retrain-quick-20261021",
-                ROOT / "data/experiments/quick-fixed-model-20261022"):
+                ROOT / "data/experiments/quick-fixed-model-20261022") or (
+                    profile == "period-only" and root == DEFAULT_ROOT):
         raise ValueError("Refusing to write into a historical campaign")
     (root / "plan/tasks").mkdir(parents=True, exist_ok=True)
     with (root / "plan/followup.lock").open("a+") as lock:
@@ -363,7 +373,7 @@ def execute(root, timeout=900, max_runs=None):
                      start_token=identity[1], started_utc=runner.utc_now(), completed=0,
                      stage_completed={}, current_task=None, session_elapsed_seconds=0,
                      cumulative_elapsed_seconds=accumulated)
-        plan = {"tasks": make_tasks()}
+        plan = {"tasks": make_tasks(profile)}
         current_start = [None]
 
         def update(force=False):
@@ -390,7 +400,8 @@ def execute(root, timeout=900, max_runs=None):
             previous_handlers[signum] = signal.signal(signum, stop)
         update(True)
         try:
-            plan = initialize(root, timeout)
+            plan = (initialize(root, timeout) if profile == "supplement" else
+                    initialize(root, timeout, profile))
             verify_runtime(plan)
             state.update(status="running", stage="verify")
             completed = set()
@@ -464,18 +475,23 @@ def execute(root, timeout=900, max_runs=None):
                         runner.stop_group(process)
             analysis = read(root / "analysis/summary.json")
             final_status = read(root / "analysis/status.json")
+            period_only = plan.get("profile") == "period-only"
+            expected_counts = ({"accuracy": 36, "online": 0, "cpu_processes": 0} if period_only else
+                               {"accuracy": 36, "online": 63, "cpu_processes": 15})
+            required_artifact = "analysis/accuracy-summary.csv" if period_only else "figures/index.html"
             if (analysis.get("status") != "complete" or final_status.get("status") != "complete" or
-                    analysis.get("counts") != {"accuracy": 36, "online": 63, "cpu_processes": 15} or
-                    not (root / "figures/index.html").is_file()):
+                    analysis.get("counts") != expected_counts or
+                    not (root / required_artifact).is_file()):
                 raise ValueError("Analysis exit succeeded but required completion artifacts are missing")
             artifacts = analysis.get("artifact_hashes", {})
-            if "figures/index.html" not in artifacts:
-                raise ValueError("Analysis summary did not seal the figure index")
+            if required_artifact not in artifacts:
+                raise ValueError("Analysis summary did not seal the required output")
             for relative, digest in artifacts.items():
                 artifact = (root / relative).resolve()
                 if root not in artifact.parents or not artifact.is_file() or sha(artifact) != digest:
                     raise ValueError("Analysis artifact hash mismatch: " + relative)
-            state.update(status="complete", stage="complete", figures=str(root / "figures/index.html"))
+            state.update(status="complete", stage="complete", figures=None if period_only else
+                         str(root / "figures/index.html"), analysis_summary=str(root / "analysis/summary.json"))
             update(True)
             return 0
         except KeyboardInterrupt as error:
@@ -494,12 +510,13 @@ def execute(root, timeout=900, max_runs=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("all", "resume", "status", "stop"))
-    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    parser.add_argument("--root", type=Path)
+    parser.add_argument("--profile", choices=("supplement", "period-only"), default="supplement")
     parser.add_argument("--watch", action="store_true")
     parser.add_argument("--run-timeout", type=float, default=900)
     parser.add_argument("--max-runs", type=int)
     args = parser.parse_args(argv)
-    root = args.root.expanduser().resolve()
+    root = (args.root or (PERIOD_ROOT if args.profile == "period-only" else DEFAULT_ROOT)).expanduser().resolve()
     try:
         if args.action == "status":
             return show_status(root, args.watch)
@@ -509,7 +526,7 @@ def main(argv=None):
         if not math.isfinite(args.run_timeout) or args.run_timeout <= 0 or args.max_runs is not None and args.max_runs <= 0:
             raise ValueError("timeout/max-runs must be positive")
         os.environ.update(JOBS="4", OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
-        return execute(root, args.run_timeout, args.max_runs)
+        return execute(root, args.run_timeout, args.max_runs, args.profile)
     except (OSError, ValueError, KeyError) as error:
         print("followup: " + str(error), file=sys.stderr)
         return 1

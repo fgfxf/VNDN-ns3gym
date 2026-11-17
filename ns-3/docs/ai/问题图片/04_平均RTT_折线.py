@@ -14,7 +14,7 @@ from matplotlib.ticker import MaxNLocator, FuncFormatter
 import numpy as np
 
 # ========= 可编辑外观参数；尺寸为英寸 =========
-FIGURE_ID = '04_平均RTT含超时_折线'
+FIGURE_ID = '04_平均RTT_折线'
 PLOT_KIND = 'line'
 RTT_LABEL = 'Mean RTT (ms)'
 FONT_FAMILY = 'Liberation Serif'  # 可改为本机已安装的Times New Roman

@@ -14,12 +14,12 @@ from matplotlib.ticker import MaxNLocator, FuncFormatter
 import numpy as np
 
 # ========= 可编辑外观参数；尺寸为英寸 =========
-FIGURE_ID = '03_平均RTT含超时_三维'
-PLOT_KIND = '3d'
+FIGURE_ID = '04_平均RTT_折线'
+PLOT_KIND = 'line'
 RTT_LABEL = 'Mean RTT (ms)'
 FONT_FAMILY = 'Liberation Serif'  # 可改为本机已安装的Times New Roman
 FONT_SIZE = 11
-FIGSIZE = (17.5, 5.7)
+FIGSIZE = (15.5, 4.9)
 DPI = 300
 ALGORITHMS = ('Naive NDN', 'VTDF', 'RTVTDF', 'TKAN-PDF')
 COLORS = ('#808080', '#E69F00', '#009E73', '#8E5AA9')

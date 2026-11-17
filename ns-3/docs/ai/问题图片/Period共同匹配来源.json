@@ -1,0 +1,720 @@
+{
+  "revision_date": "2026-11-17",
+  "definition": "Four-way intersection within each scenario/seed, keyed by (request_id, source_rsu_id), requiring the same ground-truth label in ALL four periods. No selection by prediction correctness.",
+  "aggregation": "Compute correct_count / fixed matched_sample_count separately per run, then take unweighted mean and sample SD across the same 3 seeds.",
+  "periods_ms": [
+    20,
+    200,
+    1000,
+    2000
+  ],
+  "seed_families": [
+    84001,
+    84002,
+    84003
+  ],
+  "campaign": "data/experiments/period-refresh-20261117",
+  "manifest_sha256": "369f40cb86e03dd95a895c2392fbbc55c1918bd0df3e1f18e8b5f90f3ef7310b",
+  "models": {
+    "circle": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/circle/tkan-lstm/retrain-quick-20261021-22109572fde7474a-session/checkpoint.pt",
+      "sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    "grid": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/grid/tkan-lstm/retrain-quick-20261021-f6a90796ad9a2a7f-session/checkpoint.pt",
+      "sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    "spidermap": {
+      "path": "/home/fgfxf/ndnSIM/ns-3/data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt",
+      "sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    }
+  },
+  "cohorts": [
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "common_request_source_count": 5558,
+      "excluded_label_disagreement": 41,
+      "matched_sample_count": 5517,
+      "cohort_sha256": "2cf66f5351f1b90149c858663577a17c72aad95d0f765eec7d43f915ebb1b6ec",
+      "matched_input_hashes": {
+        "request-plan.json": "b156e722d97b404391e74eda61a2255b681b02d849518b175b97c6abfc76d9b7",
+        "routes.rou.xml": "ccd79935e67ba716772532ff5b945636cf858587a24aa5acbe53c42a27c76538",
+        "network.net.xml": "48db75516e61880b9711ba4a661f536e7368e05f9d1b206001ecc9fd861887f3"
+      }
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "common_request_source_count": 5508,
+      "excluded_label_disagreement": 37,
+      "matched_sample_count": 5471,
+      "cohort_sha256": "e2977a7a777699b8af480ef8a1fbd47175801fa0496057509023cd465363f1ff",
+      "matched_input_hashes": {
+        "request-plan.json": "b1ffe6b3f15158bd08bcee2ad3203bf8a2e1393e1b139796d5e0dad02707f1c6",
+        "routes.rou.xml": "c849506f365b6ab8eadb6196fd741e392a54f3228e2d7ea048b54ef34540ca16",
+        "network.net.xml": "48db75516e61880b9711ba4a661f536e7368e05f9d1b206001ecc9fd861887f3"
+      }
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "common_request_source_count": 5494,
+      "excluded_label_disagreement": 38,
+      "matched_sample_count": 5456,
+      "cohort_sha256": "a47d14dcf9e93c6037717ce28c48c503059a46a6e35108d8d4ea4e17aadaa0fb",
+      "matched_input_hashes": {
+        "request-plan.json": "909d3bb790e772dd7d169e56eb7bd94c21d18cca74a3443df8ba6c1901a69774",
+        "routes.rou.xml": "5e12977f4daa65b129ece81a18edc926e4036afb2c2d16b3204eaa10489844ac",
+        "network.net.xml": "48db75516e61880b9711ba4a661f536e7368e05f9d1b206001ecc9fd861887f3"
+      }
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "common_request_source_count": 4757,
+      "excluded_label_disagreement": 88,
+      "matched_sample_count": 4669,
+      "cohort_sha256": "d3c459a1d8d2d5e8e71a59fc0b2b5bdde242bb07f5b888caa23ad1e5625d473e",
+      "matched_input_hashes": {
+        "request-plan.json": "b156e722d97b404391e74eda61a2255b681b02d849518b175b97c6abfc76d9b7",
+        "routes.rou.xml": "01b90732a4a4cfe0acab2c423ee9a72e4fd917bf713f493ddc32db1cef283410",
+        "network.net.xml": "7da56f497af9615f11239a5ccb3190fcc21e9c73ceb2cdca831b00c4084a0147"
+      }
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "common_request_source_count": 4911,
+      "excluded_label_disagreement": 90,
+      "matched_sample_count": 4821,
+      "cohort_sha256": "9b8fd7b982c79fc3625ddb0602157a1ac08f227b8dad8a237e989fbfc0a82183",
+      "matched_input_hashes": {
+        "request-plan.json": "b1ffe6b3f15158bd08bcee2ad3203bf8a2e1393e1b139796d5e0dad02707f1c6",
+        "routes.rou.xml": "5302f32a4d346c27f8fa272d215eedba9bc0830a7b418fcbec37deac29bf215a",
+        "network.net.xml": "7da56f497af9615f11239a5ccb3190fcc21e9c73ceb2cdca831b00c4084a0147"
+      }
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "common_request_source_count": 4768,
+      "excluded_label_disagreement": 88,
+      "matched_sample_count": 4680,
+      "cohort_sha256": "b357273fc2ff7a2e261eef671e9c87f407b1eae7f053d5713255454bd22acab7",
+      "matched_input_hashes": {
+        "request-plan.json": "909d3bb790e772dd7d169e56eb7bd94c21d18cca74a3443df8ba6c1901a69774",
+        "routes.rou.xml": "ac8ad818d294547247fdbe0fd203d861dc045af8f3a837d907c1a832cc48cab9",
+        "network.net.xml": "7da56f497af9615f11239a5ccb3190fcc21e9c73ceb2cdca831b00c4084a0147"
+      }
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "common_request_source_count": 3189,
+      "excluded_label_disagreement": 386,
+      "matched_sample_count": 2803,
+      "cohort_sha256": "4686f248b100c1cf046224c0339cc31605ff0213e08708a3c9f38efc4f92704f",
+      "matched_input_hashes": {
+        "request-plan.json": "b156e722d97b404391e74eda61a2255b681b02d849518b175b97c6abfc76d9b7",
+        "routes.rou.xml": "e0c8189d5dfbdf57f7a0ebf5ab8015b46a566d74eeec63f4b11e9bcdef35606f",
+        "network.net.xml": "885fa57256b8de5035bc884c1d3b0ecd46c01297d7c191d81d8bc1129207c2d8"
+      }
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "common_request_source_count": 3257,
+      "excluded_label_disagreement": 375,
+      "matched_sample_count": 2882,
+      "cohort_sha256": "f91660480a4b585e7e6394a2cf384786ac81fd73ecfa2e3bda5fd5e389066752",
+      "matched_input_hashes": {
+        "request-plan.json": "b1ffe6b3f15158bd08bcee2ad3203bf8a2e1393e1b139796d5e0dad02707f1c6",
+        "routes.rou.xml": "b0810a252f74e4db184d8dc18fffbad643c86d425d5241dca9b9ef0ee28fd2a5",
+        "network.net.xml": "885fa57256b8de5035bc884c1d3b0ecd46c01297d7c191d81d8bc1129207c2d8"
+      }
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "common_request_source_count": 2800,
+      "excluded_label_disagreement": 298,
+      "matched_sample_count": 2502,
+      "cohort_sha256": "9c5c778dfa568e26f0c5b53eb706119c0829ad8a23df130bbce3c5f254c44ae8",
+      "matched_input_hashes": {
+        "request-plan.json": "909d3bb790e772dd7d169e56eb7bd94c21d18cca74a3443df8ba6c1901a69774",
+        "routes.rou.xml": "51450aebf37539dfcc14c5a1985b3baa737c24f941b9f53083af51cb939d1192",
+        "network.net.xml": "885fa57256b8de5035bc884c1d3b0ecd46c01297d7c191d81d8bc1129207c2d8"
+      }
+    }
+  ],
+  "summary": [
+    {
+      "scenario": "circle",
+      "period_ms": 20,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.8421310378708,
+      "sd_accuracy_percent": 0.12410495522195694,
+      "matched_samples_total": 16444
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 200,
+      "n_runs": 3,
+      "mean_accuracy_percent": 100.0,
+      "sd_accuracy_percent": 0.0,
+      "matched_samples_total": 16444
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 1000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.93898893356297,
+      "sd_accuracy_percent": 0.05283728279827639,
+      "matched_samples_total": 16444
+    },
+    {
+      "scenario": "circle",
+      "period_ms": 2000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.93907268628526,
+      "sd_accuracy_percent": 0.10552920292261402,
+      "matched_samples_total": 16444
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 20,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.53484401828602,
+      "sd_accuracy_percent": 0.20343876737857738,
+      "matched_samples_total": 14170
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 200,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.9150541691118,
+      "sd_accuracy_percent": 0.03773687524419534,
+      "matched_samples_total": 14170
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 1000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.9079820031191,
+      "sd_accuracy_percent": 0.049854082436768754,
+      "matched_samples_total": 14170
+    },
+    {
+      "scenario": "grid",
+      "period_ms": 2000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 99.5089370201161,
+      "sd_accuracy_percent": 0.5499644131066938,
+      "matched_samples_total": 14170
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 20,
+      "n_runs": 3,
+      "mean_accuracy_percent": 97.08654074071104,
+      "sd_accuracy_percent": 1.9598704339324609,
+      "matched_samples_total": 8187
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 200,
+      "n_runs": 3,
+      "mean_accuracy_percent": 96.91518102913385,
+      "sd_accuracy_percent": 2.0422948372115717,
+      "matched_samples_total": 8187
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 1000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 96.46115370466278,
+      "sd_accuracy_percent": 2.026821477686369,
+      "matched_samples_total": 8187
+    },
+    {
+      "scenario": "spidermap",
+      "period_ms": 2000,
+      "n_runs": 3,
+      "mean_accuracy_percent": 95.58689136994721,
+      "sd_accuracy_percent": 1.9407303796736182,
+      "matched_samples_total": 8187
+    }
+  ],
+  "sources": [
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "period_ms": 20,
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello20-s84001/predictions.jsonl",
+      "prediction_sha256": "f138e5ee0891b8e0ec96477bd1bb1bc40e80858d48271856a456f18e12fc5879",
+      "evaluation_sha256": "0ec3da7ebe7e15e1dfa28f95c5c2a5851fec320b8ac601b58bc901449ce64d1d",
+      "sample_count": 5975,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "period_ms": 200,
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello200-s84001/predictions.jsonl",
+      "prediction_sha256": "5b0250fe3e20aaaf3dc966bc80c9de8680490df5edfdc64b4c0ed5226e0fc369",
+      "evaluation_sha256": "eceade9129224bb17181c792e137860697fc7a1a9072c25b25ed193317d5c43c",
+      "sample_count": 5961,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "period_ms": 1000,
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello1000-s84001/predictions.jsonl",
+      "prediction_sha256": "1dbee3deacfeb5f69686bd51c7a6f8214277f8c1d332a0f847cbe4bab79c0414",
+      "evaluation_sha256": "3d529186f87e58eee664e861ad5e32b8d9c21a1eb5666258bfde660dc9ed3727",
+      "sample_count": 5854,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "period_ms": 2000,
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello2000-s84001/predictions.jsonl",
+      "prediction_sha256": "7c67d7f4b1e1cb2d34b19d1a29bdb36f1a99ae55ec7420df5a51db9ce7b9ce28",
+      "evaluation_sha256": "70c752568a19e656d7c765b5a33aef28fd80baefddac83d0029c4f42f682899e",
+      "sample_count": 5724,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "period_ms": 20,
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello20-s84002/predictions.jsonl",
+      "prediction_sha256": "3118d8a26002ee7f21f0176a58cba36106897ba7bd9ed68bc126b433ea1817e4",
+      "evaluation_sha256": "3493db47d8169ce184427f8e81e08f3e54fb66bec6f4ba5773cb24e8fc899f0c",
+      "sample_count": 5983,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "period_ms": 200,
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello200-s84002/predictions.jsonl",
+      "prediction_sha256": "7e327836a6bcbfd7812f7ac277c791a9ea4e10063c5b34eaf69f4bbd56952b7a",
+      "evaluation_sha256": "1c78acba8389a410bb54fc071450d60639d6e8fa7a71c226f83c2521285d87f2",
+      "sample_count": 5931,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "period_ms": 1000,
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello1000-s84002/predictions.jsonl",
+      "prediction_sha256": "2293f5df65ff80a4d07e08bf4c2f9a3c808277e948ca482850fc52a9c16fd944",
+      "evaluation_sha256": "8267b2f482754c3b6d93c6cfb0a3f123e57df37e6393157e0d3753f6740db917",
+      "sample_count": 5826,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "period_ms": 2000,
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello2000-s84002/predictions.jsonl",
+      "prediction_sha256": "23cb2870c907e0eea06bf3d0296ff4b16deccc9f7b5b796ad60b69fcfc243d2c",
+      "evaluation_sha256": "2a8ebd689cf2476ae1d98c6bc9320455ccd2cdca235fb134a779cc96a379c93f",
+      "sample_count": 5656,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "period_ms": 20,
+      "task": "accuracy-circle-n10-v30-k6000-hello20-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello20-s84003/predictions.jsonl",
+      "prediction_sha256": "6271bb82fc2ca9fee7359593a16436a8da0e17fb5f45ba9efa9bece70c798c8e",
+      "evaluation_sha256": "d4b2daa07b62fd42e0d290cd5121b42460d0e3d7eb8ef1b87bf4edaf53f9e5bd",
+      "sample_count": 5951,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "period_ms": 200,
+      "task": "accuracy-circle-n10-v30-k6000-hello200-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello200-s84003/predictions.jsonl",
+      "prediction_sha256": "2eaececce88441c26e122c90910f2e60a9121d3b74fbe9d13429998a87d3a3b5",
+      "evaluation_sha256": "301f318986dba68ec3e81285e56c8c534dedc4e91906b4f07eb0e5b6543ea864",
+      "sample_count": 5960,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "period_ms": 1000,
+      "task": "accuracy-circle-n10-v30-k6000-hello1000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello1000-s84003/predictions.jsonl",
+      "prediction_sha256": "0f972ec2a5431c1bb9298b5edb1aeeb3d72822f07c3e92db97b8d7a2ddfe40d8",
+      "evaluation_sha256": "78817fd78669a8512fd71bb606793cbaca2de35284670d9465114a3b134fddb6",
+      "sample_count": 5889,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "period_ms": 2000,
+      "task": "accuracy-circle-n10-v30-k6000-hello2000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-circle-n10-v30-k6000-hello2000-s84003/predictions.jsonl",
+      "prediction_sha256": "bf155ddfbcb0d7ab4542652b71b95f36e1e208ac9f00a69cb620a88ab8d56a62",
+      "evaluation_sha256": "212b0691b9ee76cecaa74c74e7310b2f83f682339f739326a01fe4821e3845e0",
+      "sample_count": 5678,
+      "model_sha256": "644c383c683562be6465f816f723a5b8ba178d270055e17ccedb222620d3c5ba"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "period_ms": 20,
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84001/predictions.jsonl",
+      "prediction_sha256": "2900167633dce46d25c9b0b4eecba1a7678a126e7986490a3e86862a4a68df41",
+      "evaluation_sha256": "e3b5774f88f2e93623bf4edd4a9fc927bc30bc661e0d4b6e097965fd9520fce2",
+      "sample_count": 5583,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "period_ms": 200,
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello200-s84001/predictions.jsonl",
+      "prediction_sha256": "3ec3bae797c52b49592aa75eddbfbd6462ab5f2766bb508edb6eadbf190cda6a",
+      "evaluation_sha256": "112f34979604228b03955643a6fb8523a59ca662e7ed3e8712f43bee026db75c",
+      "sample_count": 5449,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "period_ms": 1000,
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello1000-s84001/predictions.jsonl",
+      "prediction_sha256": "f7fce256d49dfff76b6b09a9e2976d7a1bb9be5ea772be259073954e57b812b8",
+      "evaluation_sha256": "9160a5a7d4296470a073ba15971e320e42beca0057eb40a892e15e6cf7bf3cef",
+      "sample_count": 5367,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "period_ms": 2000,
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello2000-s84001/predictions.jsonl",
+      "prediction_sha256": "7797cfa8549eff5c114c9852ce369ffe4a9bf3ac8fbd155fb8b641c263536083",
+      "evaluation_sha256": "79dcb3925697f8bf5bf451684c21ea41fdd9d3460c07307eed3d1c38039e76ad",
+      "sample_count": 5157,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "period_ms": 20,
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84002/predictions.jsonl",
+      "prediction_sha256": "1699a02511b82959ca6fea652283c9a4bb74d3b40daefafa23361c0dddfc1ad0",
+      "evaluation_sha256": "cc7dba00bab1dada8d27b6d0cf7fc6281ae2ebaca1cdd6b58292132a7f5b6491",
+      "sample_count": 5608,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "period_ms": 200,
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello200-s84002/predictions.jsonl",
+      "prediction_sha256": "6106eb702ce13238b94c1079bb77e093661d1debe953ce064dcaa053f45407e0",
+      "evaluation_sha256": "cd4473deabc61a83754098009b1401ced663056fa7cb767177bdc41faaf63005",
+      "sample_count": 5448,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "period_ms": 1000,
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello1000-s84002/predictions.jsonl",
+      "prediction_sha256": "c4d751ab9d26427069671452cf0b916ef31e8d5c2a3e311bb9453c8b38c72a56",
+      "evaluation_sha256": "310e81d9f4ea3afca22fdb16b57cc21814a09d284020606d39e277c079e7ba96",
+      "sample_count": 5344,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "period_ms": 2000,
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello2000-s84002/predictions.jsonl",
+      "prediction_sha256": "abe59ea3284151e2b7f9c9e3f929c0ddd8febb62588f6ed04cc61dfc4644c384",
+      "evaluation_sha256": "f7e18c8b4142f0b4a803b15e6e39dad98c2bb4fa2c301d8db74bd2ef8c74a142",
+      "sample_count": 5160,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "period_ms": 20,
+      "task": "accuracy-grid-n10-v30-k6000-hello20-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello20-s84003/predictions.jsonl",
+      "prediction_sha256": "74b4da036e668091731dc024f57317075dd76135e7d08b0eddb8af2a9a74a36a",
+      "evaluation_sha256": "5a7ca9e89b840ad027dd5bd6b74f4fb793ec6880ab8c027f75345947f6711674",
+      "sample_count": 5614,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "period_ms": 200,
+      "task": "accuracy-grid-n10-v30-k6000-hello200-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello200-s84003/predictions.jsonl",
+      "prediction_sha256": "d21e9a8199a85d5b4538922bd25c3860ec970434f054fbdfdac39046cf0a51eb",
+      "evaluation_sha256": "079b9f567badf2eadaace05b2a451df54d38f95a21e9d51117501b2eaaff104c",
+      "sample_count": 5484,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "period_ms": 1000,
+      "task": "accuracy-grid-n10-v30-k6000-hello1000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello1000-s84003/predictions.jsonl",
+      "prediction_sha256": "eb6a1b27c2e3b9dbeb3ebfcf6ef483811fbde4ed3730f600544a91521f90dcbc",
+      "evaluation_sha256": "ad96f8719f3814e87154faf9a79de3bbcc572aa06e8c268f29d4879a38b27e02",
+      "sample_count": 5364,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "period_ms": 2000,
+      "task": "accuracy-grid-n10-v30-k6000-hello2000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-grid-n10-v30-k6000-hello2000-s84003/predictions.jsonl",
+      "prediction_sha256": "7e7fcb9c206903333706c2c69f4d77ab306dfbbcdb05edf800ce05fbb1442eac",
+      "evaluation_sha256": "8d3f9141edc3dd4a8cf7ae79b1922b13a8d78ae6e3c3bdd755c5a5da99d50b2f",
+      "sample_count": 5151,
+      "model_sha256": "c71f23c2b9cc0c77411ff26fc9e447539db750596d7557a86bece651cbfde2c4"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "period_ms": 20,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello20-s84001/predictions.jsonl",
+      "prediction_sha256": "e6dc20fbf03b2f6d22de8fe757dac625a44090625a6080176222f5ea1ae3da2e",
+      "evaluation_sha256": "214717c62d82d783c06c647107f7db15cfff422abb390e7ff04af9b12dfb36e9",
+      "sample_count": 4549,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "period_ms": 200,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello200-s84001/predictions.jsonl",
+      "prediction_sha256": "430e2cba0005d2943349f355a7a62c665ed7e1df9e71e392047dc1cd170e806c",
+      "evaluation_sha256": "a367f46b0336054db6689b8ca9b4725825d1c33d846f01b2ef36463edb6ede0a",
+      "sample_count": 4620,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "period_ms": 1000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello1000-s84001/predictions.jsonl",
+      "prediction_sha256": "0b6f1712c4e38f5c76db8ce41d95a3d4b5b6dea47fd5c4b88d7915f366f4abd1",
+      "evaluation_sha256": "17c60c06951389075c885ece3a4ca9c65a47fa2eeb9a3245db2e6fc927d1a4a6",
+      "sample_count": 4865,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "period_ms": 2000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84001",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello2000-s84001/predictions.jsonl",
+      "prediction_sha256": "c16e43914f4186f0880ff495a46f263a08e38d3518c26eddb1e66c341f11e410",
+      "evaluation_sha256": "598e42b0da5b9d66a338aeec4a4983071af34f239ac246e8437564e2e4ddd546",
+      "sample_count": 4904,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "period_ms": 20,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello20-s84002/predictions.jsonl",
+      "prediction_sha256": "30dc83b7a9cde57949a989363d1db4e57ab8abf68b06bad4faa92abf806a2def",
+      "evaluation_sha256": "f000875487c1cdc2edd949b9c0c0a8978304776da28785be9f13ba072d85e569",
+      "sample_count": 3967,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "period_ms": 200,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello200-s84002/predictions.jsonl",
+      "prediction_sha256": "25f9e7327df33cbf915d00fef1f6db53572e1888605dd226aefd5f87c2fb7f19",
+      "evaluation_sha256": "6784deb22fae6128bdcf7f7e8ee99d835535325b73f046779b6bc2de9ff6d475",
+      "sample_count": 4730,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "period_ms": 1000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello1000-s84002/predictions.jsonl",
+      "prediction_sha256": "68e36f932662676e9af22b5d949a6826b46952e63a533e2d5d6a5b4006153f8f",
+      "evaluation_sha256": "ffebdc16dc574d5619769fe5fb7fd5520800b7f38f7fddd777c589459c66d8d0",
+      "sample_count": 4706,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "period_ms": 2000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84002",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello2000-s84002/predictions.jsonl",
+      "prediction_sha256": "690a08d303167843e33001a28978b66cd99ed51bc8ecd8f0a176698d0fb6fe2a",
+      "evaluation_sha256": "90dc887763d918f389510eaa0cb91a392e9a0ee7b049c4e025a9d899ac92521e",
+      "sample_count": 4689,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "period_ms": 20,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello20-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello20-s84003/predictions.jsonl",
+      "prediction_sha256": "e7c3348a950b685153712390cf748c74e7c09770ae6689558a5b7c11575ed8ea",
+      "evaluation_sha256": "d610a33f7d998726a0d8fcd15f060cd6173656d754c79271b731c314aea4efd2",
+      "sample_count": 4329,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "period_ms": 200,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello200-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello200-s84003/predictions.jsonl",
+      "prediction_sha256": "226b0c1eb6fd5d08b1476313b177a743af015ad2046f77a89ac49f10904f9beb",
+      "evaluation_sha256": "2224f77a627ec58602f6804c9830b82f5afb1bb692f6cb32c0edac0b581b637c",
+      "sample_count": 4449,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "period_ms": 1000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello1000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello1000-s84003/predictions.jsonl",
+      "prediction_sha256": "6bda1a9b58cd18d71920270d8ad2818ff48e034d213becda185e2c7efa51500f",
+      "evaluation_sha256": "90a5ce37bcfaa4b1fbcecbe597d9ccc0b4179e8dbefb7e5248e1d5ff4d5028d5",
+      "sample_count": 4677,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "period_ms": 2000,
+      "task": "accuracy-spidermap-n10-v30-k6000-hello2000-s84003",
+      "prediction": "data/experiments/period-refresh-20261117/analysis/evaluation/accuracy-spidermap-n10-v30-k6000-hello2000-s84003/predictions.jsonl",
+      "prediction_sha256": "12af4d2d61858bed10db99488e26a1f423b9788dc38d447dcaa27d4e93c6dab4",
+      "evaluation_sha256": "04ade51bd20de056e618a65a89793fad19aa135ea6a82293a3810245f8160e18",
+      "sample_count": 4768,
+      "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47"
+    }
+  ],
+  "original_two_period_comparison": [
+    {
+      "scenario": "circle",
+      "seed": 84001,
+      "n": 5567,
+      "accuracy_20": 99.76648104903897,
+      "accuracy_2000": 99.98203700377223
+    },
+    {
+      "scenario": "circle",
+      "seed": 84002,
+      "n": 5510,
+      "accuracy_20": 99.7459165154265,
+      "accuracy_2000": 99.81851179673322
+    },
+    {
+      "scenario": "circle",
+      "seed": 84003,
+      "n": 5502,
+      "accuracy_20": 99.9818247909851,
+      "accuracy_2000": 99.94547437295529
+    },
+    {
+      "scenario": "grid",
+      "seed": 84001,
+      "n": 4706,
+      "accuracy_20": 99.36251593710158,
+      "accuracy_2000": 99.59626009349766
+    },
+    {
+      "scenario": "grid",
+      "seed": 84002,
+      "n": 4852,
+      "accuracy_20": 99.44352844187964,
+      "accuracy_2000": 99.91755976916735
+    },
+    {
+      "scenario": "grid",
+      "seed": 84003,
+      "n": 4765,
+      "accuracy_20": 99.7691500524659,
+      "accuracy_2000": 98.71983210912907
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84001,
+      "n": 3292,
+      "accuracy_20": 97.90400972053463,
+      "accuracy_2000": 97.75212636695018
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84002,
+      "n": 2958,
+      "accuracy_20": 94.99661933739013,
+      "accuracy_2000": 94.9290060851927
+    },
+    {
+      "scenario": "spidermap",
+      "seed": 84003,
+      "n": 2965,
+      "accuracy_20": 97.40303541315346,
+      "accuracy_2000": 92.91736930860034
+    }
+  ],
+  "limitations": "This is the subset evaluable with identical source RSU and label across all four existing runs, not all generated requests, online delivery accuracy, or a separately controlled staleness experiment. Interaction counts remain full-run counts. Different cohort from the earlier 20-vs-2000-only comparison.",
+  "evidence_membership_csv": "build/validation/period-common-cohort-20261117/匹配样本.csv",
+  "evidence_membership_sha256": "d22abfe88cec40175a9c1153df1c8e09bba8bf447a36063b29f98d7f1124ae72",
+  "publication": "docs/ai/问题.md: Period Accuracy only; original full-run Interaction Numbers unchanged.",
+  "stats_csv": "docs/ai/问题图片/Period共同匹配逐轮统计.csv",
+  "stats_csv_sha256": "6d18adead64ae73066da58bf8f0b7b484f9240777c56a091b31692a6cc217fd6",
+  "question_before_sha256": "c9e3e1246ac353ac29073769f332526a1da1405137c59241c9d435e235c9d932",
+  "question_after_sha256": "e11706c12d4a4e751a42e250eecd8f1a57ee0f205f674fd75ab3981473c38806"
+}

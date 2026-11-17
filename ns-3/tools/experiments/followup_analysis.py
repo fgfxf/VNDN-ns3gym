@@ -363,20 +363,30 @@ def validate_effective_period(effective, period):
 
 def verified_tasks(root, manifest, progress=None):
     tasks = manifest['tasks']
-    if len(tasks) != 99 or Counter(task['stage'] for task in tasks) != dict(accuracy=36, online=36, state=27):
+    period_only = manifest.get('profile') == 'period-only'
+    if manifest.get('profile', 'supplement') not in ('supplement', 'period-only'):
+        raise ValueError('unknown follow-up profile')
+    required_counts = dict(accuracy=36) if period_only else dict(accuracy=36, online=36, state=27)
+    if len(tasks) != sum(required_counts.values()) or Counter(task['stage'] for task in tasks) != required_counts:
         raise ValueError('supplement requires exactly 36 accuracy + 36 online + 27 state runs')
     signatures, run_paths, sources, records = set(), set(), set(), []
     seeds = {scene: {task['seed'] for task in tasks if task['scenario'] == scene} for scene in SCENES}
     if any(len(value) != 3 for value in seeds.values()):
         raise ValueError('exactly three prespecified seeds required for each scene')
+    if period_only and any(value != {84001, 84002, 84003} for value in seeds.values()):
+        raise ValueError('period refresh requires the frozen seed families 84001/84002/84003')
     expected = set()
     for scene in SCENES:
         for seed in seeds[scene]:
-            for stage, strategy in (('accuracy', 0), ('online', 3)):
-                for period in (20, 40, 80, 160):
+            for stage, strategy in ((('accuracy', 0),) if period_only else (('accuracy', 0), ('online', 3))):
+                for period in ((20, 200, 1000, 2000) if period_only else (20, 40, 80, 160)):
                     expected.add((stage, scene, strategy, period, 10, 30, 6000, seed))
-            for vehicles in (5, 15, 20):
+            for vehicles in (() if period_only else (5, 15, 20)):
                 expected.add(('state', scene, 3, 20, vehicles, 30, vehicles * 600, seed))
+    planned = [tuple(task[key] for key in ('stage', 'scenario', 'strategy',
+        'hello_interval_ms', 'vehicles', 'speed_kmh', 'requests', 'seed')) for task in tasks]
+    if len(set(planned)) != len(planned) or set(planned) != expected:
+        raise ValueError('incomplete approved matrix or duplicate supplementary run signature')
     for index, task in enumerate(tasks):
         signature = tuple(task[key] for key in ('stage', 'scenario', 'strategy',
             'hello_interval_ms', 'vehicles', 'speed_kmh', 'requests', 'seed'))
@@ -559,6 +569,26 @@ def analyze(root):
             write_csv(output / name, rows)
         write_json(output / 'run-analysis.json', dict(accuracy=accuracy, online=online,
             states=states, payloads=payloads, packets=packets))
+        if manifest.get('profile') == 'period-only':
+            rows = grouped_table(accuracy, ('scenario', 'hello_interval_ms'),
+                ('accuracy_percent', 'handover_accuracy_percent', 'evaluable_observation_percent',
+                 'evaluable_request_percent', 'sample_count', 'short_history_count', 'empty_history_count'))
+            write_csv(output / 'accuracy-summary.csv', rows)
+            sources.append(dict(kind='followup_manifest', path=str(manifest_path), sha256=manifest_sha))
+            for model in models.values():
+                data.verify_hash(model['path'], model['sha256'])
+                sources.append(dict(kind='fixed_model', path=model['path'], sha256=model['sha256']))
+            write_csv(output / 'source-index.csv', sources)
+            data.verify_hash(manifest_path, manifest_sha)
+            result = dict(schema_version=1, status='complete', manifest_sha256=manifest_sha,
+                analysis_code_sha256=data.sha256_file(Path(__file__)), models=models,
+                counts=dict(accuracy=len(accuracy), online=0, cpu_processes=0),
+                artifact_hashes={str(path.relative_to(root)): data.sha256_file(path)
+                    for path in [output / 'run-analysis.json'] + sorted(output.glob('*.csv'))},
+                elapsed_seconds=time.monotonic() - started)
+            write_json(output / 'summary.json', result)
+            progress('complete', len(accuracy), len(records), None, status='complete')
+            return result
         if set(benchmark_inputs) != set(SCENES):
             raise ValueError('no valid observed input for a scene CPU benchmark; inspect exclusions')
         benchmarks = run_benchmarks(output / 'benchmark', models, benchmark_inputs, progress)

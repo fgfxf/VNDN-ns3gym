@@ -30,7 +30,7 @@ PACKAGE = ROOT / 'docs/ai/问题图片'
 ORIGINAL = ROOT / 'docs/ai/仿真图填充/05_三场景RTT时间变化.py'
 SEEDS = {'circle': (23001,), 'grid': (23009,), 'spidermap': tuple(range(93001, 93006))}
 NAMES = ('01_成功RTT_三维', '02_成功RTT_折线',
-         '03_平均RTT含超时_三维', '04_平均RTT含超时_折线')
+         '03_平均RTT_三维', '04_平均RTT_折线')
 
 
 def sha(path):

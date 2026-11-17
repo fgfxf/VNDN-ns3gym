@@ -77,12 +77,13 @@ class SimulationFillAcceptance(unittest.TestCase):
         self.assertAlmostEqual(actual['run_sd'], statistics.stdev(samples), places=10)
         self.assertEqual(actual['repetitions'], repetitions)
 
-    def test_exactly_fourteen_scripts_and_fourteen_markdown_png_references(self):
+    def test_fourteen_preserved_scripts_and_eleven_active_markdown_png_references(self):
         self.assertEqual({path.stem for path in PACKAGE.glob('*.py')}, set(NAMES))
         markdown = (PACKAGE / '仿真图.md').read_text(encoding='utf-8')
         references = re.findall(r'!\[[^\]]*\]\(([^)]+)\)', markdown)
-        self.assertEqual(len(references), 14)
-        self.assertEqual({Path(name).name for name in references}, {name + '.png' for name in NAMES})
+        self.assertEqual(len(references), 11)
+        active = set(NAMES) - set(SUPPLEMENTS[1:4])
+        self.assertEqual({Path(name).name for name in references}, {name + '.png' for name in active})
         for reference in references:
             self.assertNotIn('://', reference)
             self.assertTrue((PACKAGE / reference).is_file(), reference)
@@ -104,6 +105,40 @@ class SimulationFillAcceptance(unittest.TestCase):
         after_files = {str(path.relative_to(PACKAGE)): digest(path)
                        for path in PACKAGE.rglob('*') if path.is_file()}
         self.assertEqual(after_files, before_files)
+
+    def test_requested_tick_text_and_axis_titles_preserve_numeric_inputs(self):
+        for name, scene, scan in PRIMARY:
+            namespace = runpy.run_path(str(PACKAGE / (name + '.py')))
+            data = namespace['DATA']
+            figure = namespace['draw']()
+            try:
+                expected = (['10–20', '25–35', '40–55', '55–65'] if scan == 'speed' else
+                            ['12', '25', '50', '75', '100'] if scan == 'interest' else
+                            ['5', '10', '15', '20'])
+                for axis in figure.axes:
+                    self.assertEqual([t.get_text() for t in axis.get_xticklabels()], expected)
+                    self.assertTrue(axis.get_xlabel().startswith(data['xlabel'] + '\n'))
+                self.assertEqual(figure.axes[0].get_ylabel(), 'Number of secondary forwarding')
+                self.assertEqual(figure.axes[3].get_ylabel(), 'Network overhead (Mbit)')
+            finally:
+                plt.close(figure)
+
+    def test_cost_sections_use_numeric_tables_from_saved_measurements(self):
+        markdown = (PACKAGE / '仿真图.md').read_text(encoding='utf-8')
+        section = markdown.split('## 2、', 1)[1].split('## 3、', 1)[0]
+        self.assertNotIn('![', section)
+        self.assertIn('| 车辆→缓存内容集合 | 700 |', section)
+        self.assertIn('| 缓存内容→持有车辆集合 | 200 |', section)
+        payload = literal(PACKAGE / '03_注册与更新报文大小.py', 'DATA')['panels'][0]
+        for series in payload['series']:
+            label = 'registration' if series['field'] == 'registration' else 'update'
+            row = '| ' + label + ' | ' + ' | '.join(
+                format(point['estimate'], '.2f') for point in series['points']) + ' |'
+            self.assertIn(row, section)
+        inference = literal(PACKAGE / '04_TKAN推理时延.py', 'DATA')['panels'][0]
+        for index, scene in enumerate(('圆圈', '方阵', '蜘蛛网')):
+            values = [series['points'][index]['estimate'] / 1000 for series in inference['series']]
+            self.assertIn('| ' + scene + ' | ' + ' | '.join(format(x, '.3f') for x in values) + ' |', section)
 
     def test_nine_primary_figures_preserve_all_sealed_means_sd_and_rate_conversion(self):
         checked_points = 0
@@ -217,28 +252,71 @@ class SimulationFillAcceptance(unittest.TestCase):
         finally:
             plt.close(figure)
 
-    def test_period_accuracy_points_match_saved_three_seed_summaries(self):
+    def test_period_candidate_coverage_matches_saved_probabilities_and_conditions(self):
+        import numpy as np
         data = literal(PACKAGE / '01_信标周期预测准确率.py', 'DATA')
-        rows = csv_rows('accuracy-summary.csv')
-        lookup = {(row['scenario'], int(row['hello_interval_ms']), row['metric']): row
-                  for row in rows}
-        seen = set()
+        self.assertEqual([p['xlabels'] for p in data['panels']], [[20, 40, 80, 160]] * 3)
+        legacy = ROOT / 'data/experiments/paper-figures-followup-20261026'
+        pressure = ROOT / 'data/experiments/period-candidate-pressure-20261117'
+        specs = {'circle': ('adaptive_candidate_coverage', 60, [85001]),
+                 'grid': ('top2_candidate_coverage', 30, [84001, 84002, 84003]),
+                 'spidermap': ('adaptive_candidate_coverage', 60, [85001])}
         for panel in data['panels']:
-            self.assertEqual(panel['xlabels'], [20, 40, 80, 160])
-            for series in panel['series']:
-                for period, actual in zip(panel['xlabels'], series['points']):
-                    key = (panel['scene'], period, series['field'])
-                    row = lookup[key]
-                    self.assertEqual(actual['estimate'], float(row['mean']))
-                    self.assertEqual(actual['run_sd'], float(row['sd']))
-                    self.assertEqual(actual['repetitions'], int(row['n_runs']))
-                    self.assertEqual(actual['repetitions'], 3)
-                    self.assertEqual(len(series['points']), 4)
-                    self.assertNotIn(key, seen)
-                    seen.add(key)
-        self.assertEqual(seen, {(scene, period, metric) for scene in SCENES
-                                for period in (20, 40, 80, 160)
-                                for metric in ('accuracy_percent', 'handover_accuracy_percent')})
+            metric, speed, seeds = specs[panel['scene']]
+            self.assertEqual((panel['metric'], panel['speed_kmh'], panel['seeds']), (metric, speed, seeds))
+            self.assertEqual(len(panel['series']), 1)
+            self.assertEqual(data['panels'][0]['ylabel'], 'Candidate coverage (%)')
+            for period, point in zip(panel['xlabels'], panel['series'][0]['points']):
+                values, total_n, total_c = [], 0, 0
+                for seed in seeds:
+                    if panel['scene'] == 'grid':
+                        task = 'accuracy-grid-n10-v30-k6000-hello{}-s{}'.format(period, seed)
+                        path = legacy / 'analysis/evaluation' / task / 'predictions.jsonl'
+                    else:
+                        task = 'pressure-{}-n10-v60-k6000-hello{}-s85001'.format(panel['scene'], period)
+                        path = pressure / 'analysis/evaluation' / task / 'predictions.jsonl'
+                    evaluation = json.loads(path.with_name('evaluation.json').read_text())
+                    self.assertEqual(digest(path), evaluation['predictions_sha256'])
+                    rows = [json.loads(line) for line in path.open()]
+                    selected = [row for row in rows if row['label'] != row['source_rsu_id']]
+                    correct = 0
+                    for row in selected:
+                        ids = row['candidate_rsu_ids']
+                        probabilities = np.array([row['probabilities'][row['probability_label_order'].index(k)]
+                                                  for k in ids], dtype=np.float32)
+                        probabilities /= probabilities.sum()
+                        a, b = sorted(range(len(ids)), key=lambda k: -float(probabilities[k]))[:2]
+                        dual = metric == 'top2_candidate_coverage' or (
+                            float(np.float32(probabilities[a] - probabilities[b])) <= .1 or
+                            float(probabilities[b]) >= .1)
+                        correct += row['label'] == ids[a] or dual and row['label'] == ids[b]
+                    total_n += len(selected)
+                    total_c += correct
+                    values.append(100 * correct / len(selected))
+                self.assertAlmostEqual(point['estimate'], statistics.mean(values), places=10)
+                self.assertEqual(point['repetitions'], len(seeds))
+                self.assertEqual(point['sample_count_total'], total_n)
+                self.assertEqual(point['correct_count_total'], total_c)
+                if len(seeds) == 1:
+                    self.assertIsNone(point['run_sd'])
+                else:
+                    self.assertAlmostEqual(point['run_sd'], statistics.stdev(values), places=10)
+
+    def test_period_official_tables_and_question_remove_special_neural_encoding_claims(self):
+        question = (ROOT / 'docs/ai/问题.md').read_text()
+        markdown = (PACKAGE / '仿真图.md').read_text()
+        for document in (question, markdown):
+            self.assertIn('| 20 | 96.10% | 91.69% | 36.06% |', document)
+            self.assertIn('| 160 | 71.43% | 82.80% | 24.57% |', document)
+            self.assertIn('Top-2', document)
+            self.assertIn('60 km/h', document)
+            self.assertIn('30 km/h', document)
+            self.assertIn('85001', document)
+            self.assertIn('84001', document)
+        self.assertNotIn('四档共同匹配子集', question)
+        for phrase in ('无损紧凑', '神经方案专用', '报文编码优化', 'CBOR', 'VNH1'):
+            self.assertNotIn(phrase, question)
+        self.assertIn('![Period候选覆盖率](仿真图填充/01_信标周期预测准确率.png)', question)
 
     def test_two_state_tables_preserve_time_means_and_network_peak_summaries(self):
         data = literal(PACKAGE / '02_状态表规模.py', 'DATA')
@@ -320,8 +398,10 @@ class SimulationFillAcceptance(unittest.TestCase):
         for name, source in zip(SUPPLEMENTS[:4], ('accuracy-summary.csv', 'state-summary.csv',
                                                 'hello-size-points.csv', 'inference-processes.csv')):
             provenance = literal(PACKAGE / (name + '.py'), 'PROVENANCE')
-            self.assertEqual((ROOT / provenance['source_table']).resolve(), (SOURCE / source).resolve())
-            self.assertEqual(provenance['source_sha256'], digest(SOURCE / source))
+            expected = (PACKAGE / '周期候选覆盖率逐轮数据.csv'
+                        if name == SUPPLEMENTS[0] else SOURCE / source)
+            self.assertEqual((ROOT / provenance['source_table']).resolve(), expected.resolve())
+            self.assertEqual(provenance['source_sha256'], digest(expected))
 
     def test_all_figure_text_is_english_and_all_legend_labels_are_final(self):
         for name in NAMES:
