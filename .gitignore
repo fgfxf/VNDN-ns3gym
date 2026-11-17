@@ -3,3 +3,4 @@ ns-3_old/
 .vscode/
 data/
 ns-3/docs/ai/records/*
+!ns-3/docs/ai/records/spider-power-20261103-plan.json

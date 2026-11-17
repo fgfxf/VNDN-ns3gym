@@ -164,10 +164,19 @@ class SimulationFillAcceptance(unittest.TestCase):
         data = literal(PACKAGE / '05_三场景RTT时间变化.py', 'DATA')
         self.assertEqual(set(data), set(SCENES))
         rows = csv_rows('time-bin-rtt.csv')
+        from check_question_rtt import source_data
+        adopted = source_data()['success']['spidermap']
         checked = 0
         for scene in SCENES:
             self.assertEqual([int(series['strategy']) for series in data[scene]], [0, 1, 2, 3])
             for series in data[scene]:
+                if scene == 'spidermap':
+                    expected = adopted[int(series['strategy'])]
+                    self.assertEqual(series['x'], expected['x'])
+                    for actual, wanted in zip(series['rtt_ms'], expected['rtt_ms']):
+                        self.assertAlmostEqual(actual, wanted, delta=1e-9)
+                    checked += len(expected['x'])
+                    continue
                 source = sorted((row for row in rows if row['scene'] == scene
                                  and int(row['strategy']) == int(series['strategy'])),
                                 key=lambda row: float(row['bin_start_s']))

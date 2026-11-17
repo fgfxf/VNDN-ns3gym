@@ -1,0 +1,71 @@
+{
+  "scope": "spidermap only; common RSU and OBU transmit power is the sole experimental variable",
+  "coarse_powers_dbm": [
+    13,
+    17,
+    18,
+    19,
+    20
+  ],
+  "development_seeds": [
+    23017,
+    23018
+  ],
+  "confirmation_seeds": [
+    93001,
+    93002,
+    93003,
+    93004,
+    93005
+  ],
+  "engineering_seed": 93000,
+  "vehicles": 10,
+  "speed_setting_kmh": 30,
+  "requests_per_run": 6000,
+  "measurement_window_s": [
+    20,
+    140
+  ],
+  "drain_end_s": 143.5,
+  "bin_seconds": 5,
+  "focus_window_s": [
+    50,
+    90
+  ],
+  "model": "data/models/spidermap/tkan-lstm/retrain-quick-20261021-e71f46c6af3100ad-session/checkpoint.pt",
+  "model_sha256": "52a04c6038b0f6290d1003f1432a6d6aeb752df1ff4d88d7a7b4c9d600ff4f47",
+  "baseline_policy": "Rerun eight 13 dBm runs with current binary; compare sealed historical requests. Baseline reruns avoid mixing runtime source versions.",
+  "goal_definition": {
+    "mean_order": "Naive > VTDF > RTVTDF > NN in both full and focus windows",
+    "adjacent_margin_ms": 1.0,
+    "strict_bin_order_fraction": ">0.5 in both windows",
+    "focus_temporal_sd_ms_min": 10.0,
+    "focus_peak_to_peak_ms_min": 50.0,
+    "focus_timeout_fraction_max": 0.3,
+    "high_plateau_definition": "consecutive bins all >=1000ms with range <=20ms",
+    "focus_high_plateau_max_s": 15
+  },
+  "selection_order": [
+    "all_goal_conditions_met",
+    "focus_timeout_and_high_plateau_gates_met",
+    "number_of_adjacent_mean_order_pairs_met_out_of_6",
+    "minimum_full_and_focus_strict_bin_order_fraction",
+    "shorter_worst_focus_high_plateau",
+    "lower_NN_focus_mean",
+    "lower_NN_full_mean",
+    "lower_power"
+  ],
+  "fine_rule": "If coarse best misses any goal condition, test best minus and plus 0.5 dBm on the same two development seeds. Otherwise no fine scan. Select once from development data before confirmation.",
+  "confirmation_policy": "Freeze candidate before any confirmation result. Do not retune or change seeds after confirmation; report all five seeds even if ranking fails.",
+  "fixed_parameters": [
+    "existing_checkpoint",
+    "radio_rx_threshold_-69.8dBm",
+    "MinDistance_50m",
+    "traffic_lights",
+    "routes_and_request_plans_per_seed",
+    "hello_20ms",
+    "timeout_3000ms",
+    "Data_payload_10240B",
+    "core_links_and_strategies"
+  ]
+}

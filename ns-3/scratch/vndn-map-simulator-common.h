@@ -34,7 +34,9 @@
 #include "ns3/wifi-setup-helper.h"
 
 #include <cstdlib>
+#include <cmath>
 #include <ctime>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -143,6 +145,8 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   double handoverFrequencyMultiplier = 4.0;
   std::string experimentConfigFile;
   std::string trainingSnapshotsOption;
+  std::string wifiTxPowerOption;
+  double wifiTxPowerDbm = scenario.wifiTxPowerDbm;
   std::unique_ptr<vanet::ExperimentConfig> experiment;
   std::string sumoConfigPath =
       VndnUtilsHelper::ndn4ivc_traces_folder + "/" + scenario.scenarioName + "/" +
@@ -153,6 +157,8 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
                         experimentConfigFile);
   commandLine.AddValue ("training-snapshots", "Passive experiment observations: 0 or 1",
                         trainingSnapshotsOption);
+  commandLine.AddValue ("wifi-tx-power-dbm", "Spider RSU and OBU transmit power in dBm [0, 30]",
+                        wifiTxPowerOption);
   commandLine.AddValue ("i", "Interest interval (milliseconds)", ndnIntervalMs);
   commandLine.AddValue ("s", "Simulation time (seconds)", simulationTime);
   commandLine.AddValue ("pcap", "Enable PCAP", enablePcap);
@@ -176,6 +182,27 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
                         "OBU frequency multiplier in handover areas",
                         handoverFrequencyMultiplier);
   commandLine.Parse (argc, argv);
+  if (!wifiTxPowerOption.empty ())
+    {
+      if (scenario.scenarioName != "fgfxf-spider-map")
+        {
+          std::cerr << "--wifi-tx-power-dbm is supported for spidermap only\n";
+          return 2;
+        }
+      try
+        {
+          size_t consumed = 0;
+          wifiTxPowerDbm = std::stod (wifiTxPowerOption, &consumed);
+          if (consumed != wifiTxPowerOption.size () || !std::isfinite (wifiTxPowerDbm) ||
+              wifiTxPowerDbm < 0.0 || wifiTxPowerDbm > 30.0)
+            throw std::invalid_argument ("invalid power");
+        }
+      catch (const std::exception &)
+        {
+          std::cerr << "--wifi-tx-power-dbm requires a finite number in [0, 30]\n";
+          return 2;
+        }
+    }
   if ((!trainingSnapshotsOption.empty () && trainingSnapshotsOption != "0" &&
        trainingSnapshotsOption != "1") ||
       (trainingSnapshotsOption == "1" && experimentConfigFile.empty ()))
@@ -322,10 +349,37 @@ RunVndnMapScenario (int argc, char *argv[], const VndnMapScenarioConfig &scenari
   serverNodes.Create (1);
 
   WifiSetupHelper wifi;
-  wifi.SetTxPower (scenario.wifiTxPowerDbm);
+  wifi.SetTxPower (wifiTxPowerDbm);
   wifi.SetMiniRssi (scenario.wifiMinimumRssiDbm);
   wifi.SetSnr (scenario.wifiSnrThresholdDb);
-  wifi.ConfigureDevices (nodePool, enablePcap, wifiPcapPrefix);
+  const NetDeviceContainer wifiDevices =
+      wifi.ConfigureDevices (nodePool, enablePcap, wifiPcapPrefix);
+  if (experiment)
+    {
+      // Read the installed PHYs, rather than treating the requested setting as
+      // evidence that both RSUs and OBUs actually received it. No simulated event.
+      std::ofstream radio (outputDirectory + "radio-config.json");
+      radio << std::setprecision (17)
+            << "{\"schema_version\":1,\"scenario\":\"" << experiment->scenario
+            << "\",\"requested_tx_power_dbm\":" << wifiTxPowerDbm
+            << ",\"rsu_count\":" << nRsus << ",\"obu_count\":" << nVehicles
+            << ",\"devices\":[";
+      for (uint32_t index = 0; index < wifiDevices.GetN (); ++index)
+        {
+          Ptr<WifiNetDevice> device = DynamicCast<WifiNetDevice> (wifiDevices.Get (index));
+          Ptr<WifiPhy> phy = device->GetPhy ();
+          radio << (index == 0 ? "" : ",") << "{\"node_id\":" << device->GetNode ()->GetId ()
+                << ",\"role\":\"" << (index < nRsus ? "rsu" : "obu")
+                << "\",\"tx_power_start_dbm\":" << phy->GetTxPowerStart ()
+                << ",\"tx_power_end_dbm\":" << phy->GetTxPowerEnd ()
+                << ",\"tx_power_levels\":" << unsigned (phy->GetNTxPower ())
+                << ",\"rx_sensitivity_dbm\":" << phy->GetRxSensitivity () << "}";
+        }
+      radio << "]}\n";
+      radio.close ();
+      if (!radio)
+        throw std::runtime_error ("Cannot save actual Wi-Fi radio configuration");
+    }
 
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate",

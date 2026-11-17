@@ -16,9 +16,9 @@ main (int argc, char *argv[])
   scenario.parkedNodeX = 400.0;
   scenario.parkedNodeY = 400.0;
 
-  // 保留旧 spidermap 实验的无线传播和核心网时延参数。
-  // Preserve the radio and core-network timing used by the legacy spider map.
-  scenario.wifiTxPowerDbm = 13.0;
+  // 2026-11-04 人工复核采用 16.5 dBm，其他无线与核心网参数沿用。
+  // Adopt the reviewed Spider power; retain the other radio/core-network settings.
+  scenario.wifiTxPowerDbm = 16.5;
   scenario.wifiMinimumRssiDbm = -69.8;
   scenario.wifiSnrThresholdDb = -4.0;
   scenario.infrastructureDataRate = "50Mbps";

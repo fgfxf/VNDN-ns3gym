@@ -99,6 +99,12 @@ def prepare_inputs(config_path):
             type(template["hello_interval_ms"]) is not int or
             not 1 <= template["hello_interval_ms"] <= 2147483647):
         raise ValueError("hello_interval_ms must be an integer in [1, 2147483647]")
+    if "wifi_tx_power_dbm" in template:
+        power = template["wifi_tx_power_dbm"]
+        if template["scenario"] != "spidermap":
+            raise ValueError("wifi_tx_power_dbm is supported for spidermap only")
+        if type(power) not in (int, float) or not math.isfinite(power) or not 0 <= power <= 30:
+            raise ValueError("wifi_tx_power_dbm must be a finite number in [0, 30]")
     if not isinstance(template.get("seeds"), dict):
         raise ValueError("Missing explicit seed tuple")
     for key in ("rng_seed", "rng_run", "sumo_seed", "srand_seed"):
@@ -293,6 +299,39 @@ def validate_resource_outputs(run, config, completion):
     return artifacts
 
 
+def validate_radio_output(run, config):
+    """A power scan is valid only if every RSU and OBU reports the requested PHY setting."""
+    path = run / "raw/radio-config.json"
+    required = "wifi_tx_power_dbm" in config
+    if not path.is_file():
+        if required:
+            raise ValueError("Missing requested power observation: radio-config.json")
+        return []
+    radio = summary.read_json(path)
+    if radio.get("schema_version") != 1 or radio.get("scenario") != config["scenario"]:
+        raise ValueError("Invalid radio-config scenario/schema")
+    if required:
+        power = config["wifi_tx_power_dbm"]
+        effective = summary.read_json(run / "raw/effective-experiment-config.json")
+        obu_count = len(effective["vehicle_ids"])
+        devices = radio.get("devices", [])
+        if (radio.get("rsu_count") != 7 or radio.get("obu_count") != obu_count or
+                len(devices) != 7 + obu_count or
+                {d.get("node_id") for d in devices} != set(range(7 + obu_count))):
+            raise ValueError("Incomplete or duplicated radio device observations")
+        if radio.get("requested_tx_power_dbm") != power:
+            raise ValueError("Observed radio power differs from requested power")
+        for device in devices:
+            if (device.get("role") != ("rsu" if device["node_id"] < 7 else "obu") or
+                    device.get("tx_power_levels") != 1 or
+                    device.get("tx_power_start_dbm") != power or
+                    device.get("tx_power_end_dbm") != power or
+                    not math.isclose(device.get("rx_sensitivity_dbm", math.inf), -69.8,
+                                     rel_tol=0, abs_tol=1e-9)):
+                raise ValueError("Radio device power/role/receiver differs from the controlled scan")
+    return ["raw/radio-config.json"]
+
+
 def binary_evidence(root, target):
     binary = root / "build/scratch" / target / target
     if not binary.is_file():
@@ -422,6 +461,8 @@ def execute_run(args, root, template, input_hashes, strategy, source):
                       "--rsu-forward-strategy=" + str(strategy),
                       "--open-gym-port=" + str(args.gym_port),
                       "--save-data=0", "--sumo-gui=0", "--pcap=0", "--log=0"]
+        if "wifi_tx_power_dbm" in effective:
+            simulation.append("--wifi-tx-power-dbm=" + format(effective["wifi_tx_power_dbm"], ".15g"))
         commands.append(("simulation", [str(root / "waf"),
                                         "--run-no-build" if args.no_build else "--run",
                                         shlex.join(simulation), "-j", "4"]))
@@ -454,6 +495,7 @@ def execute_run(args, root, template, input_hashes, strategy, source):
         artifact_names += ["raw/" + name for name in summary.RAW_FILES]
         completion = summary.read_json(run / "raw/recorder-complete.json")
         artifact_names += validate_resource_outputs(run, effective, completion)
+        artifact_names += validate_radio_output(run, effective)
         if (run / "raw/data-rx.csv").is_file():
             artifact_names.append("raw/data-rx.csv")
         if effective["training_snapshots"]:
